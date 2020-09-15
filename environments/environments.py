@@ -18,32 +18,41 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def step(self, dt=0.01):
         """Performs a step in the environment simulator
 
         Args:
-            dt (float, optional): [description]. Defaults to 0.01.
+            dt (float, optional): Time step run for the integration. Defaults to 0.01.
+
+        Raises:
+            NotImplementedError: Class instantiation has no implementation
         """
         raise NotImplementedError
 
+    @abstractmethod
     def draw(self):
-        """Returns Caption of the environment state
+        """Returns Array of the environment state
+
+        Raises:
+            NotImplementedError: Class instantiation has no implementation
         """
         raise NotImplementedError
 
-    def generateData(self, total_seconds, fps):
+    def generate_data(self, total_seconds, fps, dt=0.01):
         """Generates dataset for current environemnt
 
         Args:
             total_seconds (int): Total duration of video (in seconds)
             fps (int): Frame rate of generated data (frames per second)
-        
-        Returns dict containing input data and corresponding ground truth phase states
+            dt (float, optional): Time step run for the integration. Defaults to 0.01.
+
+        Returns:
+            (dict): Contains input data and corresponding ground truth phase states
         """
 
         time_evol = 1./fps
         total_images = total_seconds*fps
-        dt = 0.01
         image_list = [self.draw()]
         phase_state_list = [np.array([self.q, self.p])]
 
@@ -55,40 +64,3 @@ class Environment(ABC):
             image_list.append(self.draw())
             phase_state_list.append(np.array([self.q, self.p]))
         return {'input': np.array(image_list), 'groundtruth': np.array(phase_state_list)}
-
-
-class Pendulum(Environment):
-
-    """Pendulum System
-
-    Equations of movement are:
-
-        theta'' = -(g/l)*sin(theta)
-
-    """
-
-    def __init__(self, mass, length, p=None, q=None):
-        self.mass = mass
-        self.length = length
-        self.set(p, q)
-
-    def set(self, p, q):
-        self.p = p
-        self.q = q
-
-    def step(self, dt=0.01):
-
-        self.q += dt*(self.p/(self.mass*self.length*self.length))
-        self.p += dt*-9.81*self.mass*self.length*np.sin(self.q)
-
-    def draw(self):
-        img = Image.new('L', (32, 32))
-        draw = ImageDraw.Draw(img)
-
-        r = self.mass
-        x = np.sin(self.q)*self.length + 32/2
-        y = np.cos(self.q)*self.length
-
-        draw.ellipse((x-r, y-r, x+r, y+r), fill=255)
-
-        return np.array(img)
