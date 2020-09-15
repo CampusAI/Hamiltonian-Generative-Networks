@@ -1,4 +1,4 @@
-from environments import Environment
+from .environments import Environment
 import numpy as np
 
 
