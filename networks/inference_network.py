@@ -35,7 +35,7 @@ class EncoderNet(nn.Module):
         stdev = torch.exp(0.5 * self.out_logvar(x))
         epsilon = torch.randn_like(mean)
         x = mean + stdev * epsilon
-        return x
+        return x, mean, stdev
 
 
 class TransformerNet(nn.Module):
