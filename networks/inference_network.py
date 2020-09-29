@@ -43,13 +43,13 @@ class TransformerNet(nn.Module):
     phase space.
     """
 
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3,
                                padding=1, stride=2)
         self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=2)
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=2)
-        self.out_conv = nn.Conv2d(in_channels=64, out_channels=16, kernel_size=3, padding=1)
+        self.out_conv = nn.Conv2d(in_channels=64, out_channels=out_channels, kernel_size=3, padding=1)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -69,5 +69,5 @@ if __name__ == '__main__':
 
     z = enc_net(rand_images_ts)
 
-    trans_net = TransformerNet(in_channels=48)
+    trans_net = TransformerNet(in_channels=48, out_channels=32)
     encoding = trans_net(z)
