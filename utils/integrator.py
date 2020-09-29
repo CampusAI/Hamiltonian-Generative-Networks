@@ -11,5 +11,6 @@ class Integrator:
         self.method = method
 
     def step(self, q, p, hnn, delta_t):
-        if self.method == "Euler":
-            hnn
+        # if self.method == "Euler":
+        #     hnn
+        raise NotImplementedError
