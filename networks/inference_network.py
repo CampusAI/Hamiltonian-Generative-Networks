@@ -57,17 +57,3 @@ class TransformerNet(nn.Module):
         x = self.conv3(x)
         x = self.out_conv(x)
         return x
-
-
-if __name__ == '__main__':
-    SEQUENCE_LENGTH = 10
-    BATCH_SIZE = 64
-    enc_net = EncoderNet(seq_len=SEQUENCE_LENGTH)
-
-    rand_images = np.random.randint(0, 255, size=(BATCH_SIZE, SEQUENCE_LENGTH, 32, 32))
-    rand_images_ts = torch.tensor(rand_images).float()
-
-    z = enc_net(rand_images_ts)
-
-    trans_net = TransformerNet(in_channels=48, out_channels=32)
-    encoding = trans_net(z)
