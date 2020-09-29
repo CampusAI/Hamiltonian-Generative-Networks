@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from PIL import Image, ImageDraw
 import numpy as np
+import os
 
 
 class Environment(ABC):
@@ -9,62 +9,63 @@ class Environment(ABC):
         """Sets initial conditions for physical system
 
         Args:
-            p (float): generalized momentum
-            q (float): generalized position
+            p ([float]): generalized momentum in n-d space
+            q ([float]): generalized position in n-d space
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
         """
         raise NotImplementedError
 
+    @abstractmethod
     def step(self, dt=0.01):
         """Performs a step in the environment simulator
 
         Args:
-            dt (float, optional): [description]. Defaults to 0.01.
+            dt (float, optional): Time step run for the integration. Defaults to 0.01.
+
+        Raises:
+            NotImplementedError: Class instantiation has no implementation
         """
         raise NotImplementedError
 
+    @abstractmethod
     def draw(self):
-        """Returns Caption of the environment state
+        """Returns Array of the environment state
+
+        Raises:
+            NotImplementedError: Class instantiation has no implementation
         """
         raise NotImplementedError
 
+    def generate_data(self, total_seconds, fps, save_dir= None, dt=0.01):
+        """Generates dataset for current environemnt
 
-class Pendulum(Environment):
-    """Pendulum System
+        Args:
+            total_seconds (int): Total duration of video (in seconds)
+            fps (int): Frame rate of generated data (frames per second)
+            save_dir (string, optional): If not None then save the dataset in directory. Defaults to None.
+            dt (float, optional): Time step run for the integration. Defaults to 0.01.
 
-    Equations of movement are:
-        
-        theta'' = -(g/l)*sin(theta)
+        Returns:
+            (dict): Contains frames and corresponding phase states
+        """
 
-    """
-    def __init__(self, mass, length, p=None, q=None):
-        self.mass = mass
-        self.length = length
-        self.set(p, q)
+        time_evol = 1./fps
+        total_images = total_seconds*fps
+        image_list = [self.draw()]
+        phase_state_list = [np.array([np.array(self.q), np.array(self.p)])]
 
-    def set(self, p, q):
-        self.p = p
-        self.q = q
+        for _ in range(total_images):
+            current_time = 0
+            while(current_time < time_evol):
+                self.step(dt)
+                current_time += dt
+            image_list.append(self.draw())
+            phase_state_list.append(np.array([np.array(self.q), np.array(self.p)]))
 
-    def draw(self):
-        img = Image.new('L', (32, 32))
-        draw = ImageDraw.Draw(img)
-
-        r = self.mass
-        x = np.sin(self.q) * self.length + 32 / 2
-        y = np.cos(self.q) * self.length
-
-        draw.ellipse((x - r, y - r, x + r, y + r), fill=255)
-
-        return np.array(img)
-
-
-if __name__ == "__main__":
-    env = Pendulum(mass=1, length=20)
-    env.set(15, 0.5)
-    img = env.draw()
-    import cv2
-    cv2.imshow("img", img)
-    cv2.waitKey(0)
+        dataset = {'frames': np.array(image_list), 'states': np.array(phase_state_list)}
+        if save_dir is not None:
+            os.makedirs(save_dir, exist_ok=True)
+            np.save(os.path.join(save_dir, 'dataset'), dataset)
+        return dataset
