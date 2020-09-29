@@ -1,9 +1,5 @@
-from typing import Any
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
 
 
 class EncoderNet(nn.Module):
@@ -11,11 +7,12 @@ class EncoderNet(nn.Module):
     into a latent space with the common variational reparametrization and sampling technique.
     """
 
-    def __init__(self, seq_len):
-        """Instantiate the convolutional layers
+    def __init__(self, seq_len, out_channels):
+        """Instantiate the 8 convolutional layers.
 
         Args:
             seq_len (int): Number of frames that compose a sequence.
+            out_channels (int): Number of channels of the latent encoding.
         """
         super().__init__()
         self.input_conv = nn.Conv2d(in_channels=seq_len, out_channels=32, kernel_size=3, padding=1)
@@ -27,15 +24,26 @@ class EncoderNet(nn.Module):
         self.out_logvar = nn.Conv2d(in_channels=64, out_channels=48, kernel_size=3, padding=1)
 
     def forward(self, x):
+        """Compute the encoding of the given sequence of images.
+
+        Args:
+            x (torch.Tensor): A N x S x H x W tensor containing the sequence of frames. N is the
+                batch size, S the number of frames in a sequence, H and W the height and width.
+
+        Returns:
+            A tuple z, mu, stddev, that are all N x 48 x H x W tensors. z is the latent encoding
+            for the given input sequence, while mu and stddev are the parameters of the
+            variational distribution.
+        """
         x = self.input_conv(x)
         x = self.conv1(x)
         for layer in self.hidden_layers:
             x = layer(x)
         mean = self.out_mean(x)
-        stdev = torch.exp(0.5 * self.out_logvar(x))
+        stddev = torch.exp(0.5 * self.out_logvar(x))
         epsilon = torch.randn_like(mean)
-        x = mean + stdev * epsilon
-        return x, mean, stdev
+        z = mean + stddev * epsilon
+        return z, mean, stddev
 
 
 class TransformerNet(nn.Module):
@@ -44,6 +52,12 @@ class TransformerNet(nn.Module):
     """
 
     def __init__(self, in_channels, out_channels):
+        """Instantiate the 4 convolutional layers.
+
+        Args:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of channels of the output.
+        """
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3,
                                padding=1, stride=2)
@@ -56,4 +70,22 @@ class TransformerNet(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.out_conv(x)
-        return x
+        q, p = to_phase_space(x)
+        return q, p
+
+
+def to_phase_space(encoding):
+    """Takes the encoder-transformer output and returns the q and p tensors.
+
+    Args:
+        encoding (torch.Tensor): A N x C x H x W tensor, where N is the batch size, C the number
+            of channels, H and W the width and height of the image.
+
+    Returns:
+        q and p, that are N x C/2 x H x W tensors.
+    """
+    assert encoding.shape[1] % 2 == 0, 'The number of channels is odd. Cannot split into q and p.'
+    half_len = int(encoding.shape[1] / 2)
+    q = encoding[:, :half_len]
+    p = encoding[:, half_len:]
+    return q, p

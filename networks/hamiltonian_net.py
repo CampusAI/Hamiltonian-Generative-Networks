@@ -15,7 +15,20 @@ class HamiltonianNet(nn.Module):
         self.out_conv = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
         self.linear = nn.Linear(in_features=self.num_flat_features, out_features=1)
 
-    def forward(self, x):
+    def forward(self, q, p):
+        """Forward pass that returns the Hamiltonian for the given q and p inputs.
+
+        q and p must be two N x C x H x W tensors, where N is the batch size, C the number of
+        channels, H and W the height and width.
+
+        Args:
+            q (torch.Tensor): The tensor corresponding to the position in abstract space.
+            p (torch.Tensor): The tensor corresponding to the momentum in abstract space.
+
+        Returns:
+            A N x 1 tensor with the Hamiltonian for each input in the batch.
+        """
+        x = torch.cat((q, p), dim=1)  # Concatenate q and p to obtain a N x 2C x H x W tensor
         x = self.in_conv(x)
         x = self.conv1(x)
         x = self.conv2(x)
