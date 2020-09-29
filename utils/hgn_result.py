@@ -6,7 +6,6 @@ class HgnResult():
         self.z_mean = None
         self.z_std = None
         self.z_sample = None
-        self.s_0 = None
         self.q_s = []
         self.p_s = []
 
@@ -21,14 +20,6 @@ class HgnResult():
         self.z_mean = z_mean
         self.z_std = z_std
         self.z_sample = z_sample
-
-    def set_initial_state(self, s_0):
-        """Store initial state s_0
-
-        Args:
-            s_0 (torch.Tensor): Initial state s_0 = [q_0, p_0]
-        """
-        self.s_0 = s_0
 
     def add_step(self, q, p):
         """Append the guessed position (q) and momentum (p) to guessed list 
