@@ -10,7 +10,12 @@ class Integrator:
         self.delta_t = delta_t
         self.method = method
 
-    def step(self, q, p, hnn, delta_t):
-        # if self.method == "Euler":
-        #     hnn
+    def _euler_step(self, q, dq_dt, p, dp_dt):
+        q_next = q + self.delta_t * dq_dt
+        p_next = p + self.delta_t * dp_dt
+        return q_next, p_next
+
+    def step(self, q, dq_dt, p, dp_dt):
+        if self.method == "Euler":
+            return self._euler_step(q, dq_dt, p, dp_dt)
         raise NotImplementedError

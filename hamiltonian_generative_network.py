@@ -20,6 +20,24 @@ class HGN():
         self.decoder = None
 
         self.integrator = Integrator(delta_T=0.1, method="euler")
+    
+    def step(self, q, p):
+        # Compute energy of the system
+        energy = self.hnn(q=q, p=p)
+        energy.backward(retain_graph=True)  # Compute dH/dq, dH/dp
+        
+        # Hamilton formulas 
+        dq_dt = p.grad
+        dp_dt = -q.grad
+
+        # Compute next state
+        q_next, p_next = self.integrator.step(q=q, dq_dt=dq_dt, p=p, dp_dt=dp_dt)
+
+        q.retain_grad()  # Forget current grad
+        p.retain_grad()  # Forget current grad
+
+        return q_next, p_next
+
 
     def forward(self, rollout, steps=None):
         assert (rollout.size()[2] == 3 * self.seq_len)  # Rollout channel dim needs to be 3*seq_len
@@ -36,8 +54,10 @@ class HGN():
         prediction.add_step(q=q, p=p)
 
         # Estimate predictions
-        for step in range(steps):
-            q, p = Integrator.step(q=q, p=p, hnn=self.hnn)
+        q.requires_grad = True  # We will need dH/dq
+        p.requires_grad = True  # We will need dh/dp
+        for _ in range(steps):
+            q, p = self.step(q=q, p=p)
             prediction.add_step(q=q, p=p)
         return prediction
 
