@@ -11,33 +11,18 @@ class HGN():
     
     This class models the HGN and allows implements its training and evaluation.
     """
-    def __init__(self, seq_len):
+    def __init__(self, seq_len, integrator):
         self.seq_len = seq_len
+        self.integrator = integrator
+
         # TODO(oleguer): Pass network parameters
         self.encoder = EncoderNet(self.seq_len)
         self.transformer = TransformerNet()
         self.hnn = HamiltonianNet()
         self.decoder = None
 
-        self.integrator = Integrator(delta_T=0.1, method="euler")
-    
     def step(self, q, p):
-        # Compute energy of the system
-        energy = self.hnn(q=q, p=p)
-        energy.backward(retain_graph=True)  # Compute dH/dq, dH/dp
-        
-        # Hamilton formulas 
-        dq_dt = p.grad
-        dp_dt = -q.grad
-
-        # Compute next state
-        q_next, p_next = self.integrator.step(q=q, dq_dt=dq_dt, p=p, dp_dt=dp_dt)
-
-        q.retain_grad()  # Forget current grad
-        p.retain_grad()  # Forget current grad
-
-        return q_next, p_next
-
+        return self.integrator.step(q=q, p=p, hnn=self.hnn)
 
     def forward(self, rollout, steps=None):
         assert (rollout.size()[2] == 3 * self.seq_len)  # Rollout channel dim needs to be 3*seq_len
@@ -69,3 +54,10 @@ class HGN():
 
     def save(self, file_name):
         raise NotImplementedError
+
+
+if __name__ == "__main__":
+    seq_len = 10
+    integrator = Integrator(delta_T=0.1, method="euler")
+
+    hgn = HGN(seq_len=seq_len, integrator=integrator)
