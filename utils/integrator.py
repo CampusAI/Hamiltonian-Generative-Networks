@@ -12,7 +12,7 @@ class Integrator:
 
     def _get_grads(self, q, p, hnn):
         # Compute energy of the system
-        energy = self.hnn(q=q, p=p)
+        energy = hnn(q=q, p=p)
         energy.backward(retain_graph=True)  # Compute dH/dq, dH/dp
         
         # Hamilton formulas
