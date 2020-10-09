@@ -1,8 +1,11 @@
+import torch
+
+
 class Integrator:
     METHODS = ["Euler", "RK4", "leapfrog"]
 
     def __init__(self, delta_t, method="Euler"):
-        if method in self.METHODS:
+        if method not in self.METHODS:
             msg = "%s is not a supported method. " % (method)
             msg += "Available methods are: " + "".join("%s " % m for m in self.METHODS)
             raise KeyError(msg)
@@ -13,17 +16,17 @@ class Integrator:
     def _get_grads(self, q, p, hnn):
         # Compute energy of the system
         energy = hnn(q=q, p=p)
-        energy.backward(retain_graph=True)  # Compute dH/dq, dH/dp
-        
-        # Hamilton formulas
-        dq_dt = p.grad    # dq_dt = dH/dp
-        dp_dt = -q.grad   # dp_dt = -dH/dq
 
-        # Forget current grads
+        # Keep non-leaf gradients
         q.retain_grad()
         p.retain_grad()
-        return dq_dt, dp_dt
+        energy.backward(retain_graph=True)  # Compute dH/dq, dH/dp
 
+        # Hamilton formulas
+        dq_dt = p.grad  # dq_dt = dH/dp
+        dp_dt = -q.grad  # dp_dt = -dH/dq
+
+        return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
         dq_dt, dp_dt = self._get_grads(q, p, hnn)
