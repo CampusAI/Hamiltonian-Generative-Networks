@@ -15,13 +15,23 @@ class EncoderNet(nn.Module):
             out_channels (int): Number of channels of the latent encoding.
         """
         super().__init__()
-        self.input_conv = nn.Conv2d(in_channels=seq_len, out_channels=32, kernel_size=3, padding=1)
+        self.input_conv = nn.Conv2d(
+            in_channels=seq_len,
+            out_channels=32,
+            kernel_size=3,
+            padding=1
+        )
         self.conv1 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
         self.hidden_layers = [
             nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1) for i in range(5)
         ]
         self.out_mean = nn.Conv2d(in_channels=64, out_channels=48, kernel_size=3, padding=1)
-        self.out_logvar = nn.Conv2d(in_channels=64, out_channels=48, kernel_size=3, padding=1)
+        self.out_logvar = nn.Conv2d(
+            in_channels=64,
+            out_channels=out_channels,
+            kernel_size=3,
+            padding=1
+        )
 
     def forward(self, x):
         """Compute the encoding of the given sequence of images.
@@ -59,11 +69,21 @@ class TransformerNet(nn.Module):
             out_channels (int): Number of channels of the output.
         """
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3,
-                               padding=1, stride=2)
+        self.conv1 = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=64,
+            kernel_size=3,
+            padding=1,
+            stride=2
+        )
         self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=2)
         self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1, stride=2)
-        self.out_conv = nn.Conv2d(in_channels=64, out_channels=out_channels, kernel_size=3, padding=1)
+        self.out_conv = nn.Conv2d(
+            in_channels=64,
+            out_channels=out_channels,
+            kernel_size=3,
+            padding=1
+        )
 
     def forward(self, x):
         x = self.conv1(x)
