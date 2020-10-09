@@ -63,21 +63,22 @@ if __name__ == '__main__':
     # Forward pass
     q_0, p_0 = encoder(frames)
     print('Encoded t=0 q: ' + str(q_0) + ' p: ' + str(p_0))
-    q_1, p_1 = integ.step(q_0, p_0, hamiltonian_net)
-    print('Rollouts t=1 q: ' + str(q_1) + ' p: ' + str(p_1))
 
     x_0 = decoder(q_0)  # First frame
     print('Decoded t=0 q_0:' +str(x_0))
 
-    opt.zero_grad()
+    q_1, p_1 = integ.step(q_0, p_0, hamiltonian_net)
+    print('Rollouts t=1 q: ' + str(q_1) + ' p: ' + str(p_1))
 
-    loss = (x_0 - frames[0])**2
-    print('Loss for t=0: ' + str(loss))
+    x_1 = decoder(q_1)  # Second frame
+
+    loss = (x_0 - frames[0]) ** 2 + (x_1 - frames[1]) ** 2
 
     loss.backward()
-    print('Gradient wrt theta: ' + str(theta.grad))
-    print('Gradient wrt gamma: ' + str(gamma.grad))
-    print('Gradient wrt phi: ' + str(phi.grad))
+    print('T=0 Gradient wrt theta: ' + str(theta.grad))
+    print('T=0 Gradient wrt gamma: ' + str(gamma.grad))
+    print('T=0 Gradient wrt phi: ' + str(phi.grad))
 
+    opt.zero_grad()
 
 

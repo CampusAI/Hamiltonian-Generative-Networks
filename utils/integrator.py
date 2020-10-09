@@ -26,6 +26,8 @@ class Integrator:
         dq_dt = p.grad  # dq_dt = dH/dp
         dp_dt = -q.grad  # dp_dt = -dH/dq
 
+        p.grad.data.zero_()
+        q.grad.data.zero_()
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
