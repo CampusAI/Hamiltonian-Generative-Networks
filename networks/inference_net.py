@@ -7,12 +7,13 @@ class EncoderNet(nn.Module):
     into a latent space with the common variational reparametrization and sampling technique.
     """
 
-    def __init__(self, seq_len, out_channels):
+    def __init__(self, seq_len, out_channels, dtype='float'):
         """Instantiate the 8 convolutional layers.
 
         Args:
             seq_len (int): Number of frames that compose a sequence.
             out_channels (int): Number of channels of the latent encoding.
+            dtype (str): Type of the weights, can be 'float' or 'double'.
         """
         super().__init__()
         self.input_conv = nn.Conv2d(
@@ -22,9 +23,11 @@ class EncoderNet(nn.Module):
             padding=1
         )
         self.conv1 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
-        self.hidden_layers = [
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1) for i in range(5)
-        ]
+        self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
+        self.conv6 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
         self.out_mean = nn.Conv2d(in_channels=64, out_channels=48, kernel_size=3, padding=1)
         self.out_logvar = nn.Conv2d(
             in_channels=64,
@@ -32,6 +35,12 @@ class EncoderNet(nn.Module):
             kernel_size=3,
             padding=1
         )
+        if dtype == 'float':
+            self.float()
+        elif dtype == 'double':
+            self.double()
+        else:
+            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, x):
         """Compute the encoding of the given sequence of images.
@@ -47,8 +56,11 @@ class EncoderNet(nn.Module):
         """
         x = self.input_conv(x)
         x = self.conv1(x)
-        for layer in self.hidden_layers:
-            x = layer(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
+        x = self.conv6(x)
         mean = self.out_mean(x)
         stddev = torch.exp(0.5 * self.out_logvar(x))
         epsilon = torch.randn_like(mean)
@@ -61,12 +73,13 @@ class TransformerNet(nn.Module):
     phase space.
     """
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, dtype='float'):
         """Instantiate the 4 convolutional layers.
 
         Args:
             in_channels (int): Number of input channels.
             out_channels (int): Number of channels of the output.
+            dtype (str): Type of the weights, can be 'float' or 'double'.
         """
         super().__init__()
         self.conv1 = nn.Conv2d(
@@ -84,6 +97,12 @@ class TransformerNet(nn.Module):
             kernel_size=3,
             padding=1
         )
+        if dtype == 'float':
+            self.float()
+        elif dtype == 'double':
+            self.double()
+        else:
+            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, x):
         x = self.conv1(x)
@@ -98,11 +117,11 @@ def to_phase_space(encoding):
     """Takes the encoder-transformer output and returns the q and p tensors.
 
     Args:
-        encoding (torch.Tensor): A N x C x H x W tensor, where N is the batch size, C the number
-            of channels, H and W the width and height of the image.
+        encoding (torch.Tensor): A (N, C, ...) tensor, where N is the batch size, C the number
+            of channels.
 
     Returns:
-        q and p, that are N x C/2 x H x W tensors.
+        q and p, that are (N, C/2, ...) tensors.
     """
     assert encoding.shape[1] % 2 == 0, 'The number of channels is odd. Cannot split into q and p.'
     half_len = int(encoding.shape[1] / 2)
