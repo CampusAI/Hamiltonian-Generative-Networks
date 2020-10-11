@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-import numpy as np
 import os
 
+import numpy as np
+import torch
 
 class Environment(ABC):
     @abstractmethod
@@ -39,7 +40,7 @@ class Environment(ABC):
         raise NotImplementedError
 
     def generate_data(self, total_seconds, fps, save_dir= None, dt=0.01):
-        """Generates dataset for current environemnt
+        """Generates dataset for current environment
 
         Args:
             total_seconds (int): Total duration of video (in seconds)
@@ -69,3 +70,6 @@ class Environment(ABC):
             os.makedirs(save_dir, exist_ok=True)
             np.save(os.path.join(save_dir, 'dataset'), dataset)
         return dataset
+
+    def sample_random_rollout(self, seed=0, number_of_frames=6, delta_time=1, number_of_rollouts=1):
+        return torch.tensor([[[1], [2], [3], [4]]])

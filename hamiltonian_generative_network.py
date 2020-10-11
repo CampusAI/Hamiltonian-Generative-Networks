@@ -49,7 +49,7 @@ class HGN():
         prediction.set_z(z_mean=z_mean, z_std=z_std, z_sample=z)
 
         # Initial state
-        q, p = self.transformer(prediction.z_sampled)
+        q, p = self.transformer(z)
         prediction.append_state(q=q, p=p)
 
         # Initial state reconstruction
@@ -57,9 +57,7 @@ class HGN():
         prediction.append_reconstruction(x_reconstructed)
 
         # Estimate predictions
-        q.requires_grad = True  # We will need dH/dq
-        p.requires_grad = True  # We will need dh/dp
-        for _ in range(steps):
+        for _ in range(steps-1):
             # Compute next state
             q, p = self.integrator.step(q=q, p=p, hnn=self.hnn)
             prediction.append_state(q=q, p=p)
@@ -69,13 +67,15 @@ class HGN():
             prediction.append_reconstruction(x_reconstructed)
         return prediction
 
-    def fit(self, rollouts, loss):
+    def fit(self, rollouts):
         self.optimizer.zero_grad()
         prediction = self.forward(rollout=rollouts)
+        print("prediction.input:", prediction.input)
+        print("prediction.reconstructed_rollout:", prediction.reconstructed_rollout)
         error = self.loss(input=prediction.input,
                           target=prediction.reconstructed_rollout)
         error.backward()
-        optimizer.step()
+        self.optimizer.step()
 
     def load(self, file_name):
         raise NotImplementedError

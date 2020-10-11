@@ -20,8 +20,6 @@ class TestEnv(Environment):
         Raises:
             ValueError: If p and q are not in 1-D space
         """
-        if len(p) != 1 or len(q) != 1:
-            raise ValueError("p and q must be in 1-D space: Angular momentum and Phase.")
         self.p = p
         self.q = q
 
