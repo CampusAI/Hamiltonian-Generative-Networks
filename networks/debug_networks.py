@@ -26,7 +26,7 @@ class EncoderNet(nn.Module):
         q = self.phi[0] * x[:, 0, :]
         p = self.phi[1] * (x[:, 1, :] - x[:, 0, :])
         encoding = torch.stack((q, p), dim=1)
-        return encoding, torch.zeros_like(encoding), torch.zeros_like(encoding)
+        return encoding, torch.zeros_like(encoding), torch.ones_like(encoding)
 
 
 class TransformerNet(torch.nn.Module):
