@@ -7,13 +7,13 @@ class EncoderNet(nn.Module):
     into a latent space with the common variational reparametrization and sampling technique.
     """
 
-    def __init__(self, seq_len, out_channels, dtype='float'):
+    def __init__(self, seq_len, out_channels, dtype=torch.float):
         """Instantiate the 8 convolutional layers.
 
         Args:
             seq_len (int): Number of frames that compose a sequence.
             out_channels (int): Number of channels of the latent encoding.
-            dtype (str): Type of the weights, can be 'float' or 'double'.
+            dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
         self.input_conv = nn.Conv2d(
@@ -35,12 +35,7 @@ class EncoderNet(nn.Module):
             kernel_size=3,
             padding=1
         )
-        if dtype == 'float':
-            self.float()
-        elif dtype == 'double':
-            self.double()
-        else:
-            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
+        self.type(dtype)
 
     def forward(self, x):
         """Compute the encoding of the given sequence of images.
@@ -73,13 +68,13 @@ class TransformerNet(nn.Module):
     phase space.
     """
 
-    def __init__(self, in_channels, out_channels, dtype='float'):
+    def __init__(self, in_channels, out_channels, dtype=torch.float):
         """Instantiate the 4 convolutional layers.
 
         Args:
             in_channels (int): Number of input channels.
             out_channels (int): Number of channels of the output.
-            dtype (str): Type of the weights, can be 'float' or 'double'.
+            dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
         self.conv1 = nn.Conv2d(
@@ -97,12 +92,7 @@ class TransformerNet(nn.Module):
             kernel_size=3,
             padding=1
         )
-        if dtype == 'float':
-            self.float()
-        elif dtype == 'double':
-            self.double()
-        else:
-            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
+        self.type(dtype)
 
     def forward(self, x):
         x = self.conv1(x)
