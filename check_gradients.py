@@ -11,7 +11,7 @@ import utils
 epsilon = 1e-6
 
 if __name__ == "__main__":
-    rollouts = torch.tensor([[[1.], [2.], [3.], [4.], [1.], [2.], [3.], [4.]]], requires_grad=True).double()
+    rollouts = torch.tensor([[[43.23], [22.12], [3.], [4.]]], requires_grad=True).double()
 
     # Instantiate networks
     encoder = debug_networks.EncoderNet(seq_len=rollouts.shape[1])
@@ -44,6 +44,7 @@ if __name__ == "__main__":
               channels=1)
 
     base_error = hgn.fit(rollouts)
+    print(base_error)
 
     # print(torch.autograd.gradcheck(hgn.fit, rollouts))
     networks = [encoder, transformer, hnn, decoder]
@@ -69,6 +70,8 @@ if __name__ == "__main__":
                 param.data = param_copy
                 error = hgn.fit(rollouts)
                 param_copy[indx] -= epsilon
+                param.data = param_copy
+                print(hgn.fit(rollouts))
 
                 estimated_grad = (error - base_error)/epsilon
                 net_grads.append(estimated_grad.detach().numpy())

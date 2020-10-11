@@ -6,7 +6,7 @@ from .inference_net import to_phase_space
 
 class EncoderNet(nn.Module):
 
-    def __init__(self, phi=None, seq_len=2, dtype=torch.float):
+    def __init__(self, phi=None, seq_len=2, dtype=torch.double):
         super().__init__()
         self.seq_len = seq_len
         self.phi = phi if phi is not None else nn.Parameter(
@@ -32,7 +32,7 @@ class EncoderNet(nn.Module):
 
 class TransformerNet(torch.nn.Module):
 
-    def __init__(self, w=None, sample=False, dtype=torch.float):
+    def __init__(self, w=None, sample=False, dtype=torch.double):
         super().__init__()
         self.w = w if w is not None else nn.Parameter(
             torch.tensor([1., 1.], requires_grad=True, dtype=dtype)
@@ -47,7 +47,7 @@ class TransformerNet(torch.nn.Module):
 
 class HamiltonianNet(torch.nn.Module):
 
-    def __init__(self, gamma=None, dtype=torch.float):
+    def __init__(self, gamma=None, dtype=torch.double):
         super().__init__()
         self.gamma = gamma if gamma is not None else nn.Parameter(
             torch.tensor([3., 4.], requires_grad=True, dtype=dtype)
@@ -59,7 +59,7 @@ class HamiltonianNet(torch.nn.Module):
 
 class DecoderNet(torch.nn.Module):
 
-    def __init__(self, theta=None, dtype=torch.float):
+    def __init__(self, theta=None, dtype=torch.double):
         super().__init__()
         self.theta = theta if theta is not None else nn.Parameter(torch.tensor([2.], dtype=dtype))
 

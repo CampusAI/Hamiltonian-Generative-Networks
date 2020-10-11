@@ -70,7 +70,7 @@ class HGN():
     def fit(self, rollouts):
         self.optimizer.zero_grad()
         prediction = self.forward(rollout=rollouts)
-        print("prediction.reconstructed_rollout:", prediction.reconstructed_rollout)
+        # print("prediction.reconstructed_rollout:", prediction.reconstructed_rollout)
         error = self.loss(input=prediction.input,
                           target=prediction.reconstructed_rollout)
         error.backward()
