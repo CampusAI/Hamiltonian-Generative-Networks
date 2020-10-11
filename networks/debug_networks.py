@@ -1,16 +1,6 @@
 import torch
-<<<<<<< HEAD
-from .inference_net import to_phase_space
-
-
-class EncoderNet(torch.nn.Module):
-    def __init__(self, phi=None, seq_len=2):
-        super().__init__()
-        self.seq_len = seq_len
-        self.phi = phi if phi is not None else torch.tensor([1., 1.],
-                                                            requires_grad=True)
-=======
 from torch import nn
+
 from .inference_net import to_phase_space
 
 
@@ -22,7 +12,6 @@ class EncoderNet(nn.Module):
         self.phi = phi if phi is not None else nn.Parameter(
             torch.tensor([1., 1.], requires_grad=True)
         )
->>>>>>> babb1012acc6e2a51bb0a8a3351f66322cd2c1ca
 
     def forward(self, x):
         """
