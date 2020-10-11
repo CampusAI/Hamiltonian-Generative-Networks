@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from inference_net import to_phase_space
+from .inference_net import to_phase_space
 
 
 class EncoderNet(nn.Module):
