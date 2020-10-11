@@ -77,5 +77,5 @@ if __name__ == "__main__":
                                              number_of_rollouts=1)
         print(rollouts)
         print(rollouts.shape)
-        hgn.fit(rollouts)
+        error = hgn.fit(rollouts)
         break

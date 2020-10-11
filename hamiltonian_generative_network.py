@@ -70,12 +70,12 @@ class HGN():
     def fit(self, rollouts):
         self.optimizer.zero_grad()
         prediction = self.forward(rollout=rollouts)
-        print("prediction.input:", prediction.input)
         print("prediction.reconstructed_rollout:", prediction.reconstructed_rollout)
         error = self.loss(input=prediction.input,
                           target=prediction.reconstructed_rollout)
         error.backward()
-        self.optimizer.step()
+        # self.optimizer.step()
+        return error
 
     def load(self, file_name):
         raise NotImplementedError

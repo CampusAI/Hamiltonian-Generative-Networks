@@ -10,7 +10,7 @@ class EncoderNet(nn.Module):
         super().__init__()
         self.seq_len = seq_len
         self.phi = phi if phi is not None else nn.Parameter(
-            torch.tensor([1., 1.], requires_grad=True)
+            torch.tensor([1., 2.], requires_grad=True)
         )
 
     def forward(self, x):
@@ -46,7 +46,7 @@ class HamiltonianNet(torch.nn.Module):
     def __init__(self, gamma=None):
         super().__init__()
         self.gamma = gamma if gamma is not None else nn.Parameter(
-            torch.tensor([1., 1.], requires_grad=True)
+            torch.tensor([3., 4.], requires_grad=True)
         )
 
     def forward(self, q, p):
@@ -56,7 +56,7 @@ class HamiltonianNet(torch.nn.Module):
 class DecoderNet(torch.nn.Module):
     def __init__(self, theta=None):
         super().__init__()
-        self.theta = theta if theta is not None else nn.Parameter(torch.tensor([2.]))
+        self.theta = theta if theta is not None else nn.Parameter(torch.tensor([5.]))
 
     def forward(self, q):
         return self.theta * q
