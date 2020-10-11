@@ -3,11 +3,20 @@ class HgnResult():
     """
 
     def __init__(self):
+        self.input = None
         self.z_mean = None
         self.z_std = None
         self.z_sample = None
         self.q_s = []
         self.p_s = []
+
+    def set_input(self, rollout):
+        """Store ground truth of system evolution
+
+        Args:
+            rollout (torch.Tensor): Ground truth of the system evolution, concatenated along last axis
+        """
+        self.input = rollout
 
     def set_z(self, z_mean, z_std, z_sample):
         """Store latent variable conditions
