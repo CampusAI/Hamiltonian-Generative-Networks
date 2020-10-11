@@ -71,8 +71,10 @@ if __name__ == '__main__':
     print('Rollouts t=1 q: ' + str(q_1) + ' p: ' + str(p_1))
 
     x_1 = decoder(q_1)  # Second frame
+    print("Decoded t=1 q_1:", x_1)
 
     loss = (x_0 - frames[0]) ** 2 + (x_1 - frames[1]) ** 2
+    print("loss", loss)
 
     loss.backward()
     print('T=0 Gradient wrt theta: ' + str(theta.grad))
