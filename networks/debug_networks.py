@@ -5,12 +5,18 @@ from .inference_net import to_phase_space
 
 class EncoderNet(nn.Module):
 
-    def __init__(self, phi=None, seq_len=2):
+    def __init__(self, phi=None, seq_len=2, dtype='float'):
         super().__init__()
         self.seq_len = seq_len
         self.phi = phi if phi is not None else nn.Parameter(
             torch.tensor([1., 1.], requires_grad=True)
         )
+        if dtype == 'float':
+            self.float()
+        elif dtype == 'double':
+            self.double()
+        else:
+            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, x):
         """
@@ -31,9 +37,15 @@ class EncoderNet(nn.Module):
 
 class TransformerNet(torch.nn.Module):
 
-    def __init__(self, w=None, sample=False):
+    def __init__(self, w=None, sample=False, dtype='float'):
         super().__init__()
         self.w = w if w is not None else nn.Parameter(torch.tensor([1., 1.], requires_grad=True))
+        if dtype == 'float':
+            self.float()
+        elif dtype == 'double':
+            self.double()
+        else:
+            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, x):
         q_prime = self.w[0] * x[:, 0, :]
@@ -44,11 +56,17 @@ class TransformerNet(torch.nn.Module):
 
 class HamiltonianNet(torch.nn.Module):
 
-    def __init__(self, gamma=None):
+    def __init__(self, gamma=None, dtype='float'):
         super().__init__()
         self.gamma = gamma if gamma is not None else nn.Parameter(
             torch.tensor([1., 1.], requires_grad=True)
         )
+        if dtype == 'float':
+            self.float()
+        elif dtype == 'double':
+            self.double()
+        else:
+            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, q, p):
         return self.gamma[0] * q + self.gamma[1] * p ** 2
@@ -56,23 +74,16 @@ class HamiltonianNet(torch.nn.Module):
 
 class DecoderNet(torch.nn.Module):
 
-    def __init__(self, theta=None):
+    def __init__(self, theta=None, dtype='float'):
         super().__init__()
         self.theta = theta if theta is not None else nn.Parameter(torch.tensor([2.]))
+        if dtype == 'float':
+            self.float()
+        elif dtype == 'double':
+            self.double()
+        else:
+            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, q):
         return self.theta * q
 
-
-if __name__ == '__main__':
-    inputs = torch.tensor([[[1.], [2.]], [[3.], [4.]]])
-
-    encoder = EncoderNet()
-    transformer = TransformerNet()
-    hamiltonian = HamiltonianNet()
-    decoder = DecoderNet()
-
-    z, z_mean, z_var = encoder(inputs)
-    q, p = transformer(z)
-    h = hamiltonian(q, p)
-    x_0 = decoder(q)

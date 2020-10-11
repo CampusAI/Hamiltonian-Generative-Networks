@@ -4,7 +4,13 @@ from torch import nn
 
 class HamiltonianNet(nn.Module):
 
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, dtype='float'):
+        """Create the layers of the Hamiltonian network.
+
+        Args:
+            in_channels (int): Number of input channels.
+            dtype (str): Type of the weights, can be 'float' or 'double'.
+        """
         super().__init__()
         self.num_flat_features = 64 * 4 * 4
         self.in_conv = nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=3, padding=1)
@@ -14,6 +20,12 @@ class HamiltonianNet(nn.Module):
         self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
         self.out_conv = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
         self.linear = nn.Linear(in_features=self.num_flat_features, out_features=1)
+        if dtype == 'float':
+            self.float()
+        elif dtype == 'double':
+            self.double()
+        else:
+            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, q, p):
         """Forward pass that returns the Hamiltonian for the given q and p inputs.
