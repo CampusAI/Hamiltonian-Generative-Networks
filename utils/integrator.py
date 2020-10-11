@@ -17,6 +17,7 @@ class Integrator:
         # Compute energy of the system
         energy = hnn(q=q, p=p)
 
+<<<<<<< HEAD
         # Keep non-leaf gradients
         q.retain_grad()
         p.retain_grad()
@@ -28,6 +29,12 @@ class Integrator:
 
         # p.grad.data.zero_()
         # q.grad.data.zero_()
+=======
+        # dq_dt = dH/dp
+        dq_dt = torch.autograd.grad(energy, p, create_graph=True, retain_graph=True)[0]
+        # dp_dt = -dH/dq
+        dp_dt = -torch.autograd.grad(energy, q, create_graph=True, retain_graph=True)[0]
+>>>>>>> a5be547e9de1bfeb93565364bea36d68730ce330
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
