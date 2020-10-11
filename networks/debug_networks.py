@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+
 from .inference_net import to_phase_space
 
 
@@ -53,7 +54,7 @@ class HamiltonianNet(torch.nn.Module):
         )
 
     def forward(self, q, p):
-        return self.gamma[0] * q + self.gamma[1] * p ** 2
+        return self.gamma[0] * q + self.gamma[1] * p**2
 
 
 class DecoderNet(torch.nn.Module):
