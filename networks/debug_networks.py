@@ -1,4 +1,5 @@
 import torch
+<<<<<<< HEAD
 from .inference_net import to_phase_space
 
 
@@ -8,6 +9,20 @@ class EncoderNet(torch.nn.Module):
         self.seq_len = seq_len
         self.phi = phi if phi is not None else torch.tensor([1., 1.],
                                                             requires_grad=True)
+=======
+from torch import nn
+from .inference_net import to_phase_space
+
+
+class EncoderNet(nn.Module):
+
+    def __init__(self, phi=None, seq_len=2):
+        super().__init__()
+        self.seq_len = seq_len
+        self.phi = phi if phi is not None else nn.Parameter(
+            torch.tensor([1., 1.], requires_grad=True)
+        )
+>>>>>>> babb1012acc6e2a51bb0a8a3351f66322cd2c1ca
 
     def forward(self, x):
         """
@@ -23,14 +38,13 @@ class EncoderNet(torch.nn.Module):
         q = self.phi[0] * x[:, 0, :]
         p = self.phi[1] * (x[:, 1, :] - x[:, 0, :])
         encoding = torch.stack((q, p), dim=1)
-        return encoding, torch.zeros_like(encoding), torch.zeros_like(encoding)
+        return encoding, torch.zeros_like(encoding), torch.ones_like(encoding)
 
 
 class TransformerNet(torch.nn.Module):
     def __init__(self, w=None, sample=False):
         super().__init__()
-        self.w = w if w is not None else torch.tensor([1., 1.],
-                                                      requires_grad=True)
+        self.w = w if w is not None else nn.Parameter(torch.tensor([1., 1.], requires_grad=True))
 
     def forward(self, x):
         q_prime = self.w[0] * x[:, 0, :]
@@ -42,8 +56,9 @@ class TransformerNet(torch.nn.Module):
 class HamiltonianNet(torch.nn.Module):
     def __init__(self, gamma=None):
         super().__init__()
-        self.gamma = gamma if gamma is not None else torch.tensor(
-            [1., 1.], requires_grad=True)
+        self.gamma = gamma if gamma is not None else nn.Parameter(
+            torch.tensor([1., 1.], requires_grad=True)
+        )
 
     def forward(self, q, p):
         return self.gamma[0] * q + self.gamma[1] * p**2
@@ -52,7 +67,7 @@ class HamiltonianNet(torch.nn.Module):
 class DecoderNet(torch.nn.Module):
     def __init__(self, theta=None):
         super().__init__()
-        self.theta = theta if theta is not None else torch.tensor([2.])
+        self.theta = theta if theta is not None else nn.Parameter(torch.tensor([2.]))
 
     def forward(self, q):
         return self.theta * q
