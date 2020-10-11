@@ -5,18 +5,12 @@ from .inference_net import to_phase_space
 
 class EncoderNet(nn.Module):
 
-    def __init__(self, phi=None, seq_len=2, dtype='float'):
+    def __init__(self, phi=None, seq_len=2, dtype=torch.float):
         super().__init__()
         self.seq_len = seq_len
         self.phi = phi if phi is not None else nn.Parameter(
-            torch.tensor([1., 1.], requires_grad=True)
+            torch.tensor([1., 2.], requires_grad=True, dtype=dtype)
         )
-        if dtype == 'float':
-            self.float()
-        elif dtype == 'double':
-            self.double()
-        else:
-            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, x):
         """
@@ -37,15 +31,11 @@ class EncoderNet(nn.Module):
 
 class TransformerNet(torch.nn.Module):
 
-    def __init__(self, w=None, sample=False, dtype='float'):
+    def __init__(self, w=None, sample=False, dtype=torch.float):
         super().__init__()
-        self.w = w if w is not None else nn.Parameter(torch.tensor([1., 1.], requires_grad=True))
-        if dtype == 'float':
-            self.float()
-        elif dtype == 'double':
-            self.double()
-        else:
-            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
+        self.w = w if w is not None else nn.Parameter(
+            torch.tensor([1., 1.], requires_grad=True, dtype=dtype)
+        )
 
     def forward(self, x):
         q_prime = self.w[0] * x[:, 0, :]
@@ -56,17 +46,11 @@ class TransformerNet(torch.nn.Module):
 
 class HamiltonianNet(torch.nn.Module):
 
-    def __init__(self, gamma=None, dtype='float'):
+    def __init__(self, gamma=None, dtype=torch.float):
         super().__init__()
         self.gamma = gamma if gamma is not None else nn.Parameter(
-            torch.tensor([1., 1.], requires_grad=True)
+            torch.tensor([3., 4.], requires_grad=True, dtype=dtype)
         )
-        if dtype == 'float':
-            self.float()
-        elif dtype == 'double':
-            self.double()
-        else:
-            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
 
     def forward(self, q, p):
         return self.gamma[0] * q + self.gamma[1] * p ** 2
@@ -74,15 +58,9 @@ class HamiltonianNet(torch.nn.Module):
 
 class DecoderNet(torch.nn.Module):
 
-    def __init__(self, theta=None, dtype='float'):
+    def __init__(self, theta=None, dtype=torch.float):
         super().__init__()
-        self.theta = theta if theta is not None else nn.Parameter(torch.tensor([2.]))
-        if dtype == 'float':
-            self.float()
-        elif dtype == 'double':
-            self.double()
-        else:
-            raise ValueError('Given data type ' + str(dtype) + ' not understood.')
+        self.theta = theta if theta is not None else nn.Parameter(torch.tensor([2.], dtype=dtype))
 
     def forward(self, q):
         return self.theta * q
