@@ -1,7 +1,8 @@
+import torch
+
 class HgnResult():
     """Holds HGN evolution guess information
     """
-
     def __init__(self):
         self.input = None
         self.z_mean = None
@@ -9,6 +10,7 @@ class HgnResult():
         self.z_sample = None
         self.q_s = []
         self.p_s = []
+        self.reconstructed_rollout = None
 
     def set_input(self, rollout):
         """Store ground truth of system evolution
@@ -30,7 +32,7 @@ class HgnResult():
         self.z_std = z_std
         self.z_sample = z_sample
 
-    def add_step(self, q, p):
+    def append_state(self, q, p):
         """Append the guessed position (q) and momentum (p) to guessed list 
 
         Args:
@@ -39,3 +41,15 @@ class HgnResult():
         """
         self.q_s.append(q)
         self.p_s.append(p)
+
+    def append_reconstruction(self, reconstruction):
+        """Append guessed reconstruction
+
+        Args:
+            reconstruction (torch.Tensor): Decoder of the HGN output
+        """
+        if self.reconstructed_rollout is None:
+            self.reconstructed_rollout = reconstruction
+        else:
+            self.reconstructed_rollout = torch.cat(
+                (self.reconstructed_rollout, reconstruction), dim=1)
