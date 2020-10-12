@@ -5,7 +5,6 @@ import numpy as np
 import torch
 
 sys.path.append(str(Path('.').absolute().parent))
-
 from networks import hamiltonian_net
 from networks import inference_net
 

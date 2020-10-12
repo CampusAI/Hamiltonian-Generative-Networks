@@ -1,12 +1,16 @@
 """Script to train the Hamiltonian Generative Network
 """
+import sys
+from pathlib import Path
+
 import numpy as np
 import torch
 
+sys.path.append(str(Path('.').absolute().parent))
 from hamiltonian_generative_network import HGN
 import environments.test_env as test_env
 import networks.debug_networks as debug_networks
-import utils
+import utilities.integrator as integrator
 
 epsilon = 1e-6
 
@@ -20,7 +24,7 @@ if __name__ == "__main__":
     decoder = debug_networks.DecoderNet()
 
     # Define HGN integrator
-    integrator = utils.integrator.Integrator(delta_t=0.1, method="Euler")
+    hgn_integrator = integrator.Integrator(delta_t=0.1, method="Euler")
 
     # Define optimization module
     optim_params = [
@@ -37,7 +41,7 @@ if __name__ == "__main__":
               transformer=transformer,
               hnn=hnn,
               decoder=decoder,
-              integrator=integrator,
+              integrator=hgn_integrator,
               loss=loss,
               optimizer=optimizer,
               seq_len=rollouts.shape[1],

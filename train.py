@@ -75,7 +75,5 @@ if __name__ == "__main__":
                                              number_of_frames=5,
                                              delta_time=delta_t,
                                              number_of_rollouts=1)
-        print(rollouts)
-        print(rollouts.shape)
         error = hgn.fit(rollouts)
         break

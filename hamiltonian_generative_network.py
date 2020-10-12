@@ -2,8 +2,8 @@ import torch
 
 from networks.inference_net import EncoderNet, TransformerNet
 from networks.hamiltonian_net import HamiltonianNet
-from utils.integrator import Integrator
-from utils.hgn_result import HgnResult
+from utilities.integrator import Integrator
+from utilities.hgn_result import HgnResult
 
 
 class HGN():
@@ -78,14 +78,9 @@ class HGN():
         return error
 
     def load(self, file_name):
+        # TODO(oleguer): Load networks' parameters
         raise NotImplementedError
 
     def save(self, file_name):
+        # TODO(oleguer): Save networks' parameters
         raise NotImplementedError
-
-
-if __name__ == "__main__":
-    seq_len = 10
-    integrator = Integrator(delta_T=0.1, method="euler")
-
-    hgn = HGN(seq_len=seq_len, integrator=integrator)
