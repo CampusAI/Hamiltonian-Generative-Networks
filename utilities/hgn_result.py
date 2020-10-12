@@ -1,7 +1,7 @@
 import torch
 
 class HgnResult():
-    """Holds HGN evolution guess information
+    """Class to bundle HGN guessed output information
     """
     def __init__(self):
         self.input = None

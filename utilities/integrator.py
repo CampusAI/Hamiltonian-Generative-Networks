@@ -2,9 +2,20 @@ import torch
 
 
 class Integrator:
+    """HGN integrator class: Implements different integration methods for Hamiltonian differential equations.
+    """
     METHODS = ["Euler", "RK4", "leapfrog"]
 
     def __init__(self, delta_t, method="Euler"):
+        """Initialize HGN integrator.
+
+        Args:
+            delta_t (float): Time difference between integration steps.
+            method (str, optional): Integration method, must be "Euler", "RK4", or "leapfrog". Defaults to "Euler".
+
+        Raises:
+            KeyError: If the integration method passed is invalid.
+        """
         if method not in self.METHODS:
             msg = "%s is not a supported method. " % (method)
             msg += "Available methods are: " + "".join("%s " % m for m in self.METHODS)
@@ -14,6 +25,16 @@ class Integrator:
         self.method = method
 
     def _get_grads(self, q, p, hnn):
+        """Apply the Hamiltonian equations to the Hamiltonian network to get dq_dt, dp_dt.
+
+        Args:
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
+            hnn (HamiltonianNet): Hamiltonian Neural Network.
+
+        Returns:
+            tuple(torch.Tensor, torch.Tensor): Position and momentum time derivatives: dq_dt, dp_dt.
+        """
         # Compute energy of the system
         energy = hnn(q=q, p=p)
 
@@ -24,6 +45,16 @@ class Integrator:
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
+        """Compute next latent-space position and momentum using Euler integration method.
+
+        Args:
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
+            hnn (HamiltonianNet): Hamiltonian Neural Network.
+
+        Returns:
+            tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
+        """
         dq_dt, dp_dt = self._get_grads(q, p, hnn)
 
         # Euler integration
@@ -32,6 +63,16 @@ class Integrator:
         return q_next, p_next
 
     def _rk_step(self, q, p, hnn):
+        """Compute next latent-space position and momentum using Runge-Kutta 4 integration method.
+
+        Args:
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
+            hnn (HamiltonianNet): Hamiltonian Neural Network.
+
+        Returns:
+            tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
+        """
         # k1
         k1_q, k1_p = self._get_grads(q, p, hnn)
 
@@ -57,6 +98,21 @@ class Integrator:
 
 
     def step(self, q, p, hnn):
+        """Compute next latent-space position and momentum.
+
+        Args:
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
+            hnn (HamiltonianNet): Hamiltonian Neural Network.
+        
+        Raises:
+            NotImplementedError: If the integration method requested is not implemented.
+
+        Returns:
+            tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
+        """
         if self.method == "Euler":
             return self._euler_step(q, p, hnn)
+        if self.method == "RK4":
+            return self._rk_step(q, p, hnn)
         raise NotImplementedError
