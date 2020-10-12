@@ -5,7 +5,7 @@ import torch
 from hamiltonian_generative_network import HGN
 import environments.test_env as test_env
 import networks.debug_networks as debug_networks
-import utils
+import utilities
 
 # Data Parameters
 sequence_length = 4
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     decoder = debug_networks.DecoderNet()
 
     # Define HGN integrator
-    integrator = utils.integrator.Integrator(delta_t=delta_t, method="Euler")
+    integrator = utilities.integrator.Integrator(delta_t=delta_t, method="Euler")
 
     # Define optimization modules
     optim_params = [
