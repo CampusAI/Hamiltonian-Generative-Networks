@@ -14,7 +14,7 @@ class Pendulum(Environment):
     """
 
     def __init__(self, mass, length, p=None, q=None):
-        """Contructor for pendulum system
+        """Constructor for pendulum system
 
         Args:
             mass (float): Pendulum mass
