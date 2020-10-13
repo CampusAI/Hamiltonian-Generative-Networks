@@ -1,6 +1,7 @@
 from .environments import Environment
 from PIL import Image, ImageDraw
 import numpy as np
+from skimage.draw import circle
 
 
 class Pendulum(Environment):
@@ -13,7 +14,7 @@ class Pendulum(Environment):
 
     """
 
-    def __init__(self, mass, length, p=None, q=None):
+    def __init__(self, mass, length, g, p=None, q=None):
         """Contructor for pendulum system
 
         Args:
@@ -24,7 +25,9 @@ class Pendulum(Environment):
         """
         self.mass = mass
         self.length = length
+        self.g = g
         self.set(p, q)
+        super().__init__()
 
     def set(self, p, q):
         """Sets initial conditions for pendulum
@@ -55,21 +58,30 @@ class Pendulum(Environment):
         assert type(self.p) != None
 
         self.q[0] += dt*(self.p[0]/(self.mass*self.length*self.length))
-        self.p[0] += dt*-9.81*self.mass*self.length*np.sin(self.q[0])
+        self.p[0] += dt*-self.g*self.mass*self.length*np.sin(self.q[0])
 
-    def draw(self):
+    def dynamics(self, t, states):
+        return [(states[1]/(self.mass*self.length*self.length)), -self.g*self.mass*self.length*np.sin(states[0])]
+
+    def draw(self, size=32):
         """Caption from the actual pendulum state
 
         Returns:
             Img (np.ndarray): Caption of current state
         """
-        img = Image.new('L', (32, 32))
-        draw = ImageDraw.Draw(img)
+        q = self.rollout[0,:]
+        rollout_imgs = []
+        for i in range(len(q)):
+            img = np.zeros((size, size, 1), np.uint8)
 
-        r = self.mass
-        x = np.sin(self.q[0])*self.length + 32/2
-        y = np.cos(self.q[0])*self.length
+            r = self.mass
+            y = int(np.sin(q[i])*self.length + size/2)
+            x = int(np.cos(q[i])*self.length)
+            rr, cc = circle(x,y,r, shape=img.shape)
+            img[rr, cc] = 255
 
-        draw.ellipse((x-r, y-r, x+r, y+r), fill=255)
+            rollout_imgs.append(np.array(img))
+        return np.array(rollout_imgs)
 
-        return np.array(img)
+    def sample_init_conditions(self):
+        self.set([np.random.rand()*2.-1], [np.random.rand()*2.-1])
