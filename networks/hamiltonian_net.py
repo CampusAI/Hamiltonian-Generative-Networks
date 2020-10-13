@@ -1,8 +1,15 @@
+"""This module contains an implementation of the Hamiltonian network described in the paper.
+The Hamiltonian network takes the abstract positions and momenta, q and p, and computes a scalar
+value that is interpreted as the Hamiltonian.
+"""
+
 import torch
 from torch import nn
 
 
 class HamiltonianNet(nn.Module):
+    """The Hamiltonian network, composed of 6 convolutional layers and a final linear layer.
+    """
 
     def __init__(self, in_channels, dtype=torch.float):
         """Create the layers of the Hamiltonian network.
@@ -27,6 +34,8 @@ class HamiltonianNet(nn.Module):
 
         q and p must be two N x C x H x W tensors, where N is the batch size, C the number of
         in_channels, H and W the height and width.
+
+        TODO: Should we use activations such as ReLU or LeakyReLU?
 
         Args:
             q (torch.Tensor): The tensor corresponding to the position in abstract space.

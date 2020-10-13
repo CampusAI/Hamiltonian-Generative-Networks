@@ -1,3 +1,8 @@
+"""This module contains the implementation of a decoder network, that applies 3 residual blocks
+to the input abstract position q. In the paper q is a (16, 4, 4) tensor that can be seen as a 4x4
+image with 16 channels, but here other sizes may be used.
+"""
+
 import torch
 from torch import nn
 
@@ -55,6 +60,10 @@ class ResidualBlock(nn.Module):
     def forward(self, x):
         """Apply 2x up-sampling, followed by two convolutional layers with leaky relu. A sigmoid
         activation is applied at the end.
+
+        TODO: Should we use batch normalization? It is often common in residual blocks.
+        TODO: Here we apply a convolutional layer to the input up-sampled tensor if its number
+            of channels does not match the convolutional layer channels. Is this the correct way?
 
         Args:
             x (torch.Tensor): Input image of shape (N, C, H, W) where N is the batch size and C

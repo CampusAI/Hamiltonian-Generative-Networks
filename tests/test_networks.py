@@ -4,13 +4,11 @@ from pathlib import Path
 import numpy as np
 import torch
 
-sys.path.append(str(Path('.').absolute().parent))
-
 from networks import hamiltonian_net
 from networks import inference_net
 
 
-if __name__ == '__main__':
+def test_pipeline():
     SEQUENCE_LENGTH = 10
     BATCH_SIZE = 64
     enc_net = inference_net.EncoderNet(seq_len=SEQUENCE_LENGTH, out_channels=48)

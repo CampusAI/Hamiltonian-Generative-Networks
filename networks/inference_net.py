@@ -1,39 +1,56 @@
+"""This module contains the implementation of the inference step of the Hamiltonian Generative
+Networks paper. The inference step is composed by an Encoder network and a Transformer network.
+The encoder maps the input sequence of frames into a latent distribution and samples a Tensor z
+from it using the reparametrization trick. The Transformer network takes the latent Tensor z and
+maps it into the abstract phase space (q, p).
+"""
+
 import torch
 import torch.nn as nn
 
 
 class EncoderNet(nn.Module):
-    """Implementation of the encoder network, that encodes the input grayscale frames sequence
-    into a latent space with the common variational reparametrization and sampling technique.
+    """Implementation of the encoder network, that encodes the input frames sequence into a
+    distribution over the latent space and samples with the common reparametrization trick.
+
+    The network expects the RGB values to be concatenated. This means that if image shape is
+    (3, 32, 32) and we have 10 images in a sequence, the network will accept an input of shape
+    (N, 3 * 10, 32, 32), where N is the batch size.
     """
 
-    def __init__(self, seq_len, out_channels, dtype=torch.float):
-        """Instantiate the 8 convolutional layers.
+    def __init__(self, seq_len, img_channels, out_channels, kernel_size=3, dtype=torch.float):
+        """Instantiate the 8 convolutional layers that compose the input network with the
+        appropriate shapes.
+
+        TODO: Should we use activations such as ReLU or LeakyReLU?
 
         Args:
             seq_len (int): Number of frames that compose a sequence.
+            img_channels (int): Number of channels of images in the sequence.
             out_channels (int): Number of in_channels of the latent encoding.
+            kernel_size (int): Size of kernel to use in the convolutional layers.
             dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
+        padding = int(kernel_size / 2)
         self.input_conv = nn.Conv2d(
-            in_channels=seq_len,
+            in_channels=seq_len * img_channels,
             out_channels=32,
             kernel_size=3,
             padding=1
         )
-        self.conv1 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
-        self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
-        self.conv5 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
-        self.conv6 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
-        self.out_mean = nn.Conv2d(in_channels=64, out_channels=48, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=padding)
+        self.conv2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=padding)
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=padding)
+        self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=padding)
+        self.conv5 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=padding)
+        self.conv6 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=padding)
+        self.out_mean = nn.Conv2d(in_channels=64, out_channels=48, kernel_size=3, padding=padding)
         self.out_logvar = nn.Conv2d(
             in_channels=64,
             out_channels=out_channels,
             kernel_size=3,
-            padding=1
+            padding=padding
         )
         self.type(dtype)
 
@@ -118,3 +135,21 @@ def to_phase_space(encoding):
     q = encoding[:, :half_len]
     p = encoding[:, half_len:]
     return q, p
+
+
+def concat_rgb(sequence):
+    """Concatenate the images along channel dimension.
+
+    TODO: Is this correct? Need to check!
+
+    Args:
+        sequence (torch.Tensor): A Tensor with shape (batch_size, seq_len, channels, heigh, width)
+            containing the images of the sequence.
+
+    Returns:
+        A Tensor with shape (batch_size, seq_len * channels, height, width) with the images
+        concatenated
+        along the channel dimension.
+    """
+    batch_size, seq_len, channels, h, w = sequence.size()
+    return torch.reshape(sequence, shape=(batch_size, seq_len * channels, h, w))
