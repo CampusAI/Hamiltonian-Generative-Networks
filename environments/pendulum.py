@@ -20,6 +20,7 @@ class Pendulum(Environment):
         Args:
             mass (float): Pendulum mass
             length (float): Pendulum length
+            g (float): Gravity of the environment
             p ([float], optional): Generalized momentum in 1-D space: Angular momentum. Defaults to None
             q ([float], optional): Generalized position in 1-D space: Phase. Defaults to None
         """
@@ -61,27 +62,48 @@ class Pendulum(Environment):
         self.p[0] += dt*-self.g*self.mass*self.length*np.sin(self.q[0])
 
     def dynamics(self, t, states):
-        return [(states[1]/(self.mass*self.length*self.length)), -self.g*self.mass*self.length*np.sin(states[0])]
+        """Defines system dynamics
 
-    def draw(self, size=32):
-        """Caption from the actual pendulum state
+        Args:
+            t (float): Time parameter of the dynamic equations.
+            states ([float]) Phase states at time t
 
         Returns:
-            Img (np.ndarray): Caption of current state
+            equations ([float]): Movement equations of the physical system
+        """
+        return [(states[1]/(self.mass*self.length*self.length)), -self.g*self.mass*self.length*np.sin(states[0])]
+
+    def draw(self, res=32, color=True):
+        """Returns array of the environment evolution
+
+        Returns:
+            vid (np.ndarray): Rendered rollout as a sequence of images
         """
         q = self.rollout[0,:]
-        rollout_imgs = []
-        for i in range(len(q)):
-            img = np.zeros((size, size, 1), np.uint8)
+        length = len(q)
+        if color:
+            vid = np.zeros((length, res, res, 3), dtype='float')
+        else:
+            vid = np.zeros((length, res, res, 1), dtype='float')
+        SIZE = 1.5
+        grid = np.arange(0, 1, 1. / res) *2*SIZE  - SIZE
+        [I, J] = np.meshgrid(grid, grid)
+        for t in range(length):
+            if color:
+                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 + (J - np.cos(q[t])) ** 2) /(self.mass ** 2)) ** 4)
+                vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t])) ** 2 + (J - np.cos(q[t])) ** 2) /(self.mass ** 2)) ** 4)
+            else:
+                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 + (J - np.cos(q[t])) ** 2) /(self.mass ** 2)) ** 4)
+            vid[t][vid[t] > 1] = 1
 
-            r = self.mass
-            y = int(np.sin(q[i])*self.length + size/2)
-            x = int(np.cos(q[i])*self.length)
-            rr, cc = circle(x,y,r, shape=img.shape)
-            img[rr, cc] = 255
+        return vid
 
-            rollout_imgs.append(np.array(img))
-        return np.array(rollout_imgs)
+    def sample_init_conditions(self, radius):
+        """Samples random initial conditions for the environment
 
-    def sample_init_conditions(self):
-        self.set([np.random.rand()*2.-1], [np.random.rand()*2.-1])
+        Args:
+            radius (float): Radius of the sampling process
+        """
+        states = np.random.rand(2)*2.-1
+        states /= np.sqrt((states**2).sum())*radius
+        self.set([states[0]], [states[1]])
