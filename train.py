@@ -1,61 +1,54 @@
 """Script to train the Hamiltonian Generative Network
 """
 import torch
+import yaml
 
 from hamiltonian_generative_network import HGN
-import environments.test_env as test_env
+from environments.environment_factory import EnvFactory
 import networks.debug_networks as debug_networks
 import utilities
 
-# Data Parameters
-sequence_length = 4
-delta_t = 0.1
-
-# Network Parameters
-encoder_out_channels = 48
-transformer_out_channels = 32
-
-# Optimization Parameters
-training_steps = 1
-encoder_lr = 1e-2
-transformer_lr = 1e-2
-hnn_lr = 1e-2
-decoder_lr = 1e-2
-momentum = 0.9
+params_file = "experiments_params/default.yaml"
 
 if __name__ == "__main__":
+    # Read parameters
+    with open(params_file, 'r') as f:
+        params = yaml.load(f)
+
     # Pick environment
-    env = test_env.TestEnv()
+    EnvFactory.get_environment(params["environment"])
 
     # Instantiate networks
-    encoder = debug_networks.EncoderNet(seq_len=sequence_length)
-    transformer = debug_networks.TransformerNet()
-    hnn = debug_networks.HamiltonianNet()
-    decoder = debug_networks.DecoderNet()
+    encoder = debug_networks.EncoderNet(seq_len=params["rollout"]["seq_length"],
+                                        params["networks"]["encoder"])
+    transformer = debug_networks.TransformerNet(params["networks"]["transformer"])
+    hnn = debug_networks.HamiltonianNet(params["networks"]["hamiltonian"])
+    decoder = debug_networks.DecoderNet(params["networks"]["decoder"])
 
     # Define HGN integrator
-    integrator = utilities.integrator.Integrator(delta_t=delta_t, method="Euler")
+    integrator = utilities.integrator.Integrator(
+        delta_t=params["rollout"]["delta_time"], method=params["integrator"]["method"])
 
     # Define optimization modules
     optim_params = [
         {
             'params': encoder.parameters(),
-            'lr': encoder_lr
+            'lr': params["optimization"]["encoder_lr"]
         },
         {
             'params': transformer.parameters(),
-            'lr': transformer_lr
+            'lr': params["optimization"]["transformer_lr"]
         },
         {
             'params': hnn.parameters(),
-            'lr': hnn_lr
+            'lr': params["optimization"]["hnn_lr"]
         },
         {
             'params': decoder.parameters(),
-            'lr': decoder_lr
+            'lr': params["optimization"]["decoder_lr"]
         },
     ]
-    optimizer = torch.optim.SGD(optim_params, momentum=momentum)
+    optimizer = torch.optim.Adam(optim_params, momentum=momentum)
     loss = torch.nn.MSELoss()
 
     # Instantiate Hamiltonian Generative Network
@@ -67,13 +60,13 @@ if __name__ == "__main__":
               loss=loss,
               optimizer=optimizer,
               seq_len=sequence_length,
-              channels=1)
+              channels=params["rollouts"]["n_channels"])
 
     for i in range(training_steps):  # For each training step
         # Sample rollouts from the environment  TODO(oleguer): Move this into a dataloader
         rollouts = env.sample_random_rollout(seed=i,
-                                             number_of_frames=5,
-                                             delta_time=delta_t,
-                                             number_of_rollouts=1)
+                                             number_of_frames=params["rollout"]["seq_length"],
+                                             delta_time=params["rollout"]["delta_time"],
+                                             number_of_rollouts=params["optimization"]["batch_size"])
         error = hgn.fit(rollouts)
         break

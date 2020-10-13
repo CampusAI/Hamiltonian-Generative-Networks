@@ -1,0 +1,33 @@
+# Define environment
+environment:
+  name: "Pendulum"
+  mass: 1
+  length: 1
+
+# Define rollout
+rollouts:
+  seq_length: 30
+  delta_time: 0.1
+  n_channels: 3
+
+# Define networks architectures
+networks:
+  encoder: ""
+  transformer: ""
+  hamiltonian: ""
+  decoder: ""
+
+# Define HGN Integrator
+integrator:
+  method: "Euler"
+
+# Define optimization
+optimization:
+  training_steps: 1
+  batch_size: 1
+  momentum: 0.9
+  # Learning rates
+  encoder_lr: 1.5e-4
+  transformer_lr: 1.5e-4
+  hnn_lr: 1.5e-4
+  decoder_lr: 1.5e-4

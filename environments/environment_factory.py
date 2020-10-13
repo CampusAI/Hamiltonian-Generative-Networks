@@ -13,12 +13,12 @@ class EnvFactory():
     _name_to_env = {cl.__name__: cl for cl in Environment.__subclasses__()}
 
     @staticmethod
-    def get_environment(class_name, **kwargs):
+    def get_environment(name, **kwargs):
         """Return an environment object based on the environment identifier.
 
         Args:
-            class_name (string); name of the class of the concrete Environment.
-            **kwargs: args supplied to the constructor of the object of class class_name. 
+            name (string); name of the class of the concrete Environment.
+            **kwargs: args supplied to the constructor of the object of class name. 
         
         Raises:
             (NameError): if the given environment type is not supported.
@@ -27,9 +27,9 @@ class EnvFactory():
             (Environment): concrete instantiation of the Environment.
         """
         try:
-            return EnvFactory._name_to_env[class_name](**kwargs)
+            return EnvFactory._name_to_env[name](**kwargs)
         except KeyError:
-            msg = "%s is not a supported type by Environment." % (class_name)
+            msg = "%s is not a supported type by Environment." % (name)
             msg += "Available types are: " + "".join("%s " % eef for eef in EnvFactory._name_to_env.keys())
             raise NameError(msg)
 
