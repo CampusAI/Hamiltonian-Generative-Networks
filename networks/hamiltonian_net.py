@@ -8,7 +8,7 @@ class HamiltonianNet(nn.Module):
         """Create the layers of the Hamiltonian network.
 
         Args:
-            in_channels (int): Number of input channels.
+            in_channels (int): Number of input in_channels.
             dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
@@ -26,7 +26,7 @@ class HamiltonianNet(nn.Module):
         """Forward pass that returns the Hamiltonian for the given q and p inputs.
 
         q and p must be two N x C x H x W tensors, where N is the batch size, C the number of
-        channels, H and W the height and width.
+        in_channels, H and W the height and width.
 
         Args:
             q (torch.Tensor): The tensor corresponding to the position in abstract space.

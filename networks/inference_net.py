@@ -12,7 +12,7 @@ class EncoderNet(nn.Module):
 
         Args:
             seq_len (int): Number of frames that compose a sequence.
-            out_channels (int): Number of channels of the latent encoding.
+            out_channels (int): Number of in_channels of the latent encoding.
             dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
@@ -72,8 +72,8 @@ class TransformerNet(nn.Module):
         """Instantiate the 4 convolutional layers.
 
         Args:
-            in_channels (int): Number of input channels.
-            out_channels (int): Number of channels of the output.
+            in_channels (int): Number of input in_channels.
+            out_channels (int): Number of in_channels of the output.
             dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
@@ -108,12 +108,12 @@ def to_phase_space(encoding):
 
     Args:
         encoding (torch.Tensor): A (N, C, ...) tensor, where N is the batch size, C the number
-            of channels.
+            of in_channels.
 
     Returns:
         q and p, that are (N, C/2, ...) tensors.
     """
-    assert encoding.shape[1] % 2 == 0, 'The number of channels is odd. Cannot split into q and p.'
+    assert encoding.shape[1] % 2 == 0, 'The number of in_channels is odd. Cannot split into q and p.'
     half_len = int(encoding.shape[1] / 2)
     q = encoding[:, :half_len]
     p = encoding[:, half_len:]
