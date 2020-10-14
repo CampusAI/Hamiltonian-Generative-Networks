@@ -41,7 +41,7 @@ def test_to_phase_space():
     channels = 48
     img_size = 32
     batch = torch.randn((batch_size, channels, img_size, img_size))
-    q, p = inference_net.to_phase_space(batch)
+    q, p = inference_net.TransformerNet.to_phase_space(batch)
 
     for k in range(batch_size):
         for i in range(int(channels / 2)):
