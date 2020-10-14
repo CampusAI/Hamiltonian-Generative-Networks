@@ -93,7 +93,7 @@ class Environment(ABC):
             radius_lb (float): Radius lower bound of the phase state sampling.
             radius_ub (float): Radius upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius 
-                r ~ U(base_radius, base_radius + 1) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
+                r ~ U(radius_lb, radius_ub) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
             seed (int): Seed for reproducibility.
         Raises:
             AssertError: If radius_lb > radius_ub
