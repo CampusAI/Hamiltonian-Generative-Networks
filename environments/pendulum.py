@@ -1,6 +1,7 @@
-from .environments import Environment
-
+from matplotlib import pyplot as plt, animation
 import numpy as np
+
+from environments import Environment
 
 
 class Pendulum(Environment):
@@ -38,29 +39,15 @@ class Pendulum(Environment):
         Raises:
             ValueError: If p and q are not in 1-D space
         """
-
+        if p is None or q is None:
+            return
         if len(p) != 1 or len(q) != 1:
             raise ValueError(
                 "p and q must be in 1-D space: Angular momentum and Phase.")
         self.p = p
         self.q = q
 
-    def step(self, dt=0.01):
-        """Performs a step in the pendulum system
-
-        Args:
-            dt (float, optional): Time step run for the integration. Defaults to 0.01.
-
-        Raises:
-            AssertError: If p or q are None
-        """
-        assert self.q != None
-        assert self.p != None
-
-        self.q[0] += dt*(self.p[0]/(self.mass*self.length*self.length))
-        self.p[0] += dt*-self.g*self.mass*self.length*np.sin(self.q[0])
-
-    def dynamics(self, t, states):
+    def _dynamics(self, t, states):
         """Defines system dynamics
 
         Args:
@@ -72,13 +59,13 @@ class Pendulum(Environment):
         """
         return [(states[1]/(self.mass*self.length*self.length)), -self.g*self.mass*self.length*np.sin(states[0])]
 
-    def draw(self, res=32, color=True):
+    def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
         """
-        q = self.rollout[0, :]
+        q = self._rollout[0, :]
         length = len(q)
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
@@ -109,3 +96,20 @@ class Pendulum(Environment):
         states = np.random.rand(2)*2.-1
         states /= np.sqrt((states**2).sum())*radius
         self.set([states[0]], [states[1]])
+
+
+# Sample code for sampling rollouts
+if __name__ == "__main__":
+
+    pd = Pendulum(mass=.5, length=1, g=3)
+    rolls = pd.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
+                                      number_of_rollouts=16, img_size=32,
+                                      noisy_data=True, noise_std=0.1, seed=23)
+    fig = plt.figure()
+    img = []
+    idx = np.random.randint(rolls.shape[0])
+    for im in rolls[idx]:
+        img.append([plt.imshow(im, animated=True)])
+    ani = animation.ArtistAnimation(fig, img, interval=50, blit=True,
+                                    repeat_delay=1000)
+    plt.show()
