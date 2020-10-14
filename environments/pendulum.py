@@ -5,7 +5,6 @@ from environments import Environment
 
 
 class Pendulum(Environment):
-
     """Pendulum System
 
     Equations of movement are:
@@ -13,9 +12,8 @@ class Pendulum(Environment):
         theta'' = -(g/l)*sin(theta)
 
     """
-
     def __init__(self, mass, length, g, p=None, q=None):
-        """Contructor for pendulum system
+        """Constructor for pendulum system
 
         Args:
             mass (float): Pendulum mass (kg)
@@ -57,7 +55,8 @@ class Pendulum(Environment):
         Returns:
             equations ([float]): Movement equations of the physical system
         """
-        return [(states[1]/(self.mass*self.length*self.length)), -self.g*self.mass*self.length*np.sin(states[0])]
+        return [(states[1] / (self.mass * self.length * self.length)),
+                -self.g * self.mass * self.length * np.sin(states[0])]
 
     def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
@@ -72,29 +71,32 @@ class Pendulum(Environment):
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
         SIZE = 1.5
-        grid = np.arange(0, 1, 1./res)*2*SIZE - SIZE
+        grid = np.arange(0, 1, 1. / res) * 2 * SIZE - SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
                 vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) / (self.mass**2))**4)
+                                             (J - np.cos(q[t]))**2) /
+                                            (self.mass**2))**4)
                 vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) / (self.mass**2))**4)
+                                             (J - np.cos(q[t]))**2) /
+                                            (self.mass**2))**4)
             else:
                 vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) / (self.mass**2))**4)
+                                             (J - np.cos(q[t]))**2) /
+                                            (self.mass**2))**4)
             vid[t][vid[t] > 1] = 1
 
         return vid
 
-    def sample_init_conditions(self, radius):
+    def _sample_init_conditions(self, radius):
         """Samples random initial conditions for the environment
 
         Args:
             radius (float): Radius of the sampling process
         """
-        states = np.random.rand(2)*2.-1
-        states /= np.sqrt((states**2).sum())*radius
+        states = np.random.rand(2) * 2. - 1
+        states /= np.sqrt((states**2).sum()) * radius
         self.set([states[0]], [states[1]])
 
 
@@ -102,14 +104,20 @@ class Pendulum(Environment):
 if __name__ == "__main__":
 
     pd = Pendulum(mass=.5, length=1, g=3)
-    rolls = pd.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
-                                      number_of_rollouts=16, img_size=32,
-                                      noisy_data=True, noise_std=0.1, seed=23)
+    rolls = pd.sample_random_rollouts(number_of_frames=100,
+                                      delta_time=0.1,
+                                      number_of_rollouts=16,
+                                      img_size=32,
+                                      noise_std=0.,
+                                      seed=23)
     fig = plt.figure()
     img = []
     idx = np.random.randint(rolls.shape[0])
     for im in rolls[idx]:
         img.append([plt.imshow(im, animated=True)])
-    ani = animation.ArtistAnimation(fig, img, interval=50, blit=True,
+    ani = animation.ArtistAnimation(fig,
+                                    img,
+                                    interval=50,
+                                    blit=True,
                                     repeat_delay=1000)
     plt.show()
