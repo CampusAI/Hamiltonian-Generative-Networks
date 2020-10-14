@@ -129,9 +129,9 @@ class DecoderNet(nn.Module):
         self.residual_blocks = nn.ModuleList(
             [
                 ResidualBlock(
-                    in_channels=filters[i],
-                    n_filters=filters[i+1],
-                    kernel_size=kernel_sizes[i],
+                    in_channels=int(filters[i]),
+                    n_filters=int(filters[i+1]),
+                    kernel_size=int(kernel_sizes[i]),
                     upsample=upsample[i]
                 )
                 for i in range(n_residual_blocks)
