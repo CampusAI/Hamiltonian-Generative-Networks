@@ -38,21 +38,18 @@ class ResidualBlock(nn.Module):
             out_channels=n_filters,
             kernel_size=kernel_size,
             padding=use_padding,
-            bias=False
         )
         self.conv2 = nn.Conv2d(
             in_channels=n_filters,
             out_channels=n_filters,
             kernel_size=kernel_size,
             padding=use_padding,
-            bias=False
         )
         if in_channels != n_filters:
             self.dim_match_conv = nn.Conv2d(
                 in_channels=in_channels,
                 out_channels=n_filters,
                 kernel_size=1,
-                bias=False,
                 padding=0
             )
         self.leaky_relu = nn.LeakyReLU()
