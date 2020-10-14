@@ -1,7 +1,6 @@
 from .environments import Environment
 
 import numpy as np
-from skimage.draw import circle
 
 
 class Pendulum(Environment):
@@ -39,7 +38,7 @@ class Pendulum(Environment):
         Raises:
             ValueError: If p and q are not in 1-D space
         """
-        
+
         if len(p) != 1 or len(q) != 1:
             raise ValueError(
                 "p and q must be in 1-D space: Angular momentum and Phase.")
@@ -86,17 +85,17 @@ class Pendulum(Environment):
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
         SIZE = 1.5
-        grid = np.arange(0, 1, 1. / res) * 2*SIZE - SIZE
+        grid = np.arange(0, 1, 1./res)*2*SIZE - SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 +
-                                             (J - np.cos(q[t])) ** 2) / (self.mass ** 2)) ** 4)
-                vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t])) ** 2 +
-                                             (J - np.cos(q[t])) ** 2) / (self.mass ** 2)) ** 4)
+                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
+                                             (J - np.cos(q[t]))**2) / (self.mass**2))**4)
+                vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t]))**2 +
+                                             (J - np.cos(q[t]))**2) / (self.mass**2))**4)
             else:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 +
-                                             (J - np.cos(q[t])) ** 2) / (self.mass ** 2)) ** 4)
+                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
+                                             (J - np.cos(q[t]))**2) / (self.mass**2))**4)
             vid[t][vid[t] > 1] = 1
 
         return vid
