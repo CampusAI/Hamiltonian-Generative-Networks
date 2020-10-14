@@ -12,7 +12,7 @@ class Spring(Environment):
 
     """
     def __init__(self, mass, elastic_cst, q=None, p=None):
-        """Contructor for spring system
+        """Constructor for spring system
 
         Args:
             mass (float): Spring mass
