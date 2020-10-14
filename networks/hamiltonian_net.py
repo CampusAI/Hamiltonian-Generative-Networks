@@ -83,7 +83,7 @@ class HamiltonianNet(nn.Module):
             padding=paddings[-1]
         )
         out_size = int((out_size - kernel_sizes[-1] + 2 * paddings[-1]) / strides[-1]) + 1
-        self.n_flat = out_size ** 2 * n_filters[-1]
+        self.n_flat = (out_size ** 2) * n_filters[-1]
         self.linear = nn.Linear(in_features=self.n_flat, out_features=1)
         self.activation = act_func
         self.type(dtype)
