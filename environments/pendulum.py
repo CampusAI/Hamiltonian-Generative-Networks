@@ -61,6 +61,10 @@ class Pendulum(Environment):
     def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
+        Args:
+            res (int): Image resolution (images are square)
+            color (bool): True if RGB, false if grayscale 
+
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
         """
