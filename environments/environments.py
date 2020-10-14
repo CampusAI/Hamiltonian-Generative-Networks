@@ -18,7 +18,6 @@ class Environment(ABC):
         self.p = None
         self.set(q=q, p=p)
 
-class Environment(ABC):
     @abstractmethod
     def set(self, q, p):
         """Sets initial conditions for physical system

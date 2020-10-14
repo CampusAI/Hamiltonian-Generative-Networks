@@ -3,7 +3,7 @@
 from environments import Environment
 # TODO(Oleguer): Fix this, its not very nice to have to import all classes
 from pendulum import Pendulum
-from spring import Spring
+# from spring import Spring
 
 
 class EnvFactory():
@@ -35,5 +35,25 @@ class EnvFactory():
 
 if __name__ == "__main__":
     # EnvFactory test
-    env = EnvFactory.get_environment("Pendulum", mass=1, length=1)
+    env = EnvFactory.get_environment("Pendulum", mass=0.5, length=1, g=10)
     print(type(env))
+
+    from matplotlib import pyplot as plt, animation
+    import numpy as np
+    rolls = env.sample_random_rollouts(number_of_frames=100,
+                                        delta_time=0.1,
+                                        number_of_rollouts=16,
+                                        img_size=32,
+                                        noise_std=0.,
+                                        seed=23)
+    fig = plt.figure()
+    img = []
+    idx = np.random.randint(rolls.shape[0])
+    for im in rolls[idx]:
+        img.append([plt.imshow(im, animated=True)])
+    ani = animation.ArtistAnimation(fig,
+                                    img,
+                                    interval=50,
+                                    blit=True,
+                                    repeat_delay=1000)
+    plt.show()
