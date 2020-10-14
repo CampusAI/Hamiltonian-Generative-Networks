@@ -107,8 +107,8 @@ class EncoderNet(nn.Module):
         """Compute the encoding of the given sequence of images.
 
         Args:
-            x (torch.Tensor): A N x S x H x W tensor containing the sequence of frames. N is the
-                batch size, S the number of frames in a sequence, H and W the height and width.
+            x (torch.Tensor): A (batch_size, seq_len * channels, height, width) tensor containing
+            the sequence of frames.
 
         Returns:
             A tuple (z, mu, stddev), which are all N x 48 x H x W tensors. z is the latent encoding
