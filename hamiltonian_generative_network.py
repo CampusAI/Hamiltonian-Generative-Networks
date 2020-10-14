@@ -1,7 +1,5 @@
 import torch
 
-from networks.inference_net import EncoderNet, TransformerNet
-from networks.hamiltonian_net import HamiltonianNet
 from utilities.integrator import Integrator
 from utilities.hgn_result import HgnResult
 
