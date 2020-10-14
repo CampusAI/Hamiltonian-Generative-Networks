@@ -6,19 +6,25 @@ from scipy.integrate import solve_ivp
 
 
 class Environment(ABC):
-    def __init__(self, p, q):
+    def __init__(self, q=None, p=None):
+        """Instantiate new environment with the provided position and momentum
+
+        Args:
+            q ([float], optional): generalized position in n-d space
+            p ([float], optional): generalized momentum in n-d space
+        """
         self._rollout = None
         self.q = None
         self.p = None
-        self.set(p, q)
+        self.set(q=q, p=p)
 
     @abstractmethod
-    def set(self, p, q):
+    def set(self, q, p):
         """Sets initial conditions for physical system
 
         Args:
-            p ([float]): generalized momentum in n-d space
             q ([float]): generalized position in n-d space
+            p ([float]): generalized momentum in n-d space
 
         Raises:
             NotImplementedError: Class instantiation has no implementation

@@ -12,38 +12,38 @@ class Pendulum(Environment):
         theta'' = -(g/l)*sin(theta)
 
     """
-    def __init__(self, mass, length, g, p=None, q=None):
+    def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
         Args:
             mass (float): Pendulum mass (kg)
             length (float): Pendulum length (m)
             g (float): Gravity of the environment (m/s^2)
-            p ([float], optional): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s). Defaults to None
             q ([float], optional): Generalized position in 1-D space: Phase (rad). Defaults to None
+            p ([float], optional): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s). Defaults to None
         """
         self.mass = mass
         self.length = length
         self.g = g
-        super().__init__(p, q)
+        super().__init__(q=q, p=p)
 
-    def set(self, p, q):
+    def set(self, q, p):
         """Sets initial conditions for pendulum
 
         Args:
-            p ([float]): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s)
             q ([float]): Generalized position in 1-D space: Phase (rad)
+            p ([float]): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s)
 
         Raises:
             ValueError: If p and q are not in 1-D space
         """
-        if p is None or q is None:
+        if q is None or p is None:
             return
-        if len(p) != 1 or len(q) != 1:
+        if len(q) != 1 or len(p) != 1:
             raise ValueError(
-                "p and q must be in 1-D space: Angular momentum and Phase.")
-        self.p = p
+                "q and p must be in 1-D space: Angular momentum and Phase.")
         self.q = q
+        self.p = p
 
     def _dynamics(self, t, states):
         """Defines system dynamics
