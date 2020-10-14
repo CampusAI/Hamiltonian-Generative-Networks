@@ -137,7 +137,6 @@ class DecoderNet(nn.Module):
                 for i in range(n_residual_blocks)
             ]
         )
-        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         """Apply the three residual blocks and the final convolutional layer.
@@ -150,7 +149,6 @@ class DecoderNet(nn.Module):
         """
         for layer in self.residual_blocks:
             x = layer(x)
-        x = self.sigmoid(x)
         return x
 
 
