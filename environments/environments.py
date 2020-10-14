@@ -6,20 +6,25 @@ from scipy.integrate import solve_ivp
 
 
 class Environment(ABC):
+    def __init__(self, q=None, p=None):
+        """Instantiate new environment with the provided position and momentum
 
-    def __init__(self, p, q):
+        Args:
+            q ([float], optional): generalized position in n-d space
+            p ([float], optional): generalized momentum in n-d space
+        """
         self._rollout = None
         self.q = None
         self.p = None
-        self.set(p, q)
+        self.set(q=q, p=p)
 
     @abstractmethod
-    def set(self, p, q):
+    def set(self, q, p):
         """Sets initial conditions for physical system
 
         Args:
-            p ([float]): generalized momentum in n-d space
             q ([float]): generalized position in n-d space
+            p ([float]): generalized momentum in n-d space
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
@@ -48,7 +53,7 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
-    def sample_init_conditions(self, radius):
+    def _sample_init_conditions(self, radius):
         """Samples random initial conditions for the environment
 
         Args:
@@ -73,8 +78,8 @@ class Environment(ABC):
         assert self.q != None
         assert self.p != None
 
-        t_eval = np.linspace(0, total_time, round(
-            total_time/delta_time)+1)[:-1]
+        t_eval = np.linspace(0, total_time,
+                             round(total_time / delta_time) + 1)[:-1]
         t_span = [0, total_time]
         y0 = np.array([np.array(self.q), np.array(self.p)]).reshape(-1)
         self._rollout = solve_ivp(self._dynamics, t_span, y0, t_eval=t_eval).y
@@ -88,7 +93,6 @@ class Environment(ABC):
             number_of_rollouts (int): Number of rollouts to generate.
             img_size (int): Size of the frames (in pixels)
             color (bool): Whether to have colored or grayscale frames.
-            noisy_data (bool): Whether to add noise to data.
             noise_std (float): If noisy_data=true, standard deviation of the gaussian noise source.
             radius_lb (float): Radius lower bound of the phase state sampling.
             radius_ub (float): Radius upper bound of the phase state sampling.
@@ -105,15 +109,15 @@ class Environment(ABC):
         assert radius_lb <= radius_ub
         if seed is not None:
             np.random.seed(seed)
-        total_time = number_of_frames*delta_time
+        total_time = number_of_frames * delta_time
         batch_sample = []
         for i in range(number_of_rollouts):
             radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
             self.sample_init_conditions(radius)
             self._evolution(total_time, delta_time)
-            if noisy_data:
-                self._rollout += np.random.randn(*
-                                                 self._rollout.shape)*noise_std
+            if noise_std > 0.:
+                self._rollout += np.random.randn(
+                    *self._rollout.shape) * noise_std
             batch_sample.append(self._draw(img_size, color))
 
         return np.array(batch_sample)
