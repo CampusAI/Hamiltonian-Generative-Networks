@@ -93,13 +93,11 @@ class NObjectGravity(Environment):
 
         states_resh = states.reshape(2, self.n_objects, 2)
         dyn = np.zeros_like(states_resh)
-        states_q = states_resh[0,:,:]
-        states_p = states_resh[1,:,:]
-        dyn[0,:,:] = states_p/(np.array(mass)[:,np.newaxis])
+        states_q = states_resh[0, :, :]
+        states_p = states_resh[1, :, :]
+        dyn[0, :, :] = states_p/(np.array(mass)[:, np.newaxis])
         for d in range(2):
             for i in range(self.n_objects):
-                
-                
 
     def draw(self):
         """Caption from the actual spring state
