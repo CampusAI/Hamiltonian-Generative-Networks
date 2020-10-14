@@ -220,25 +220,25 @@ class TransformerNet(nn.Module):
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
         x = self.activation(self.out_conv(x))
-        q, p = to_phase_space(x)
+        q, p = self.to_phase_space(x)
         return q, p
 
+    @staticmethod
+    def to_phase_space(encoding):
+        """Takes the encoder-transformer output and returns the q and p tensors.
 
-def to_phase_space(encoding):
-    """Takes the encoder-transformer output and returns the q and p tensors.
+        Args:
+            encoding (torch.Tensor): A tensor of shape (batch_size, channels, ...).
 
-    Args:
-        encoding (torch.Tensor): A tensor of shape (batch_size, channels, ...).
-
-    Returns:
-        Two tensors of shape (batch_size, channels/2, ...) resulting from splitting the given
-        tensor along the second dimension.
-    """
-    assert encoding.shape[1] % 2 == 0, 'The number of in_channels is odd. Cannot split properly.'
-    half_len = int(encoding.shape[1] / 2)
-    q = encoding[:, :half_len]
-    p = encoding[:, half_len:]
-    return q, p
+        Returns:
+            Two tensors of shape (batch_size, channels/2, ...) resulting from splitting the given
+            tensor along the second dimension.
+        """
+        assert encoding.shape[1] % 2 == 0, 'The number of in_channels is odd. Cannot split properly.'
+        half_len = int(encoding.shape[1] / 2)
+        q = encoding[:, :half_len]
+        p = encoding[:, half_len:]
+        return q, p
 
 
 def concat_rgb(sequences_batch):
