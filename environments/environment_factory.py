@@ -1,8 +1,8 @@
+"""Environment factory class. Given a valid environment name and its constructor args, returns an instantiation of it
 """
-"""
-from environments import Environment
+from .environments import Environment
 # TODO(Oleguer): Fix this, its not very nice to have to import all classes
-from pendulum import Pendulum
+from .pendulum import Pendulum
 # from spring import Spring
 
 

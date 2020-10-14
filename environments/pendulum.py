@@ -1,6 +1,6 @@
 import numpy as np
 
-from environments import Environment, visualize_rollout
+from .environments import Environment, visualize_rollout
 
 
 class Pendulum(Environment):
