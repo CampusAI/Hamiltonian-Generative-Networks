@@ -1,12 +1,13 @@
 """Script to train the Hamiltonian Generative Network
 """
+import os
 import sys
 from pathlib import Path
 
 import numpy as np
 import torch
 
-sys.path.append(str(Path('.').absolute().parent))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(_file_))))
 from hamiltonian_generative_network import HGN
 import environments.test_env as test_env
 import networks.debug_networks as debug_networks
