@@ -35,7 +35,7 @@ class Spring(Environment):
             q ([float]): Generalized position in 1-D space: Position (m)
 
         Raises:
-            AssertError: If p and q are not in 1-D space
+            ValueError: If p and q are not in 1-D space
         """
         if p is None or q is None:
             return

@@ -35,7 +35,7 @@ class Pendulum(Environment):
             p ([float]): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s)
 
         Raises:
-            AssertError: If p and q are not in 1-D space
+            ValueError: If p and q are not in 1-D space
         """
         if q is None or p is None:
             return
