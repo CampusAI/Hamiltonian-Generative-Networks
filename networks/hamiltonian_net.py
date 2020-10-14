@@ -14,8 +14,8 @@ class HamiltonianNet(nn.Module):
     DEFAULT_PARAMS = {
         'hidden_conv_layers': 6,
         'n_filters': [32, 64, 64, 64, 64, 64, 64, 64],
-        'kernel_sizes': [3, 3, 3, 3, 3, 3, 3, 3, 3],
-        'strides': [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        'kernel_sizes': [3, 3, 3, 3, 3, 3, 3, 3],
+        'strides': [1, 1, 1, 1, 1, 1, 1, 1],
     }
 
     def __init__(self, in_shape, hidden_conv_layers=None, n_filters=None, kernel_sizes=None,
