@@ -1,5 +1,5 @@
 from .environments import Environment
-from PIL import Image, ImageDraw
+
 import numpy as np
 from skimage.draw import circle
 
@@ -18,30 +18,31 @@ class Pendulum(Environment):
         """Contructor for pendulum system
 
         Args:
-            mass (float): Pendulum mass
-            length (float): Pendulum length
-            g (float): Gravity of the environment
-            p ([float], optional): Generalized momentum in 1-D space: Angular momentum. Defaults to None
-            q ([float], optional): Generalized position in 1-D space: Phase. Defaults to None
+            mass (float): Pendulum mass (kg)
+            length (float): Pendulum length (m)
+            g (float): Gravity of the environment (m/s^2)
+            p ([float], optional): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s). Defaults to None
+            q ([float], optional): Generalized position in 1-D space: Phase (rad). Defaults to None
         """
         self.mass = mass
         self.length = length
         self.g = g
-        self.set(p, q)
-        super().__init__()
+        super().__init__(p, q)
 
     def set(self, p, q):
         """Sets initial conditions for pendulum
 
         Args:
-            p ([float]): Generalized momentum in 1-D space: Angular momentum
-            q ([float]): Generalized position in 1-D space: Phase
-        
+            p ([float]): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s)
+            q ([float]): Generalized position in 1-D space: Phase (rad)
+
         Raises:
             ValueError: If p and q are not in 1-D space
         """
+        
         if len(p) != 1 or len(q) != 1:
-            raise ValueError("p and q must be in 1-D space: Angular momentum and Phase.")
+            raise ValueError(
+                "p and q must be in 1-D space: Angular momentum and Phase.")
         self.p = p
         self.q = q
 
@@ -52,11 +53,10 @@ class Pendulum(Environment):
             dt (float, optional): Time step run for the integration. Defaults to 0.01.
 
         Raises:
-            TypeError: If p or q are None
+            AssertError: If p or q are None
         """
-
-        assert type(self.q) != None
-        assert type(self.p) != None
+        assert self.q != None
+        assert self.p != None
 
         self.q[0] += dt*(self.p[0]/(self.mass*self.length*self.length))
         self.p[0] += dt*-self.g*self.mass*self.length*np.sin(self.q[0])
@@ -79,21 +79,24 @@ class Pendulum(Environment):
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
         """
-        q = self.rollout[0,:]
+        q = self.rollout[0, :]
         length = len(q)
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
         SIZE = 1.5
-        grid = np.arange(0, 1, 1. / res) *2*SIZE  - SIZE
+        grid = np.arange(0, 1, 1. / res) * 2*SIZE - SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 + (J - np.cos(q[t])) ** 2) /(self.mass ** 2)) ** 4)
-                vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t])) ** 2 + (J - np.cos(q[t])) ** 2) /(self.mass ** 2)) ** 4)
+                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 +
+                                             (J - np.cos(q[t])) ** 2) / (self.mass ** 2)) ** 4)
+                vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t])) ** 2 +
+                                             (J - np.cos(q[t])) ** 2) / (self.mass ** 2)) ** 4)
             else:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 + (J - np.cos(q[t])) ** 2) /(self.mass ** 2)) ** 4)
+                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t])) ** 2 +
+                                             (J - np.cos(q[t])) ** 2) / (self.mass ** 2)) ** 4)
             vid[t][vid[t] > 1] = 1
 
         return vid

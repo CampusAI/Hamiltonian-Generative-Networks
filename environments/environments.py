@@ -1,12 +1,19 @@
 from abc import ABC, abstractmethod
+
 import numpy as np
-import os
 from scipy.integrate import solve_ivp
+
+import os
+
 
 class Environment(ABC):
 
-    def __init__(self):
+    def __init__(self, p, q):
         self.rollout = None
+        self.q = None
+        self.p = None
+        if p is not None and q is not None:
+            self.set(p, q)
 
     @abstractmethod
     def set(self, p, q):
@@ -74,14 +81,17 @@ class Environment(ABC):
             total_time (float): Total duration of the rollout (in seconds)
             delta_time (float): Sample interval in the rollout (in seconds)
 
-        Returns:
-            (dict): Contains frames and corresponding phase states
+        Raises:
+            AssertError: If p or q are None
         """
-        t_eval = np.linspace(0, total_time, round(total_time/delta_time)+1)[:-1]
+        assert self.q != None
+        assert self.p != None
+
+        t_eval = np.linspace(0, total_time, round(
+            total_time/delta_time)+1)[:-1]
         t_span = [0, total_time]
         y0 = np.array([np.array(self.q), np.array(self.p)]).reshape(-1)
         self.rollout = solve_ivp(self.dynamics, t_span, y0, t_eval=t_eval).y
-
 
     def generate_data(self, total_time, delta_time, save_dir=None):
         """Generates dataset for current environment.
@@ -92,9 +102,8 @@ class Environment(ABC):
             save_dir (string, optional): If not None then save the dataset in directory. Defaults to None.
 
         Returns:
-            (dict): Contains frames and corresponding phase states
+            (dict['frames', 'states']): Contains frames and corresponding phase states of a single rollout
         """
-
         self.evolution(total_time, delta_time)
 
         dataset = {'frames': self.draw(), 'states': self.rollout}
