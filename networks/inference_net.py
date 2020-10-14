@@ -13,9 +13,9 @@ class EncoderNet(nn.Module):
     """Implementation of the encoder network, that encodes the input frames sequence into a
     distribution over the latent space and samples with the common reparametrization trick.
 
-    The network expects the RGB values to be concatenated. This means that if image shape is
-    (3, 32, 32) and we have 10 images in a sequence, the network will accept an input of shape
-    (N, 3 * 10, 32, 32), where N is the batch size.
+    The network expects the images to be concatenated along channel dimension. This means that if
+    a batch of sequences has shape (batch_size, seq_len, channels, height, width) the network
+    will accept an input of shape (batch_size, seq_len * channels, height, width).
     """
 
     DEFAULT_PARAMS = {
