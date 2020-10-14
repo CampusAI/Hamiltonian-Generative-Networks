@@ -1,7 +1,6 @@
-from matplotlib import pyplot as plt, animation
 import numpy as np
 
-from environments import Environment
+from environments import *
 
 
 class Pendulum(Environment):
@@ -12,6 +11,7 @@ class Pendulum(Environment):
         theta'' = -(g/l)*sin(theta)
 
     """
+
     def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
@@ -58,12 +58,13 @@ class Pendulum(Environment):
         return [(states[1] / (self.mass * self.length * self.length)),
                 -self.g * self.mass * self.length * np.sin(states[0])]
 
-    def _draw(self, res=32, color=True):
+    def _draw(self, res=32, color=True, world_size=1.5):
         """Returns array of the environment evolution
 
         Args:
-            res (int): Image resolution (images are square)
-            color (bool): True if RGB, false if grayscale 
+            res (int): Image resolution (images are square).
+            color (bool): True if RGB, false if grayscale.
+            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
@@ -74,8 +75,7 @@ class Pendulum(Environment):
             vid = np.zeros((length, res, res, 3), dtype='float')
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        SIZE = 1.5
-        grid = np.arange(0, 1, 1. / res) * 2 * SIZE - SIZE
+        grid = np.arange(0, 1, 1. / res)*2*world_size - world_size
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
@@ -110,16 +110,7 @@ if __name__ == "__main__":
     pd = Pendulum(mass=.5, length=1, g=3)
     rolls = pd.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
                                       number_of_rollouts=16, img_size=32,
-                                      noisy_data=True, noise_std=0.1,
-                                      radius_lb=1.3, radius_ub=2.3, seed=23)
-    fig = plt.figure()
-    img = []
+                                      noise_std=0., radius_bound=(1.3, 2.3),
+                                      world_size=1.5, seed=23)
     idx = np.random.randint(rolls.shape[0])
-    for im in rolls[idx]:
-        img.append([plt.imshow(im, animated=True)])
-    ani = animation.ArtistAnimation(fig,
-                                    img,
-                                    interval=50,
-                                    blit=True,
-                                    repeat_delay=1000)
-    plt.show()
+    visualize_rollout(rolls[idx])

@@ -1,7 +1,6 @@
-from matplotlib import pyplot as plt, animation
 import numpy as np
 
-from environments import Environment
+from environments import *
 
 
 class Spring(Environment):
@@ -14,36 +13,36 @@ class Spring(Environment):
 
     """
 
-    def __init__(self, mass, elastic_cst, p=None, q=None):
+    def __init__(self, mass, elastic_cst, q=None, p=None):
         """Contructor for spring system
 
         Args:
             mass (float): Spring mass
             elastic_cst (float): Spring elastic constant
-            p ([float], optional): Generalized momentum in 1-D space: Linear momentum (kg*m/s). Defaults to None
             q ([float], optional): Generalized position in 1-D space: Position (m). Defaults to None
+            p ([float], optional): Generalized momentum in 1-D space: Linear momentum (kg*m/s). Defaults to None
         """
         self.mass = mass
         self.elastic_cst = elastic_cst
-        super().__init__(p, q)
+        super().__init__(q=q, p=p)
 
-    def set(self, p, q):
+    def set(self, q, p):
         """Sets initial conditions for spring system
 
         Args:
-            p ([float]): Generalized momentum in 1-D space: Linear momentum (kg*m/s)
             q ([float]): Generalized position in 1-D space: Position (m)
+            p ([float]): Generalized momentum in 1-D space: Linear momentum (kg*m/s)
 
         Raises:
             ValueError: If p and q are not in 1-D space
         """
-        if p is None or q is None:
+        if q is None or p is None:
             return
-        if len(p) != 1 or len(q) != 1:
+        if len(q) != 1 or len(p) != 1:
             raise ValueError(
-                "p and q must be in 1-D space: Angular momentum and Phase.")
-        self.p = p
+                "q and p must be in 1-D space: Angular momentum and Phase.")
         self.q = q
+        self.p = p
 
     def _dynamics(self, t, states):
         """Defines system dynamics
@@ -57,8 +56,13 @@ class Spring(Environment):
         """
         return [states[1]/self.mass, -self.elastic_cst*states[0]]
 
-    def _draw(self, res=32, color=True):
+    def _draw(self, res=32, color=True, world_size=1.5):
         """Returns array of the environment evolution
+
+        Args:
+            res (int): Image resolution (images are square).
+            color (bool): True if RGB, false if grayscale.
+            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
@@ -69,8 +73,7 @@ class Spring(Environment):
             vid = np.zeros((length, res, res, 3), dtype='float')
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        SIZE = 1.5
-        grid = np.arange(0, 1, 1./res)*2*SIZE - SIZE
+        grid = np.arange(0, 1, 1./res)*2*world_size - world_size
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
@@ -85,7 +88,7 @@ class Spring(Environment):
 
         return vid
 
-    def sample_init_conditions(self, radius):
+    def _sample_init_conditions(self, radius):
         """Samples random initial conditions for the environment
 
         Args:
@@ -102,13 +105,7 @@ if __name__ == "__main__":
     sp = Spring(mass=.5, elastic_cst=2)
     rolls = sp.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
                                       number_of_rollouts=16, img_size=32,
-                                      noisy_data=False, noise_std=0.1,
-                                      radius_lb=0.1, radius_ub=1.0, seed=23)
-    fig = plt.figure()
-    img = []
+                                      noise_std=0., radius_bound=(.1, 1.),
+                                      world_size=1.5, seed=23)
     idx = np.random.randint(rolls.shape[0])
-    for im in rolls[idx]:
-        img.append([plt.imshow(im, animated=True)])
-    ani = animation.ArtistAnimation(fig, img, interval=50, blit=True,
-                                    repeat_delay=1000)
-    plt.show()
+    visualize_rollout(rolls[idx])
