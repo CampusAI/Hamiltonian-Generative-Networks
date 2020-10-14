@@ -10,12 +10,12 @@ class EnvironmentSampler(Dataset):
     Given an environment and sampling conditions, the dataset samples rollouts as pytorch tensors.
     """
 
-    def __init__(self, environment, length, number_of_frames, delta_time, number_of_rollouts, img_size, noise_std, radius_bound, world_size, seed, data_mean=.5, data_std=.5):
+    def __init__(self, environment, dataset_len, number_of_frames, delta_time, number_of_rollouts, img_size, noise_std, radius_bound, world_size, seed, data_mean=.5, data_std=.5):
         """Constructor method
 
         Args:
             environment (Environment): Instance belonging to Environment abstract base class.
-            length (int): Length of the dataset.
+            dataset_len (int): Length of the dataset.
             number_of_frames (int): Total duration of video (in frames).
             delta_time (float): Frame interval of generated data (in seconds).
             number_of_rollouts (int): Number of rollouts to generate.
@@ -31,7 +31,7 @@ class EnvironmentSampler(Dataset):
             data_std (float): Data std for standaritzation. Defaults to 0.5.
         """
         self.environment = environment
-        self.length = length
+        self.dataset_len = dataset_len
         self.data_mean = data_mean
         self.data_std = data_std
         self.number_of_frames = number_of_frames
@@ -49,7 +49,7 @@ class EnvironmentSampler(Dataset):
         Returns:
             length (int): Length of the dataset.
         """
-        return self.length
+        return self.dataset_len
 
     def __getitem__(self, i):
         """Iterator for rollout sampling.
@@ -57,6 +57,9 @@ class EnvironmentSampler(Dataset):
 
         Args:
             i (int): Index of the dataset sample (ignored since we sample random data).
+        Returns:
+            (Torch.tensor): Tensor of shape (Batch, Nframes, Channels, Height, Width).
+                Contains standarized sampled rollouts        
         """
         rolls = self.environment.sample_random_rollouts(number_of_frames=self.number_of_frames,
                                                         delta_time=self.delta_time,
