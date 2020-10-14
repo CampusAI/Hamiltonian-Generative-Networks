@@ -1,21 +1,41 @@
 # Define environment
 environment:
   name: "Pendulum"
-  mass: 1
+  mass: 0.5
   length: 1
+  g: 3
 
 # Define rollout
-rollouts:
+rollout:
   seq_length: 30
   delta_time: 0.1
   n_channels: 3
 
 # Define networks architectures
 networks:
-  encoder: ""
-  transformer: ""
-  hamiltonian: ""
-  decoder: ""
+  encoder:
+    hidden_conv_layers: 6
+    n_filters: [32, 64, 64, 64, 64, 64, 64]
+    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]
+    strides: [1, 1, 1, 1, 1, 1, 1, 1]
+    out_channels: 48
+  transformer:
+    hidden_conv_layers: 2
+    n_filters: [64, 64, 64]
+    kernel_sizes: [3, 3, 3, 3]
+    strides: [2, 2, 2, 1]
+    out_channels: 32
+  hamiltonian:
+    hidden_conv_layers: 6
+    in_shape: [16, 4, 4]  # Should be coherent with transformer output
+    n_filters: [32, 64, 64, 64, 64, 64, 64, 64]
+    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]
+    strides: [1, 1, 1, 1, 1, 1, 1, 1]
+  decoder:
+    n_residual_blocks: 3
+    n_filters: [64, 64]
+    kernel_sizes: [3, 3, 3]
+    upsample: [True, True, True]
 
 # Define HGN Integrator
 integrator:
@@ -25,7 +45,6 @@ integrator:
 optimization:
   training_steps: 1
   batch_size: 1
-  momentum: 0.9
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4
