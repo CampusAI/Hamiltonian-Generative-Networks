@@ -98,7 +98,7 @@ class HamiltonianNet(nn.Module):
             p (torch.Tensor): The tensor corresponding to the momentum in abstract space.
 
         Returns:
-            A (batch_size, 1) shaped tensor with the Hamiltonian for each input in the batch.
+            A (batch_size, 1) shaped tensor with the energy for each input in the batch.
         """
         x = torch.cat((q, p), dim=1)  # Concatenate q and p to obtain a N x 2C x H x W tensor
         x = self.activation(self.in_conv(x))
