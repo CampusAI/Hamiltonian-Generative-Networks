@@ -1,6 +1,6 @@
 import numpy as np
 
-from environments import *
+from environments import Environment, visualize_rollout
 
 
 class Pendulum(Environment):
@@ -11,7 +11,6 @@ class Pendulum(Environment):
         theta'' = -(g/l)*sin(theta)
 
     """
-
     def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
@@ -75,7 +74,7 @@ class Pendulum(Environment):
             vid = np.zeros((length, res, res, 3), dtype='float')
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res)*2*world_size - world_size
+        grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
@@ -99,8 +98,8 @@ class Pendulum(Environment):
         Args:
             radius (float): Radius of the sampling process
         """
-        states = np.random.rand(2)*2.-1
-        states = (states/np.sqrt((states**2).sum()))*radius
+        states = np.random.rand(2) * 2. - 1
+        states = (states / np.sqrt((states**2).sum())) * radius
         self.set([states[0]], [states[1]])
 
 
@@ -108,9 +107,13 @@ class Pendulum(Environment):
 if __name__ == "__main__":
 
     pd = Pendulum(mass=.5, length=1, g=3)
-    rolls = pd.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
-                                      number_of_rollouts=16, img_size=32,
-                                      noise_std=0., radius_bound=(1.3, 2.3),
-                                      world_size=1.5, seed=23)
+    rolls = pd.sample_random_rollouts(number_of_frames=100,
+                                      delta_time=0.1,
+                                      number_of_rollouts=16,
+                                      img_size=32,
+                                      noise_std=0.,
+                                      radius_bound=(1.3, 2.3),
+                                      world_size=1.5,
+                                      seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

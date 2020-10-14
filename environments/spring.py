@@ -1,10 +1,9 @@
 import numpy as np
 
-from environments import *
+from environments import Environment, visualize_rollout
 
 
 class Spring(Environment):
-
     """Spring System
 
     Equations of movement are:
@@ -12,7 +11,6 @@ class Spring(Environment):
         x'' = -(k/m)*x
 
     """
-
     def __init__(self, mass, elastic_cst, q=None, p=None):
         """Contructor for spring system
 
@@ -54,7 +52,7 @@ class Spring(Environment):
         Returns:
             equations ([float]): Movement equations of the physical system
         """
-        return [states[1]/self.mass, -self.elastic_cst*states[0]]
+        return [states[1] / self.mass, -self.elastic_cst * states[0]]
 
     def _draw(self, res=32, color=True, world_size=1.5):
         """Returns array of the environment evolution
@@ -73,17 +71,17 @@ class Spring(Environment):
             vid = np.zeros((length, res, res, 3), dtype='float')
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1./res)*2*world_size - world_size
+        grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
-                vid[t, :, :, 0] += np.exp(-(((I - 0)**2 +
-                                             (J - q[t])**2) / (self.mass**2))**4)
-                vid[t, :, :, 1] += np.exp(-(((I - 0)**2 +
-                                             (J - q[t])**2) / (self.mass**2))**4)
+                vid[t, :, :, 0] += np.exp(-(((I - 0)**2 + (J - q[t])**2) /
+                                            (self.mass**2))**4)
+                vid[t, :, :, 1] += np.exp(-(((I - 0)**2 + (J - q[t])**2) /
+                                            (self.mass**2))**4)
             else:
-                vid[t, :, :, 0] += np.exp(-(((I - 0)**2 +
-                                             (J - q[t])**2) / (self.mass**2))**4)
+                vid[t, :, :, 0] += np.exp(-(((I - 0)**2 + (J - q[t])**2) /
+                                            (self.mass**2))**4)
             vid[t][vid[t] > 1] = 1
 
         return vid
@@ -94,8 +92,8 @@ class Spring(Environment):
         Args:
             radius (float): Radius of the sampling process
         """
-        states = np.random.rand(2)*2.-1
-        states = (states/np.sqrt((states**2).sum()))*radius
+        states = np.random.rand(2) * 2. - 1
+        states = (states / np.sqrt((states**2).sum())) * radius
         self.set([states[0]], [states[1]])
 
 
@@ -103,9 +101,13 @@ class Spring(Environment):
 if __name__ == "__main__":
 
     sp = Spring(mass=.5, elastic_cst=2)
-    rolls = sp.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
-                                      number_of_rollouts=16, img_size=32,
-                                      noise_std=0., radius_bound=(.1, 1.),
-                                      world_size=1.5, seed=23)
+    rolls = sp.sample_random_rollouts(number_of_frames=100,
+                                      delta_time=0.1,
+                                      number_of_rollouts=16,
+                                      img_size=32,
+                                      noise_std=0.,
+                                      radius_bound=(.1, 1.),
+                                      world_size=1.5,
+                                      seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
