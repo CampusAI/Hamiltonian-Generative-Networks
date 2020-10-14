@@ -3,6 +3,7 @@ import numpy as np
 
 from environments import Environment
 
+
 class Spring(Environment):
 
     """Spring System
@@ -34,7 +35,7 @@ class Spring(Environment):
             q ([float]): Generalized position in 1-D space: Position (m)
 
         Raises:
-            ValueError: If p and q are not in 1-D space
+            AssertError: If p and q are not in 1-D space
         """
         if p is None or q is None:
             return
@@ -91,7 +92,7 @@ class Spring(Environment):
             radius (float): Radius of the sampling process
         """
         states = np.random.rand(2)*2.-1
-        states /= np.sqrt((states**2).sum())*radius
+        states = (states/np.sqrt((states**2).sum()))*radius
         self.set([states[0]], [states[1]])
 
 
@@ -101,7 +102,8 @@ if __name__ == "__main__":
     sp = Spring(mass=.5, elastic_cst=2)
     rolls = sp.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
                                       number_of_rollouts=16, img_size=32,
-                                      noisy_data=False, noise_std=0.1, seed=23)
+                                      noisy_data=False, noise_std=0.1,
+                                      radius_lb=0.1, radius_ub=1.0, seed=23)
     fig = plt.figure()
     img = []
     idx = np.random.randint(rolls.shape[0])

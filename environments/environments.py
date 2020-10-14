@@ -79,7 +79,7 @@ class Environment(ABC):
         y0 = np.array([np.array(self.q), np.array(self.p)]).reshape(-1)
         self._rollout = solve_ivp(self._dynamics, t_span, y0, t_eval=t_eval).y
 
-    def sample_random_rollouts(self, number_of_frames=100, delta_time=0.1, number_of_rollouts=16, img_size=32, color=True, noisy_data=False, noise_std=0.1, base_radius=1.3, seed=None):
+    def sample_random_rollouts(self, number_of_frames=100, delta_time=0.1, number_of_rollouts=16, img_size=32, color=True, noisy_data=False, noise_std=0.1, radius_lb=1.3, radius_ub=2.3, seed=None):
         """Samples random rollouts for a given environment
 
         Args:
@@ -90,20 +90,25 @@ class Environment(ABC):
             color (bool): Whether to have colored or grayscale frames.
             noisy_data (bool): Whether to add noise to data.
             noise_std (float): If noisy_data=true, standard deviation of the gaussian noise source.
-            base_radius (float): Init phase states will be sampled from a circle (q, p) of radius 
+            radius_lb (float): Radius lower bound of the phase state sampling.
+            radius_ub (float): Radius upper bound of the phase state sampling.
+                Init phase states will be sampled from a circle (q, p) of radius 
                 r ~ U(base_radius, base_radius + 1) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
-            seed (int): Seed for reproducibility
-
+            seed (int): Seed for reproducibility.
+        Raises:
+            AssertError: If radius_lb > radius_ub
         Returns:
             (ndarray): Array of shape (Batch, Nframes, Height, Width, Channels).
                 Contains sampled rollouts
         """
+
+        assert radius_lb <= radius_ub
         if seed is not None:
             np.random.seed(seed)
         total_time = number_of_frames*delta_time
         batch_sample = []
         for i in range(number_of_rollouts):
-            radius = np.random.rand() + base_radius
+            radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
             self.sample_init_conditions(radius)
             self._evolution(total_time, delta_time)
             if noisy_data:

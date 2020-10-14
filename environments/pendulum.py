@@ -37,7 +37,7 @@ class Pendulum(Environment):
             q ([float]): Generalized position in 1-D space: Phase (rad)
 
         Raises:
-            ValueError: If p and q are not in 1-D space
+            AssertError: If p and q are not in 1-D space
         """
         if p is None or q is None:
             return
@@ -94,7 +94,7 @@ class Pendulum(Environment):
             radius (float): Radius of the sampling process
         """
         states = np.random.rand(2)*2.-1
-        states /= np.sqrt((states**2).sum())*radius
+        states = (states/np.sqrt((states**2).sum()))*radius
         self.set([states[0]], [states[1]])
 
 
@@ -104,7 +104,8 @@ if __name__ == "__main__":
     pd = Pendulum(mass=.5, length=1, g=3)
     rolls = pd.sample_random_rollouts(number_of_frames=100, delta_time=0.1,
                                       number_of_rollouts=16, img_size=32,
-                                      noisy_data=True, noise_std=0.1, seed=23)
+                                      noisy_data=True, noise_std=0.1,
+                                      radius_lb=1.3, radius_ub=2.3, seed=23)
     fig = plt.figure()
     img = []
     idx = np.random.randint(rolls.shape[0])
