@@ -25,7 +25,7 @@ class EncoderNet(nn.Module):
         'strides': [1, 1, 1, 1, 1, 1, 1, 1],
     }
 
-    def __init__(self, seq_len, in_channels, out_channels, hidden_conv_layers=None,
+    def __init__(self, seq_len, in_channels, out_channels=48, hidden_conv_layers=None,
                  n_filters=None, kernel_sizes=None, strides=None, act_func=nn.ReLU(),
                  dtype=torch.float):
         """Instantiate the convolutional layers that compose the input network with the
@@ -38,7 +38,7 @@ class EncoderNet(nn.Module):
         Args:
             seq_len (int): Number of frames that compose a sequence.
             in_channels (int): Number of channels of images in the input sequence.
-            out_channels (int): Number of in_channels of the output latent encoding.
+            out_channels (int): Number of channels of the output latent encoding.
             hidden_conv_layers (int): Number of hidden convolutional layers (excluding the input
                 and the two output layers for mean and variance).
             n_filters (list): List with number of filters for each of the hidden layers.
@@ -136,7 +136,7 @@ class TransformerNet(nn.Module):
         'strides': [2, 2, 2, 1],
     }
 
-    def __init__(self, in_channels, out_channels, hidden_conv_layers=None,
+    def __init__(self, in_channels, out_channels=32, hidden_conv_layers=None,
                  n_filters=None, kernel_sizes=None, strides=None, act_func=torch.nn.ReLU(),
                  dtype=torch.float):
         """Instantiate the convolutional layers with the given attributes or using the default
