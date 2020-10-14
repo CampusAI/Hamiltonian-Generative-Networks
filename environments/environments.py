@@ -65,10 +65,6 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
-<<<<<<< HEAD
-    def generate_data(self, total_seconds, fps, save_dir= None, dt=0.01):
-        """Generates dataset for current environment
-=======
     def _evolution(self, total_time=10, delta_time=0.1):
         """Performs rollout of the physical system given some initial conditions.
         Sets rollout phase states to self.rollout
@@ -99,7 +95,6 @@ class Environment(ABC):
                                base_radius=1.3,
                                seed=None):
         """Samples random rollouts for a given environment
->>>>>>> master
 
         Args:
             number_of_frames (int): Total duration of video (in frames)
@@ -129,28 +124,4 @@ class Environment(ABC):
                     *self._rollout.shape) * noise_std
             batch_sample.append(self._draw(img_size, color))
 
-<<<<<<< HEAD
-        time_evol = 1./fps
-        total_images = total_seconds*fps
-        image_list = [self.draw()]
-        phase_state_list = [np.array([np.array(self.q), np.array(self.p)])]
-
-        for _ in range(total_images):
-            current_time = 0
-            while(current_time < time_evol):
-                self.step(dt)
-                current_time += dt
-            image_list.append(self.draw())
-            phase_state_list.append(np.array([np.array(self.q), np.array(self.p)]))
-
-        dataset = {'frames': np.array(image_list), 'states': np.array(phase_state_list)}
-        if save_dir is not None:
-            os.makedirs(save_dir, exist_ok=True)
-            np.save(os.path.join(save_dir, 'dataset'), dataset)
-        return dataset
-
-    def sample_random_rollout(self, seed=0, number_of_frames=6, delta_time=1, number_of_rollouts=1):
-        return torch.tensor([[[1], [2], [3], [4]]])
-=======
         return np.array(batch_sample)
->>>>>>> master
