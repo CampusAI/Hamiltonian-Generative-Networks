@@ -13,71 +13,38 @@ class NObjectGravity(Environment):
 
     """
 
-    def __init__(self, mass, gravity_cst, p=None, q=None):
+    def __init__(self, mass, gravity_cst, q=None, p=None):
         """Contructor for spring system
 
         Args:
             mass ([float]): Object masses (kg).
             gravity_cst (float): Constant for the intensity of gravitational field (m^3/kg*s^2)
-            p (ndarray, optional): Object generalized momentums in 2-D space : Linear momentums (kg*m/s). Defaults to None
             q (ndarray, optional): Object generalized positions in 2-D space: Positions (m). Defaults to None
+            p (ndarray, optional): Object generalized momentums in 2-D space : Linear momentums (kg*m/s). Defaults to None
         """
         self.mass = mass
         self.n_objects = len(mass)
         self.gravity_cst = gravity_cst
-        super().__init__(p, q)
+        super().__init__(q=q, p=p)
 
-    def set(self, p, q):
+    def set(self, q, p):
         """Sets initial conditions for pendulum
 
         Args:
-            p (ndarray): Object generalized momentums in 2-D space : Linear momentums (kg*m/s)
             q (ndarray): Object generalized positions in 2-D space: Positions (m)
+            p (ndarray): Object generalized momentums in 2-D space : Linear momentums (kg*m/s)
 
         Raises:
-            ValueError: If p and q are not in 2-D space or do not refer to all the objects in space
+            ValueError: If q and p are not in 2-D space or do not refer to all the objects in space
         """
-        if p.shape[0] != self.n_objects or p.shape[0] != self.n_objects:
+        if q.shape[0] != self.n_objects or p.shape[0] != self.n_objects:
             raise ValueError(
-                "p and q do not refer to the same number of objects in the system.")
-        if p.shape[-1] != 2 or q.shape[-1] != 2:
+                "q and p do not refer to the same number of objects in the system.")
+        if q.shape[-1] != 2 or p.shape[-1] != 2:
             raise ValueError(
-                "p and q must be in 2-D space: Linear momentum and Position.")
-        self.p = p.copy()
+                "q and p must be in 2-D space: Position and Linear momentum.")
         self.q = q.copy()
-
-    def step(self, dt=0.01):
-        """Performs a step in the spring system
-
-        Args:
-            dt (float, optional): Time step run for the integration. Defaults to 0.01.
-
-        Raises:
-            TypeError: If p or q are None
-        """
-
-        assert type(self.q) != None
-        assert type(self.p) != None
-
-        # Distance calculation
-        object_distance = np.zeros((self.n_objects, self.n_objects))
-        for i in range(self.n_objects):
-            for j in range(i, self.n_objects):
-                object_distance[i, j] = object_distance[j,
-                                                        i] = np.linalg.norm(self.q[i] - self.q[j])
-        object_distance = np.power(object_distance, 3)/self.gravity_cst
-
-        for d in range(2):
-            for i in range(self.n_objects):
-                # update q
-                self.q[i, d] += dt*self.p[i, d]/self.mass[i]
-                # update momenta
-                mom_term = 0
-                for j in range(self.n_objects):
-                    if i != j:
-                        mom_term += self.mass[j]*(self.q[j, d] -
-                                                  self.q[i, d])/object_distance[i, j]
-                self.p[i, d] += dt*mom_term*self.mass[i]
+        self.p = p.copy()
 
     def _dynamics(self, t, states):
         """Defines system dynamics
@@ -90,7 +57,6 @@ class NObjectGravity(Environment):
             equations ([float]): Movement equations of the physical system
         """
         # Convert states to n_object arrays of q and p
-
         states_resh = states.reshape(2, self.n_objects, 2)
         dyn = np.zeros_like(states_resh)
         states_q = states_resh[0, :, :]
@@ -98,21 +64,74 @@ class NObjectGravity(Environment):
         dyn[0, :, :] = states_p/(np.array(mass)[:, np.newaxis])
         for d in range(2):
             for i in range(self.n_objects):
+                for j in range(self.n_objects):
+                    if i != j:
+                        mom_term += self.mass[j]*(self.q[j, d] -
+                                                  self.q[i, d])/object_distance[i, j]
+                dyn[1, :, :] += mom_term*self.mass[i]
+        return dyn.reshape(-1)
 
-    def draw(self):
-        """Caption from the actual spring state
+    def _draw(self, res=32, color=True, world_size=1.5):
+        """Returns array of the environment evolution
+
+        Args:
+            res (int): Image resolution (images are square).
+            color (bool): True if RGB, false if grayscale.
+            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
-            Img (np.ndarray): Caption of current state
+            vid (np.ndarray): Rendered rollout as a sequence of images
         """
-        img = Image.new('L', (32, 32))
-        draw = ImageDraw.Draw(img)
+        q = self._rollout.reshape(2, self.n_objects, 2, -1)[0, :, :, :]
+        length = len(q)
+        if color:
+            vid = np.zeros((length, res, res, 3), dtype='float')
+        else:
+            vid = np.zeros((length, res, res, 1), dtype='float')
+        grid = np.arange(0, 1, 1./res)*2*world_size - world_size
+        [I, J] = np.meshgrid(grid, grid)
+        for t in range(length):
+            if color:
+                vid[t, :, :, 0] += np.exp(-(((I - q[0, 0, t])**2 +
+                                             (J - q[0, 1, t])**2) /
+                                            (self.mass**2))**4)
+                vid[t, :, :, 1] += np.exp(-(((I - q[1, 0, t])**2 +
+                                             (J - q[1, 1, t])**2) /
+                                            (self.mass**2))**4)
+                if self.n_objects > 2:
+                    vid[t, :, :, 2] += np.exp(-(((I - q[2, 0, t])**2 +
+                                                 (J - q[2, 1, t])**2) /
+                                                (self.mass**2))**4)
+            else:
+                for i in range(self.n_objects):
+                    vid[t, :, :, 0] += np.exp(-(((I - q[i, 0, t])**2 +
+                                                 (J - q[i, 1, t])**2) /
+                                                (self.mass**2))**4)
+            vid[t][vid[t] > 1] = 1
 
-        for i in range(self.n_objects):
-            r = self.mass[i]
-            x = self.q[i, 0] + 32/2
-            y = self.q[i, 1] + 32/2
+        return vid
 
-            draw.ellipse((x-r, y-r, x+r, y+r), fill=255)
+    def _sample_init_conditions(self, radius):
+        """Samples random initial conditions for the environment
+        Args:
+            radius (float): Radius of the sampling process
+        """
+        states = np.random.rand(2) * 2. - 1
+        states = (states / np.sqrt((states**2).sum())) * radius
+        self.set([states[0]], [states[1]])
 
-        return np.array(img)
+
+# Sample code for sampling rollouts
+if __name__ == "__main__":
+
+    og = NObjectGravity(mass=[1., 1.], gravity_cst=1)
+    rolls = og.sample_random_rollouts(number_of_frames=100,
+                                      delta_time=0.1,
+                                      number_of_rollouts=16,
+                                      img_size=32,
+                                      noise_std=0.,
+                                      radius_bound=(1.3, 2.3),
+                                      world_size=1.5,
+                                      seed=23)
+    idx = np.random.randint(rolls.shape[0])
+    visualize_rollout(rolls[idx])
