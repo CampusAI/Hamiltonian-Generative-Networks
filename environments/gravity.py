@@ -13,7 +13,7 @@ class NObjectGravity(Environment):
 
     """
 
-    def __init__(self, mass, gravity_cst, orbit_noise=.05, q=None, p=None):
+    def __init__(self, mass, gravity_cst, orbit_noise=.01, q=None, p=None):
         """Contructor for spring system
 
         Args:
@@ -26,10 +26,11 @@ class NObjectGravity(Environment):
             NotImplementedError: If more than 2 objects are considered
         """
         self.mass = mass
+        self.colors = ['y', 'r', 'g', 'b', 'c', 'p', 'w']
         self.n_objects = len(mass)
         self.gravity_cst = gravity_cst
         self.orbit_noise = orbit_noise
-        if self.n_objects > 2:
+        if self.n_objects > 7:
             raise NotImplementedError(
                 'Gravity interaction for ' + str(self.n_objects) + ' bodies is not implemented.')
         super().__init__(q=q, p=p)
@@ -112,22 +113,47 @@ class NObjectGravity(Environment):
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
-                vid[t, :, :, 0] += np.exp(-(((I - q[0, 0, t])**2 +
-                                             (J - q[0, 1, t])**2) /
-                                            (self.mass[0]**2))**4)
-                vid[t, :, :, 1] += np.exp(-(((I - q[1, 0, t])**2 +
-                                             (J - q[1, 1, t])**2) /
-                                            (self.mass[1]**2))**4)
-                if self.n_objects > 2:
-                    vid[t, :, :, 2] += np.exp(-(((I - q[2, 0, t])**2 +
-                                                 (J - q[2, 1, t])**2) /
-                                                (self.mass[2]**2))**4)
+                for n in range(self.n_objects):
+                    brush = self.colors[n]
+                    color_term = np.exp(-(((I - q[n, 0, t])**2 +
+                                           (J - q[n, 1, t])**2) /
+                                          (self.mass[n]**2))**4)
+                    if brush == 'y':
+                        vid[t, :, :, 0] += color_term
+                        vid[t, :, :, 1] += color_term
+                        vid[t, :, :, 2] -= color_term
+                    elif brush == 'r':
+                        vid[t, :, :, 0] += color_term
+                        vid[t, :, :, 1] -= color_term
+                        vid[t, :, :, 2] -= color_term
+                    elif brush == 'g':
+                        vid[t, :, :, 0] -= color_term
+                        vid[t, :, :, 1] += color_term
+                        vid[t, :, :, 2] -= color_term
+                    elif brush == 'b':
+                        vid[t, :, :, 0] -= color_term
+                        vid[t, :, :, 1] -= color_term
+                        vid[t, :, :, 2] += color_term
+                    elif brush == 'c':
+                        vid[t, :, :, 0] -= color_term
+                        vid[t, :, :, 1] += color_term
+                        vid[t, :, :, 2] += color_term
+                    elif brush == 'p':
+                        vid[t, :, :, 0] += color_term
+                        vid[t, :, :, 1] -= color_term
+                        vid[t, :, :, 2] += color_term
+                    elif brush == 'w':
+                        vid[t, :, :, 0] += color_term
+                        vid[t, :, :, 1] += color_term
+                        vid[t, :, :, 2] += color_term
+                    vid[t][vid[t] < 0] = 0
             else:
                 for i in range(self.n_objects):
                     vid[t, :, :, 0] += np.exp(-(((I - q[i, 0, t])**2 +
                                                  (J - q[i, 1, t])**2) /
                                                 (self.mass[i]**2))**4)
             vid[t][vid[t] > 1] = 1
+            vid[t][vid[t] < 0] = 0
 
         return vid
 
@@ -137,32 +163,51 @@ class NObjectGravity(Environment):
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
         """
         radius_lb, radius_ub = radius_bound
+        radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
         states = np.zeros((2, self.n_objects, 2))
-        pos = np.random.rand(2)*(radius_ub - radius_lb) + radius_lb
-        r = np.sqrt(np.sum((pos**2)))
+        # first position
+        pos = np.random.rand(2)*2. - 1
+        pos = (pos/np.sqrt((pos**2).sum()))*radius
 
         # velocity that yields a circular orbit
-        vel = np.flipud(pos) / (2 * r**1.5)
+        if self.n_objects == 2:
+            factor = 2
+        else:
+            factor = np.sqrt(np.sin(np.pi/3)/(2*np.cos(np.pi/6)**2))
+        vel = np.flipud(pos)/(factor*radius**1.5)
         vel[0] *= -1
-        vel *= 1 + self.orbit_noise*np.random.randn()
         states[0, 0, :] = pos
         states[1, 0, :] = vel
-        # draw circular orbit
-        states[:, 1, :] = states[:, 0, :]*-1
+
+        rot_angle = 2*np.pi/self.n_objects
+        for i in range(1, self.n_objects):
+            states[0, i, :] = self.__rotate2d(
+                states[0, i - 1, :], theta=rot_angle)
+            states[1, i, :] = self.__rotate2d(
+                states[1, i - 1, :], theta=rot_angle)
+        for i in range(self.n_objects):
+            states[1, i, :] *= 1 + \
+                self.orbit_noise*(2*np.random.rand(2) - 1)
         self.set(states[0], states[1])
+
+    def __rotate2d(self, p, theta):
+        c, s = np.cos(theta), np.sin(theta)
+        Rot = np.array([[c, -s], [s, c]])
+        return np.dot(Rot, p.reshape(2, 1)).squeeze()
 
 
 # Sample code for sampling rollouts
 if __name__ == "__main__":
 
-    og = NObjectGravity(mass=[1., 1.], gravity_cst=1)
-    rolls = og.sample_random_rollouts(number_of_frames=100,
+    og = NObjectGravity(mass=[1., 1., 1., 1., 1., 1., 1.],
+                        gravity_cst=1., orbit_noise=0.1)
+    rolls = og.sample_random_rollouts(number_of_frames=1000,
                                       delta_time=0.1,
                                       number_of_rollouts=1,
                                       img_size=64,
                                       noise_std=0.,
-                                      radius_bound=(.5, 1.5),
-                                      world_size=3,
-                                      seed=43)
+                                      radius_bound=(2., 3.2),
+                                      world_size=5,
+                                      seed=33)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
