@@ -76,8 +76,8 @@ class Environment(ABC):
         Raises:
             AssertError: If p or q are None
         """
-        assert self.q != None
-        assert self.p != None
+        assert self.q.all() != None
+        assert self.p.all() != None
 
         t_eval = np.linspace(0, total_time,
                              round(total_time / delta_time) + 1)[:-1]
