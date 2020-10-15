@@ -9,8 +9,19 @@ class EnvironmentSampler(Dataset):
     """Dataset for rollout sampling
     Given an environment and sampling conditions, the dataset samples rollouts as pytorch tensors.
     """
-
-    def __init__(self, environment, dataset_len, number_of_frames, delta_time, number_of_rollouts, img_size, noise_std, radius_bound, world_size, seed, data_mean=.5, data_std=.5):
+    def __init__(self,
+                 environment,
+                 dataset_len,
+                 number_of_frames,
+                 delta_time,
+                 number_of_rollouts,
+                 img_size,
+                 noise_std,
+                 radius_bound,
+                 world_size,
+                 seed,
+                 data_mean=.5,
+                 data_std=.5):
         """Constructor method
 
         Args:
@@ -61,16 +72,17 @@ class EnvironmentSampler(Dataset):
             (Torch.tensor): Tensor of shape (Batch, Nframes, Channels, Height, Width).
                 Contains standarized sampled rollouts        
         """
-        rolls = self.environment.sample_random_rollouts(number_of_frames=self.number_of_frames,
-                                                        delta_time=self.delta_time,
-                                                        number_of_rollouts=self.number_of_rollouts,
-                                                        img_size=self.img_size,
-                                                        noise_std=self.noise_std,
-                                                        radius_bound=self.radius_bound,
-                                                        world_size=self.world_size,
-                                                        seed=self.seed)
+        rolls = self.environment.sample_random_rollouts(
+            number_of_frames=self.number_of_frames,
+            delta_time=self.delta_time,
+            number_of_rollouts=self.number_of_rollouts,
+            img_size=self.img_size,
+            noise_std=self.noise_std,
+            radius_bound=self.radius_bound,
+            world_size=self.world_size,
+            seed=self.seed)
         # standarization
-        rolls = (rolls - self.data_mean)/self.data_std
+        rolls = (rolls - self.data_mean) / self.data_std
         return rolls.transpose((0, 1, 4, 2, 3))
 
 
@@ -78,34 +90,35 @@ class EnvironmentSampler(Dataset):
 if __name__ == "__main__":
     import time
     pd = Pendulum(mass=.5, length=1, g=3)
-    trainDS = EnvironmentSampler(
-        environment=pd,
-        length=100,
-        data_mean=.5,
-        data_std=.5,
-        number_of_frames=100,
-        delta_time=.1,
-        number_of_rollouts=4,
-        img_size=64,
-        noise_std=0.,
-        radius_bound=(1.3, 2.3),
-        world_size=1.5,
-        seed=23
-    )
+    trainDS = EnvironmentSampler(environment=pd,
+                                 dataset_len=100,
+                                 data_mean=.5,
+                                 data_std=.5,
+                                 number_of_frames=100,
+                                 delta_time=.1,
+                                 number_of_rollouts=4,
+                                 img_size=64,
+                                 noise_std=0.,
+                                 radius_bound=(1.3, 2.3),
+                                 world_size=1.5,
+                                 seed=23)
     # Dataloader instance test, batch_mode disabled
-    train = torch.utils.data.DataLoader(
-        trainDS, shuffle=False, batch_size=None)
+    train = torch.utils.data.DataLoader(trainDS,
+                                        shuffle=False,
+                                        batch_size=None)
     start = time.time()
     sample = next(iter(train))
     end = time.time()
 
-    print(sample.size(), "Sampled in " + str(end-start) + " s")
+    print(sample.size(), "Sampled in " + str(end - start) + " s")
 
     # Dataloader instance test, batch_mode enabled
-    train = torch.utils.data.DataLoader(
-        trainDS, shuffle=False, batch_size=4, num_workers=1)
+    train = torch.utils.data.DataLoader(trainDS,
+                                        shuffle=False,
+                                        batch_size=4,
+                                        num_workers=1)
     start = time.time()
     sample = next(iter(train))
     end = time.time()
 
-    print(sample.size(), "Sampled in " + str(end-start) + " s")
+    print(sample.size(), "Sampled in " + str(end - start) + " s")
