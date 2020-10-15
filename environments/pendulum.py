@@ -79,15 +79,15 @@ class Pendulum(Environment):
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) /
+                vid[t, :, :, 0] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
+                                             (J - self.length*np.cos(q[t]))**2) /
                                             (self.mass**2))**4)
-                vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) /
+                vid[t, :, :, 1] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
+                                             (J - self.length*np.cos(q[t]))**2) /
                                             (self.mass**2))**4)
             else:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) /
+                vid[t, :, :, 0] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
+                                             (J - self.length*np.cos(q[t]))**2) /
                                             (self.mass**2))**4)
             vid[t][vid[t] > 1] = 1
 
@@ -115,8 +115,8 @@ if __name__ == "__main__":
                                       number_of_rollouts=16,
                                       img_size=32,
                                       noise_std=0.,
-                                      radius_bound=(1.3, 2.3),
-                                      world_size=1.5,
+                                      radius_bound=(1, 2.3),
+                                      world_size=3.5,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
