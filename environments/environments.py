@@ -89,7 +89,16 @@ class Environment(ABC):
         y0 = np.array([np.array(self.q), np.array(self.p)]).reshape(-1)
         self._rollout = solve_ivp(self._dynamics, t_span, y0, t_eval=t_eval).y
 
-    def sample_random_rollouts(self, number_of_frames=100, delta_time=0.1, number_of_rollouts=16, img_size=32, color=True, noise_std=0.1, radius_bound=(1.3, 2.3), world_size=1.5, seed=None):
+    def sample_random_rollouts(self,
+                               number_of_frames=100,
+                               delta_time=0.1,
+                               number_of_rollouts=16,
+                               img_size=32,
+                               color=True,
+                               noise_std=0.1,
+                               radius_bound=(1.3, 2.3),
+                               world_size=1.5,
+                               seed=None):
         """Samples random rollouts for a given environment
 
         Args:
@@ -138,6 +147,9 @@ def visualize_rollout(rollout):
     img = []
     for im in rollout:
         img.append([plt.imshow(im, animated=True)])
-        ani = animation.ArtistAnimation(fig, img, interval=50,
-                                        blit=True, repeat_delay=1000)
+        ani = animation.ArtistAnimation(fig,
+                                        img,
+                                        interval=50,
+                                        blit=True,
+                                        repeat_delay=1000)
     plt.show()

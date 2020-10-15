@@ -18,8 +18,14 @@ class HamiltonianNet(nn.Module):
         'strides': [1, 1, 1, 1, 1, 1, 1, 1, 1],
     }
 
-    def __init__(self, in_shape, hidden_conv_layers=None, n_filters=None, kernel_sizes=None,
-                 strides=None, act_func=nn.ReLU(), dtype=torch.float):
+    def __init__(self,
+                 in_shape,
+                 hidden_conv_layers=None,
+                 n_filters=None,
+                 kernel_sizes=None,
+                 strides=None,
+                 act_func=nn.ReLU(),
+                 dtype=torch.float):
         """Create the layers of the Hamiltonian network.
 
         If K is the total number of convolutional layers, then hidden_conv_layers = K - 2.
@@ -37,12 +43,15 @@ class HamiltonianNet(nn.Module):
             dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
-        if all(var is None for var in (hidden_conv_layers, n_filters, kernel_sizes, strides)):
-            hidden_conv_layers = HamiltonianNet.DEFAULT_PARAMS['hidden_conv_layers']
+        if all(var is None for var in (hidden_conv_layers, n_filters,
+                                       kernel_sizes, strides)):
+            hidden_conv_layers = HamiltonianNet.DEFAULT_PARAMS[
+                'hidden_conv_layers']
             n_filters = HamiltonianNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = HamiltonianNet.DEFAULT_PARAMS['kernel_sizes']
             strides = HamiltonianNet.DEFAULT_PARAMS['strides']
-        elif all(var is not None for var in (hidden_conv_layers, n_filters, kernel_sizes, strides)):
+        elif all(var is not None for var in (hidden_conv_layers, n_filters,
+                                             kernel_sizes, strides)):
             # If no Nones, check consistency
             assert len(n_filters) == hidden_conv_layers + 2,\
                 'n_filters must be a list of length hidden_conv_layers + 2 ' \
@@ -52,38 +61,34 @@ class HamiltonianNet(nn.Module):
                    'kernel_sizes and strides must be lists with values foreach layer in the ' \
                    'network (' + str(hidden_conv_layers + 2) + ' in this case).'
         else:
-            raise ValueError('Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
-                             'can only be either all None, or all defined by the user.')
+            raise ValueError(
+                'Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
+                'can only be either all None, or all defined by the user.')
         in_channels = in_shape[0] * 2
-        paddings = [int(k/2) for k in kernel_sizes]
-        self.in_conv = nn.Conv2d(
-            in_channels=in_channels,
-            out_channels=n_filters[0],
-            kernel_size=kernel_sizes[0],
-            padding=paddings[0])
-        out_size = int((in_shape[1] - kernel_sizes[0] + 2 * paddings[0])) / strides[0] + 1
-        self.hidden_layers = nn.ModuleList(
-            modules=[
-                nn.Conv2d(
-                    in_channels=n_filters[i],
-                    out_channels=n_filters[i + 1],
-                    kernel_size=kernel_sizes[i + 1],
-                    padding=paddings[i + 1],
-                    stride=strides[i + 1]
-                )
-                for i in range(hidden_conv_layers)
-            ]
-        )
+        paddings = [int(k / 2) for k in kernel_sizes]
+        self.in_conv = nn.Conv2d(in_channels=in_channels,
+                                 out_channels=n_filters[0],
+                                 kernel_size=kernel_sizes[0],
+                                 padding=paddings[0])
+        out_size = int(
+            (in_shape[1] - kernel_sizes[0] + 2 * paddings[0])) / strides[0] + 1
+        self.hidden_layers = nn.ModuleList(modules=[
+            nn.Conv2d(in_channels=n_filters[i],
+                      out_channels=n_filters[i + 1],
+                      kernel_size=kernel_sizes[i + 1],
+                      padding=paddings[i + 1],
+                      stride=strides[i + 1]) for i in range(hidden_conv_layers)
+        ])
         for i in range(hidden_conv_layers):
-            out_size = int((out_size - kernel_sizes[i] + 2 * paddings[i]) / strides[i]) + 1
-        self.out_conv = nn.Conv2d(
-            in_channels=n_filters[-1],
-            out_channels=n_filters[-1],
-            kernel_size=kernel_sizes[-1],
-            padding=paddings[-1]
-        )
-        out_size = int((out_size - kernel_sizes[-1] + 2 * paddings[-1]) / strides[-1]) + 1
-        self.n_flat = (out_size ** 2) * n_filters[-1]
+            out_size = int((out_size - kernel_sizes[i] + 2 * paddings[i]) /
+                           strides[i]) + 1
+        self.out_conv = nn.Conv2d(in_channels=n_filters[-1],
+                                  out_channels=n_filters[-1],
+                                  kernel_size=kernel_sizes[-1],
+                                  padding=paddings[-1])
+        out_size = int(
+            (out_size - kernel_sizes[-1] + 2 * paddings[-1]) / strides[-1]) + 1
+        self.n_flat = (out_size**2) * n_filters[-1]
         self.linear = nn.Linear(in_features=self.n_flat, out_features=1)
         self.activation = act_func
         self.type(dtype)
@@ -100,7 +105,9 @@ class HamiltonianNet(nn.Module):
         Returns:
             A (batch_size, 1) shaped tensor with the energy for each input in the batch.
         """
-        x = torch.cat((q, p), dim=1)  # Concatenate q and p to obtain a N x 2C x H x W tensor
+        x = torch.cat(
+            (q, p),
+            dim=1)  # Concatenate q and p to obtain a N x 2C x H x W tensor
         x = self.activation(self.in_conv(x))
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
