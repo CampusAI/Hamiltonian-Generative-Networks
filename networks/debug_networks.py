@@ -18,7 +18,6 @@ from networks import hamiltonian_net
 class EncoderNet(inference_net.EncoderNet):
     """Network that encodes the input value into a two-dimensional latent encoding.
     """
-
     def __init__(self, phi=None, dtype=torch.float):
         """Create the encoder network.
 
@@ -28,8 +27,7 @@ class EncoderNet(inference_net.EncoderNet):
         """
         nn.Module.__init__(self)
         self.phi = phi if phi is not None else nn.Parameter(
-            torch.tensor([1., 2.], requires_grad=True, dtype=dtype)
-        )
+            torch.tensor([1., 2.], requires_grad=True, dtype=dtype))
 
     def forward(self, x):
         """Compute the encoding of x.
@@ -52,7 +50,6 @@ class EncoderNet(inference_net.EncoderNet):
 class TransformerNet(inference_net.TransformerNet):
     """Transforms the given encoding into abstract phase space q and p.
     """
-
     def __init__(self, w=None, dtype=torch.float):
         """Create the transformer net by setting the weighs.
 
@@ -62,8 +59,7 @@ class TransformerNet(inference_net.TransformerNet):
         """
         nn.Module.__init__(self)
         self.w = w if w is not None else nn.Parameter(
-            torch.tensor([1., 1.], requires_grad=True, dtype=dtype)
-        )
+            torch.tensor([1., 1.], requires_grad=True, dtype=dtype))
 
     def forward(self, x):
         """Transform the two dimensional input tensor x into q, p as q = w_0 * x_0, p = w_1 * x_1
@@ -83,7 +79,6 @@ class TransformerNet(inference_net.TransformerNet):
 class HamiltonianNet(hamiltonian_net.HamiltonianNet):
     """Computes the hamiltonian from the given q and p.
     """
-
     def __init__(self, gamma=None, dtype=torch.float):
         """Create the hamiltonian net.
 
@@ -93,8 +88,7 @@ class HamiltonianNet(hamiltonian_net.HamiltonianNet):
         """
         nn.Module.__init__(self)
         self.gamma = gamma if gamma is not None else nn.Parameter(
-            torch.tensor([3., 4.], requires_grad=True, dtype=dtype)
-        )
+            torch.tensor([3., 4.], requires_grad=True, dtype=dtype))
 
     def forward(self, q, p):
         return self.gamma[0] * q + self.gamma[1] * p**2
@@ -103,7 +97,6 @@ class HamiltonianNet(hamiltonian_net.HamiltonianNet):
 class DecoderNet(decoder_net.DecoderNet):
     """Decoder net debug implementation, where the input q is decoded as q * theta
     """
-
     def __init__(self, theta=None, dtype=torch.float):
         """Create the debug decoder network.
 
@@ -112,7 +105,8 @@ class DecoderNet(decoder_net.DecoderNet):
             dtype (torch.dtype): Type of theta.
         """
         nn.Module.__init__(self)
-        self.theta = theta if theta is not None else nn.Parameter(torch.tensor([2.], dtype=dtype))
+        self.theta = theta if theta is not None else nn.Parameter(
+            torch.tensor([2.], dtype=dtype))
 
     def forward(self, q):
         """Returns q * theta.

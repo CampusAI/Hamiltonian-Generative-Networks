@@ -25,8 +25,15 @@ class EncoderNet(nn.Module):
         'strides': [1, 1, 1, 1, 1, 1, 1, 1],
     }
 
-    def __init__(self, seq_len, in_channels, out_channels=48, hidden_conv_layers=None,
-                 n_filters=None, kernel_sizes=None, strides=None, act_func=nn.ReLU(),
+    def __init__(self,
+                 seq_len,
+                 in_channels,
+                 out_channels,
+                 hidden_conv_layers=None,
+                 n_filters=None,
+                 kernel_sizes=None,
+                 strides=None,
+                 act_func=nn.ReLU(),
                  dtype=torch.float):
         """Instantiate the convolutional layers that compose the input network with the
         appropriate shapes.
@@ -48,13 +55,15 @@ class EncoderNet(nn.Module):
             dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
-        if all(var is None for var in (hidden_conv_layers, n_filters, kernel_sizes, strides)):
-            hidden_conv_layers = EncoderNet.DEFAULT_PARAMS['hidden_conv_layers']
+        if all(var is None for var in (hidden_conv_layers, n_filters,
+                                       kernel_sizes, strides)):
+            hidden_conv_layers = EncoderNet.DEFAULT_PARAMS[
+                'hidden_conv_layers']
             n_filters = EncoderNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = EncoderNet.DEFAULT_PARAMS['kernel_sizes']
             strides = EncoderNet.DEFAULT_PARAMS['strides']
-        elif all(var is not None for var in
-                 (hidden_conv_layers, n_filters, kernel_sizes, strides)):
+        elif all(var is not None for var in (hidden_conv_layers, n_filters,
+                                             kernel_sizes, strides)):
             # If no Nones, check consistency
             assert len(n_filters) == hidden_conv_layers + 1,\
                 'n_filters must be a list of length hidden_conv_layers + 1 ' \
@@ -64,42 +73,32 @@ class EncoderNet(nn.Module):
                    'kernel_sizes and strides must be lists with values foreach layer in the ' \
                    'network (' + str(hidden_conv_layers + 2) + ' in this case).'
         else:
-            raise ValueError('Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
-                             'can only be either all None, or all defined by the user.')
-        paddings = [int(k/2) for k in kernel_sizes]
-        self.input_conv = nn.Conv2d(
-            in_channels=seq_len * in_channels,
-            out_channels=n_filters[0],
-            kernel_size=kernel_sizes[0],
-            padding=paddings[0],
-            stride=strides[0]
-        )
-        self.hidden_layers = nn.ModuleList(
-            modules=[
-                nn.Conv2d(
-                    in_channels=n_filters[i],
-                    out_channels=n_filters[i + 1],
-                    kernel_size=kernel_sizes[i + 1],
-                    padding=paddings[i + 1],
-                    stride=strides[i + 1]
-                )
-                for i in range(hidden_conv_layers)
-            ]
-        )
-        self.out_mean = nn.Conv2d(
-            in_channels=n_filters[-1],
-            out_channels=out_channels,
-            kernel_size=kernel_sizes[-1],
-            padding=paddings[-1],
-            stride=strides[-1]
-        )
-        self.out_logvar = nn.Conv2d(
-            in_channels=n_filters[-1],
-            out_channels=out_channels,
-            kernel_size=kernel_sizes[-1],
-            padding=paddings[-1],
-            stride=strides[-1]
-        )
+            raise ValueError(
+                'Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
+                'can only be either all None, or all defined by the user.')
+        paddings = [int(k / 2) for k in kernel_sizes]
+        self.input_conv = nn.Conv2d(in_channels=seq_len * in_channels,
+                                    out_channels=n_filters[0],
+                                    kernel_size=kernel_sizes[0],
+                                    padding=paddings[0],
+                                    stride=strides[0])
+        self.hidden_layers = nn.ModuleList(modules=[
+            nn.Conv2d(in_channels=n_filters[i],
+                      out_channels=n_filters[i + 1],
+                      kernel_size=kernel_sizes[i + 1],
+                      padding=paddings[i + 1],
+                      stride=strides[i + 1]) for i in range(hidden_conv_layers)
+        ])
+        self.out_mean = nn.Conv2d(in_channels=n_filters[-1],
+                                  out_channels=out_channels,
+                                  kernel_size=kernel_sizes[-1],
+                                  padding=paddings[-1],
+                                  stride=strides[-1])
+        self.out_logvar = nn.Conv2d(in_channels=n_filters[-1],
+                                    out_channels=out_channels,
+                                    kernel_size=kernel_sizes[-1],
+                                    padding=paddings[-1],
+                                    stride=strides[-1])
         self.activation = act_func
         self.type(dtype)
 
@@ -136,8 +135,14 @@ class TransformerNet(nn.Module):
         'strides': [2, 2, 2, 1],
     }
 
-    def __init__(self, in_channels, out_channels=32, hidden_conv_layers=None,
-                 n_filters=None, kernel_sizes=None, strides=None, act_func=torch.nn.ReLU(),
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 hidden_conv_layers=None,
+                 n_filters=None,
+                 kernel_sizes=None,
+                 strides=None,
+                 act_func=torch.nn.ReLU(),
                  dtype=torch.float):
         """Instantiate the convolutional layers with the given attributes or using the default
         parameters.
@@ -159,12 +164,15 @@ class TransformerNet(nn.Module):
             dtype (torch.dtype): Type of the weights.
         """
         super().__init__()
-        if all(var is None for var in (hidden_conv_layers, n_filters, kernel_sizes, strides)):
-            hidden_conv_layers = TransformerNet.DEFAULT_PARAMS['hidden_conv_layers']
+        if all(var is None for var in (hidden_conv_layers, n_filters,
+                                       kernel_sizes, strides)):
+            hidden_conv_layers = TransformerNet.DEFAULT_PARAMS[
+                'hidden_conv_layers']
             n_filters = TransformerNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = TransformerNet.DEFAULT_PARAMS['kernel_sizes']
             strides = TransformerNet.DEFAULT_PARAMS['strides']
-        elif all(var is not None for var in (hidden_conv_layers, n_filters, kernel_sizes, strides)):
+        elif all(var is not None for var in (hidden_conv_layers, n_filters,
+                                             kernel_sizes, strides)):
             # If no Nones, check consistency
             assert len(n_filters) == hidden_conv_layers + 1,\
                 'n_filters must be of length hidden_conv_layers + 1 ' \
@@ -174,36 +182,28 @@ class TransformerNet(nn.Module):
                    'kernel_sizes and strides must be lists with values foreach layer in the ' \
                    'network (' + str(hidden_conv_layers + 2) + ' in this case).'
         else:
-            raise ValueError('Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
-                             'can only be either all None, or all defined by the user.')
+            raise ValueError(
+                'Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
+                'can only be either all None, or all defined by the user.')
 
-        paddings = [int(k/2) for k in kernel_sizes]
-        self.in_conv = nn.Conv2d(
-            in_channels=in_channels,
-            out_channels=n_filters[0],
-            kernel_size=kernel_sizes[0],
-            padding=paddings[0],
-            stride=strides[0]
-        )
-        self.hidden_layers = nn.ModuleList(
-            modules=[
-                nn.Conv2d(
-                    in_channels=n_filters[i],
-                    out_channels=n_filters[i + 1],
-                    kernel_size=kernel_sizes[i + 1],
-                    padding=paddings[i + 1],
-                    stride=strides[i + 1]
-                )
-                for i in range(hidden_conv_layers)
-            ]
-        )
-        self.out_conv = nn.Conv2d(
-            in_channels=n_filters[-1],
-            out_channels=out_channels * 2,
-            kernel_size=kernel_sizes[-1],
-            padding=paddings[-1],
-            stride=strides[-1]
-        )
+        paddings = [int(k / 2) for k in kernel_sizes]
+        self.in_conv = nn.Conv2d(in_channels=in_channels,
+                                 out_channels=n_filters[0],
+                                 kernel_size=kernel_sizes[0],
+                                 padding=paddings[0],
+                                 stride=strides[0])
+        self.hidden_layers = nn.ModuleList(modules=[
+            nn.Conv2d(in_channels=n_filters[i],
+                      out_channels=n_filters[i + 1],
+                      kernel_size=kernel_sizes[i + 1],
+                      padding=paddings[i + 1],
+                      stride=strides[i + 1]) for i in range(hidden_conv_layers)
+        ])
+        self.out_conv = nn.Conv2d(in_channels=n_filters[-1],
+                                  out_channels=out_channels * 2,
+                                  kernel_size=kernel_sizes[-1],
+                                  padding=paddings[-1],
+                                  stride=strides[-1])
         self.activation = act_func
         self.type(dtype)
 
@@ -234,7 +234,8 @@ class TransformerNet(nn.Module):
             Two tensors of shape (batch_size, channels/2, ...) resulting from splitting the given
             tensor along the second dimension.
         """
-        assert encoding.shape[1] % 2 == 0, 'The number of in_channels is odd. Cannot split properly.'
+        assert encoding.shape[
+            1] % 2 == 0, 'The number of in_channels is odd. Cannot split properly.'
         half_len = int(encoding.shape[1] / 2)
         q = encoding[:, :half_len]
         p = encoding[:, half_len:]
@@ -253,15 +254,21 @@ def concat_rgb(sequences_batch):
         concatenated along the channel dimension.
     """
     batch_size, seq_len, channels, h, w = sequences_batch.size()
-    return torch.reshape(sequences_batch, shape=(batch_size, seq_len * channels, h, w))
+    return torch.reshape(sequences_batch,
+                         shape=(batch_size, seq_len * channels, h, w))
 
 
 if __name__ == '__main__':
-    encoder = EncoderNet(seq_len=10, in_channels=3, out_channels=48, hidden_conv_layers=9,
+    encoder = EncoderNet(seq_len=10,
+                         in_channels=3,
+                         out_channels=48,
+                         hidden_conv_layers=9,
                          kernel_sizes=[3 for i in range(11)],
                          n_filters=[64 for i in range(10)],
                          strides=[1 for i in range(11)])
-    transformer = TransformerNet(in_channels=48, out_channels=32, hidden_conv_layers=4,
+    transformer = TransformerNet(in_channels=48,
+                                 out_channels=32,
+                                 hidden_conv_layers=4,
                                  kernel_sizes=[3, 3, 3, 3, 3, 4],
                                  n_filters=[32, 48, 64, 96, 128],
                                  strides=[2, 2, 2, 1, 1, 2])
@@ -273,4 +280,3 @@ if __name__ == '__main__':
     q, p = transformer(encoded)
     print(q.size())
     print(p.size())
-
