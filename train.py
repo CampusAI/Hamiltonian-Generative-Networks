@@ -21,7 +21,8 @@ if __name__ == "__main__":
         params = yaml.load(f, Loader=yaml.FullLoader)
 
     # Set device
-    device = "cuda:" + str(params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+    device = "cuda:" + str(
+        params["gpu_id"]) if torch.cuda.is_available() else "cpu"
 
     # Pick environment
     env = EnvFactory.get_environment(**params["environment"])
@@ -78,26 +79,27 @@ if __name__ == "__main__":
               channels=params["rollout"]["n_channels"])
 
     # Dataloader
-    trainDS = EnvironmentSampler(environment=env,
-                                 dataset_len=100,
-                                 number_of_frames=params["rollout"]["seq_length"],
-                                 delta_time=params["rollout"]["delta_time"],
-                                 number_of_rollouts=params["optimization"]["batch_size"],
-                                 img_size=params["dataset"]["img_size"],
-                                 noise_std=params["dataset"]["noise_std"],
-                                 radius_bound=params["dataset"]["radius_bound"],
-                                 world_size=params["dataset"]["world_size"],
-                                 seed=None)
+    trainDS = EnvironmentSampler(
+        environment=env,
+        dataset_len=100,
+        number_of_frames=params["rollout"]["seq_length"],
+        delta_time=params["rollout"]["delta_time"],
+        number_of_rollouts=params["optimization"]["batch_size"],
+        img_size=params["dataset"]["img_size"],
+        noise_std=params["dataset"]["noise_std"],
+        radius_bound=params["dataset"]["radius_bound"],
+        world_size=params["dataset"]["world_size"],
+        seed=None)
     # Dataloader instance test, batch_mode disabled
     data_loader = torch.utils.data.DataLoader(trainDS,
-                                        shuffle=False,
-                                        batch_size=None)
+                                              shuffle=False,
+                                              batch_size=None)
     errors = []
     for rollout_batch in data_loader:
         rollout_batch = rollout_batch.float().to(device)
         error = hgn.fit(rollout_batch)
         errors.append(error)
-    
+
     print("errors:\n", errors)
 
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
