@@ -6,7 +6,7 @@ class HgnResult():
     def __init__(self):
         self.input = None
         self.z_mean = None
-        self.z_std = None
+        self.z_logvar = None
         self.z_sample = None
         self.q_s = []
         self.p_s = []
@@ -20,16 +20,16 @@ class HgnResult():
         """
         self.input = rollout
 
-    def set_z(self, z_mean, z_std, z_sample):
+    def set_z(self, z_mean, z_logvar, z_sample):
         """Store latent variable conditions
 
         Args:
             z_mean (torch.Tensor): Mean of q_z
-            z_std (torch.Tensor): Standard dev of q_z
+            z_logvar (torch.Tensor): Standard dev of q_z
             z_sample (torch.Tensor): Sample taken from q_z distribution
         """
         self.z_mean = z_mean
-        self.z_std = z_std
+        self.z_logvar = z_logvar
         self.z_sample = z_sample
 
     def append_state(self, q, p):
