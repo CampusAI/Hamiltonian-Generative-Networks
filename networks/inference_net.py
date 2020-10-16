@@ -116,8 +116,8 @@ class EncoderNet(nn.Module):
         x = self.activation(self.input_conv(x))
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
-        mean = self.activation(self.out_mean(x))
-        stddev = torch.exp(0.5 * self.activation(self.out_logvar(x)))
+        mean = self.out_mean(x)
+        stddev = torch.exp(0.5 * self.out_logvar(x))
         epsilon = torch.randn_like(mean)
         z = mean + stddev * epsilon
         return z, mean, stddev
@@ -234,8 +234,8 @@ class TransformerNet(nn.Module):
             Two tensors of shape (batch_size, channels/2, ...) resulting from splitting the given
             tensor along the second dimension.
         """
-        assert encoding.shape[
-            1] % 2 == 0, 'The number of in_channels is odd. Cannot split properly.'
+        assert encoding.shape[1] % 2 == 0,\
+            'The number of in_channels is odd. Cannot split properly.'
         half_len = int(encoding.shape[1] / 2)
         q = encoding[:, :half_len]
         p = encoding[:, half_len:]
