@@ -3,7 +3,7 @@
 from .environments import Environment
 # TODO(Oleguer): Fix this, its not very nice to have to import all classes
 from .pendulum import Pendulum
-# from spring import Spring
+from .spring import Spring
 
 
 class EnvFactory():
