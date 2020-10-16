@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
+
 class EnvironmentSampler(Dataset):
     """Dataset for rollout sampling
     Given an environment and sampling conditions, the dataset samples rollouts as pytorch tensors.
@@ -13,6 +14,7 @@ class EnvironmentSampler(Dataset):
                  delta_time,
                  number_of_rollouts,
                  img_size,
+                 color,
                  noise_std,
                  radius_bound,
                  world_size,
@@ -46,6 +48,7 @@ class EnvironmentSampler(Dataset):
         self.delta_time = delta_time
         self.number_of_rollouts = number_of_rollouts
         self.img_size = img_size
+        self.color = color
         self.noise_std = noise_std
         self.radius_bound = radius_bound
         self.world_size = world_size
@@ -74,12 +77,13 @@ class EnvironmentSampler(Dataset):
             delta_time=self.delta_time,
             number_of_rollouts=self.number_of_rollouts,
             img_size=self.img_size,
+            color=self.color,
             noise_std=self.noise_std,
             radius_bound=self.radius_bound,
             world_size=self.world_size,
             seed=self.seed)
         # standarization
-        rolls = (rolls - self.data_mean) / self.data_std
+        # rolls = (rolls - self.data_mean) / self.data_std
         return rolls.transpose((0, 1, 4, 2, 3))
 
 

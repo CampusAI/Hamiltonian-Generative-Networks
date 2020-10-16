@@ -39,9 +39,9 @@ class Integrator:
         energy = hnn(q=q, p=p)
 
         # dq_dt = dH/dp
-        dq_dt = torch.autograd.grad(energy, p, create_graph=True, retain_graph=True)[0]
+        dq_dt = torch.autograd.grad(energy, p, create_graph=True, retain_graph=True, grad_outputs=torch.ones_like(energy))[0]
         # dp_dt = -dH/dq
-        dp_dt = -torch.autograd.grad(energy, q, create_graph=True, retain_graph=True)[0]
+        dp_dt = -torch.autograd.grad(energy, q, create_graph=True, retain_graph=True, grad_outputs=torch.ones_like(energy))[0]
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):

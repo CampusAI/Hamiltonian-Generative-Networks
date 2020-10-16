@@ -20,33 +20,33 @@ dataset:
 
 # Define rollout
 rollout:
-  seq_length: 1
+  seq_length: 20
   delta_time: 0.1
   n_channels: 1
 
 # Define networks architectures
 networks:
   encoder:
-    hidden_conv_layers: 6
-    n_filters: [32, 64, 64, 64, 64, 64, 64]
-    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]
-    strides: [1, 1, 1, 1, 1, 1, 1, 1]
-    out_channels: 48
+    hidden_conv_layers: 2
+    n_filters: [8, 16, 16]
+    kernel_sizes: [3, 3, 3, 3]
+    strides: [1, 1, 1, 1,]
+    out_channels: 8
   transformer:
     hidden_conv_layers: 2
-    n_filters: [64, 64, 64]
+    n_filters: [16, 16, 16]
     kernel_sizes: [3, 3, 3, 3]
     strides: [2, 2, 2, 1]
     out_channels: 16  # Channels of q, and p splitted
   hamiltonian:
-    hidden_conv_layers: 6
+    hidden_conv_layers: 3
     in_shape: [16, 4, 4]  # Should be coherent with transformer output
-    n_filters: [32, 64, 64, 64, 64, 64, 64, 64]
-    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]
-    strides: [1, 1, 1, 1, 1, 1, 1, 1]
+    n_filters: [8, 16, 16, 16, 16]
+    kernel_sizes: [3, 3, 3, 3, 3]
+    strides: [1, 1, 1, 1, 1]
   decoder:
     n_residual_blocks: 3
-    n_filters: [64, 64, 64]
+    n_filters: [8, 8, 8]
     kernel_sizes: [3, 3, 3, 3]
 
 # Define HGN Integrator
@@ -55,8 +55,8 @@ integrator:
 
 # Define optimization
 optimization:
-  epochs: 5
-  batch_size: 1
+  epochs: 200
+  batch_size: 10
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4

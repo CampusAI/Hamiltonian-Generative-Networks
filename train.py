@@ -3,7 +3,7 @@
 import os
 
 import torch
-from tqdm import tqdm
+import tqdm
 import yaml
 
 from environments.datasets import EnvironmentSampler
@@ -15,7 +15,7 @@ from networks.hamiltonian_net import HamiltonianNet
 from networks.decoder_net import DecoderNet
 import utilities
 
-params_file = "experiment_params/default.yaml"
+params_file = "experiment_params/small.yaml"
 
 if __name__ == "__main__":
     # Read parameters
@@ -90,6 +90,7 @@ if __name__ == "__main__":
         delta_time=params["rollout"]["delta_time"],
         number_of_rollouts=params["optimization"]["batch_size"],
         img_size=params["dataset"]["img_size"],
+        color=params["rollout"]["n_channels"] == 3,
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
         world_size=params["dataset"]["world_size"],
@@ -98,28 +99,48 @@ if __name__ == "__main__":
     data_loader = torch.utils.data.DataLoader(trainDS,
                                               shuffle=False,
                                               batch_size=None)
+    
+    hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    
+    import cv2
     errors = []
-    for rollout_batch in tqdm(data_loader):
+    KLD_errors = []
+    pbar = tqdm.tqdm(data_loader, )
+    for rollout_batch in pbar:
+        # print(rollout_batch.shape)
+        # cv2.imshow("img", 0.5 + 0.5*rollout_batch[0, 0, 0].numpy())
+        # cv2.waitKey(0)
         rollout_batch = rollout_batch.float().to(device)
-        error = hgn.fit(rollout_batch)
+        error, kld = hgn.fit(rollout_batch)
         errors.append(float(error))
-    print("errors:\n", errors)
+        KLD_errors.append(float(kld))
+        msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
+        pbar.set_description(msg)
+    import matplotlib.pyplot as plt
+    plt.plot(list(range(len(errors))), errors)
+    # plt.plot(list(range(len(errors))), KLD_errors)
+    plt.show()
+    # print("errors:\n", errors)
+    hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
+
 
     test_rollout = env.sample_random_rollouts(
         number_of_frames=params["rollout"]["seq_length"],
         delta_time=params["rollout"]["delta_time"],
         number_of_rollouts=1,
         img_size=params["dataset"]["img_size"],
+        color=params["rollout"]["n_channels"] == 3,
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
         world_size=params["dataset"]["world_size"],
         seed=1)
     
-    # visualize_rollout(test_rollout)
     test_rollout = test_rollout.transpose((0, 1, 4, 2, 3))
+    # visualize_rollout(test_rollout)
     test_rollout = torch.tensor(test_rollout).float().to(device)
-    print(test_rollout.size())
     prediction = hgn.forward(test_rollout, n_steps=10)
-    prediction.visualize()
-
-    hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    for i in range(prediction.reconstructed_rollout.size()[1]):
+        first_img = prediction.reconstructed_rollout[0, i].detach().numpy()
+        cv2.imshow("img", first_img)
+        cv2.waitKey(0)
+    # prediction.visualize()

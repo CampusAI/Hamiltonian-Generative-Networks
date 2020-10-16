@@ -67,7 +67,7 @@ class HgnResult():
         rollout = self.reconstructed_rollout.detach().numpy()
         rollout = np.squeeze(rollout, axis=0)
         rollout = np.array(np.split(rollout, len(self.q_s), axis=0))
-        print(rollout.shape)
+        # print(rollout.shape)
         rollout = rollout.transpose((0, 2, 3, 1))
 
         plt.hist(rollout.flatten())
@@ -75,8 +75,11 @@ class HgnResult():
 
         rollout = np.array(250*rollout, dtype=np.uint8)
 
+        if (rollout.shape[-1] == 1):
+            rollout = np.squeeze(rollout, axis=-1)
+
         # plt.hist(rollout.flatten())
 
-        print(rollout.shape)
-        print(rollout)
+        # print(rollout.shape)
+        # print(rollout)
         visualize_rollout(rollout)
