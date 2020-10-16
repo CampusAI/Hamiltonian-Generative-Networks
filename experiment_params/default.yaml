@@ -55,7 +55,7 @@ integrator:
 
 # Define optimization
 optimization:
-  epochs: 100
+  epochs: 10
   batch_size: 1
   # Learning rates
   encoder_lr: 1.5e-4

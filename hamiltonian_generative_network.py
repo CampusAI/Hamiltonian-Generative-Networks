@@ -124,7 +124,7 @@ class HGN():
         # Optimization step
         error.backward()
         self.optimizer.step()
-        return error
+        return float(error.detach().numpy())
 
     def load(self, directory):
         """Load networks' parameters

@@ -60,10 +60,8 @@ class ResidualBlock(nn.Module):
             A torch.Tensor with the up-sampled images, of shape (N, n_filters, H, W).
         """
         x = self.upsample(x)
-        print("x", x.shape)
         residual = self.dim_match_conv(
             x) if self.channels != self.n_filters else x
-        print("residual", residual.shape)
         x = self.leaky_relu(self.conv1(x))
         x = self.leaky_relu(self.conv2(x))
         x = self.sigmoid(x + residual)
@@ -141,8 +139,6 @@ class DecoderNet(nn.Module):
             Tensor of shape (out_channels, H * 2^3, W * 2^3) with the reconstructed image.
         """
         for layer in self.residual_blocks:
-            print("Before:", x.size())
             x = layer(x)
-            print("After:", x.size())
         x = self.out_conv(x)  # TODO: activation?
         return x

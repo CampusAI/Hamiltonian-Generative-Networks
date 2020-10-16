@@ -3,6 +3,7 @@
 import os
 
 import torch
+from tqdm import tqdm
 import yaml
 
 from environments.datasets import EnvironmentSampler
@@ -79,9 +80,11 @@ if __name__ == "__main__":
               channels=params["rollout"]["n_channels"])
 
     # Dataloader
+    dataset_len = params["optimization"]["epochs"] * params["optimization"][
+        "batch_size"]
     trainDS = EnvironmentSampler(
         environment=env,
-        dataset_len=100,
+        dataset_len=dataset_len,
         number_of_frames=params["rollout"]["seq_length"],
         delta_time=params["rollout"]["delta_time"],
         number_of_rollouts=params["optimization"]["batch_size"],
@@ -95,10 +98,10 @@ if __name__ == "__main__":
                                               shuffle=False,
                                               batch_size=None)
     errors = []
-    for rollout_batch in data_loader:
+    for rollout_batch in tqdm(data_loader):
         rollout_batch = rollout_batch.float().to(device)
         error = hgn.fit(rollout_batch)
-        errors.append(error)
+        errors.append(float(error))
 
     print("errors:\n", errors)
 
