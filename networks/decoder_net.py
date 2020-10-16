@@ -128,6 +128,7 @@ class DecoderNet(nn.Module):
             kernel_size=kernel_sizes[-1],
             padding=int(kernel_sizes[-1] / 2)  # To not resize the image
         )
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         """Apply the three residual blocks and the final convolutional layer.
@@ -140,5 +141,5 @@ class DecoderNet(nn.Module):
         """
         for layer in self.residual_blocks:
             x = layer(x)
-        x = self.out_conv(x)  # TODO: activation?
+        x = self.sigmoid(self.out_conv(x))
         return x
