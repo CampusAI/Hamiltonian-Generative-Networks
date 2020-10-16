@@ -126,7 +126,8 @@ if __name__ == "__main__":
     # print("errors:\n", errors)
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
-
+    import numpy as np
+    np.save("errors", errors)
     # test_rollout = env.sample_random_rollouts(
     #     number_of_frames=params["rollout"]["seq_length"],
     #     delta_time=params["rollout"]["delta_time"],
