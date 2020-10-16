@@ -36,7 +36,7 @@ if __name__ == "__main__":
         **params["networks"]["transformer"])
     hnn = HamiltonianNet(**params["networks"]["hamiltonian"])
     decoder = DecoderNet(
-        in_channels=params["networks"]["transformer"]["out_channels"] / 2,
+        in_channels=params["networks"]["transformer"]["out_channels"],
         out_channels=params["rollout"]["n_channels"],
         **params["networks"]["decoder"])
 

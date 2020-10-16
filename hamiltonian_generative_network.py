@@ -91,7 +91,7 @@ class HGN():
             prediction.append_state(q=q, p=p)
 
             # Compute state reconstruction
-            x_reconstructed = self.decoder(q=q)
+            x_reconstructed = self.decoder(q)
             prediction.append_reconstruction(x_reconstructed)
         return prediction
 
