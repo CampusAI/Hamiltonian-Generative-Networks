@@ -46,6 +46,8 @@ class ResidualBlock(nn.Module):
             padding=use_padding,
         )
         if in_channels != n_filters:
+            print("in_channels", in_channels)
+            print("n_filters", n_filters)
             self.dim_match_conv = nn.Conv2d(
                 in_channels=in_channels,
                 out_channels=n_filters,

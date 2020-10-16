@@ -20,13 +20,16 @@ if __name__ == "__main__":
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
 
+    # Set device
+    device = "cuda:" + str(params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+
     # Pick environment
     env = EnvFactory.get_environment(**params["environment"])
 
     # Instantiate networks
     encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
                          in_channels=params["rollout"]["n_channels"],
-                         **params["networks"]["encoder"])
+                         **params["networks"]["encoder"]).to(device)
     transformer = TransformerNet(
         in_channels=params["networks"]["encoder"]["out_channels"],
         **params["networks"]["transformer"])
@@ -86,12 +89,12 @@ if __name__ == "__main__":
                                  world_size=params["dataset"]["world_size"],
                                  seed=None)
     # Dataloader instance test, batch_mode disabled
-    train = torch.utils.data.DataLoader(trainDS,
+    data_loader = torch.utils.data.DataLoader(trainDS,
                                         shuffle=False,
                                         batch_size=None)
     errors = []
-    for rollout_batch in train:
-        rollout_batch = rollout_batch.float()
+    for rollout_batch in data_loader:
+        rollout_batch = rollout_batch.float().to(device)
         error = hgn.fit(rollout_batch)
         errors.append(error)
     
