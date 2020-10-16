@@ -35,12 +35,12 @@ if __name__ == "__main__":
                          **params["networks"]["encoder"]).to(device)
     transformer = TransformerNet(
         in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"])
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"])
+        **params["networks"]["transformer"]).to(device)
+    hnn = HamiltonianNet(**params["networks"]["hamiltonian"]).to(device)
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
         out_channels=params["rollout"]["n_channels"],
-        **params["networks"]["decoder"])
+        **params["networks"]["decoder"]).to(device)
 
     # Define HGN integrator
     integrator = utilities.integrator.Integrator(
