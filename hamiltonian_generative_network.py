@@ -116,7 +116,7 @@ class HGN():
         mu = prediction.z_mean
         logvar = prediction.z_logvar
         KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())  # NOTE(oleguer): Sum or mean?
-        
+
         # Compute loss
         beta = 0.  #TODO(Stathi) Compute beta value
         error = reconstruction_error + beta*KLD

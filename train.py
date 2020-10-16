@@ -100,47 +100,50 @@ if __name__ == "__main__":
                                               shuffle=False,
                                               batch_size=None)
     
-    hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
     
-    import cv2
+    # import cv2
     errors = []
-    KLD_errors = []
-    pbar = tqdm.tqdm(data_loader, )
+    # KLD_errors = []
+    pbar = tqdm.tqdm(data_loader)
+    i = 0
     for rollout_batch in pbar:
         # print(rollout_batch.shape)
         # cv2.imshow("img", 0.5 + 0.5*rollout_batch[0, 0, 0].numpy())
         # cv2.waitKey(0)
         rollout_batch = rollout_batch.float().to(device)
         error, kld = hgn.fit(rollout_batch)
-        errors.append(float(error))
-        KLD_errors.append(float(kld))
+        if i == 0:
+            errors.append(float(error))
+        # KLD_errors.append(float(kld))
         msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
         pbar.set_description(msg)
-    import matplotlib.pyplot as plt
-    plt.plot(list(range(len(errors))), errors)
+        i = (i + 1) % 1000
+    # import matplotlib.pyplot as plt
+    # plt.plot(list(range(len(errors))), errors)
     # plt.plot(list(range(len(errors))), KLD_errors)
-    plt.show()
+    # plt.show()
     # print("errors:\n", errors)
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
 
-    test_rollout = env.sample_random_rollouts(
-        number_of_frames=params["rollout"]["seq_length"],
-        delta_time=params["rollout"]["delta_time"],
-        number_of_rollouts=1,
-        img_size=params["dataset"]["img_size"],
-        color=params["rollout"]["n_channels"] == 3,
-        noise_std=params["dataset"]["noise_std"],
-        radius_bound=params["dataset"]["radius_bound"],
-        world_size=params["dataset"]["world_size"],
-        seed=1)
+    # test_rollout = env.sample_random_rollouts(
+    #     number_of_frames=params["rollout"]["seq_length"],
+    #     delta_time=params["rollout"]["delta_time"],
+    #     number_of_rollouts=1,
+    #     img_size=params["dataset"]["img_size"],
+    #     color=params["rollout"]["n_channels"] == 3,
+    #     noise_std=params["dataset"]["noise_std"],
+    #     radius_bound=params["dataset"]["radius_bound"],
+    #     world_size=params["dataset"]["world_size"],
+    #     seed=1)
     
-    test_rollout = test_rollout.transpose((0, 1, 4, 2, 3))
-    # visualize_rollout(test_rollout)
-    test_rollout = torch.tensor(test_rollout).float().to(device)
-    prediction = hgn.forward(test_rollout, n_steps=10)
-    for i in range(prediction.reconstructed_rollout.size()[1]):
-        first_img = prediction.reconstructed_rollout[0, i].detach().numpy()
-        cv2.imshow("img", first_img)
-        cv2.waitKey(0)
+    # test_rollout = test_rollout.transpose((0, 1, 4, 2, 3))
+    # # visualize_rollout(test_rollout)
+    # test_rollout = torch.tensor(test_rollout).float().to(device)
+    # prediction = hgn.forward(test_rollout, n_steps=10)
+    # for i in range(prediction.reconstructed_rollout.size()[1]):
+    #     first_img = prediction.reconstructed_rollout[0, i].detach().numpy()
+    #     cv2.imshow("img", first_img)
+    #     cv2.waitKey(0)
     # prediction.visualize()
