@@ -1,3 +1,7 @@
+# Experiment ID
+experiment_id: "test"
+model_save_dir: "saved_models"
+
 # Define environment
 environment:
   name: "Pendulum"
@@ -43,7 +47,7 @@ integrator:
 
 # Define optimization
 optimization:
-  training_steps: 1
+  epochs: 100
   batch_size: 1
   # Learning rates
   encoder_lr: 1.5e-4

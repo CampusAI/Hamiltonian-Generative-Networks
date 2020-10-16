@@ -1,3 +1,6 @@
+import os
+import pathlib
+
 import torch
 
 from utilities.integrator import Integrator
@@ -7,8 +10,13 @@ from utilities.hgn_result import HgnResult
 class HGN():
     """Hamiltonian Generative Network model.
     
-    This class models the HGN and allows implements its training and evaluation.
+    This class models the HGN and implements its training and evaluation.
     """
+    ENCODER_FILENAME = "encoder.pt"
+    TRANSFORMER_FILENAME = "transformer.pt"
+    HAMILTONIAN_FILENAME = "hamiltonian.pt"
+    DECODER_FILENAME = "decoder.pt"
+
     def __init__(self,
                  encoder,
                  transformer,
@@ -64,8 +72,8 @@ class HGN():
         prediction.set_input(rollout)
 
         # Latent distribution
-        z, z_mean, z_std = self.encoder(rollout)
-        prediction.set_z(z_mean=z_mean, z_std=z_std, z_sample=z)
+        z, z_mean, z_logvar = self.encoder(rollout)
+        prediction.set_z(z_mean=z_mean, z_logvar=z_logvar, z_sample=z)
 
         # Initial state
         q, p = self.transformer(z)
@@ -95,28 +103,47 @@ class HGN():
         Returns:
             float: Loss obtained forwarding the given rollouts batch.
         """
+        # Re-set gradients and forward new batch
         self.optimizer.zero_grad()
         prediction = self.forward(rollout=rollouts)
-        error = self.loss(input=prediction.input,
-                          target=prediction.reconstructed_rollout)
+        
+        # Compute frame reconstruction error
+        reconstruction_error = self.loss(input=prediction.input,
+                                target=prediction.reconstructed_rollout)
+    
+        # Compute KL divergence
+        mu = prediction.z_mean
+        logvar = prediction.z_logvar
+        KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())  # NOTE(oleguer): Sum or mean?
+        
+        # Compute loss
+        beta = 1  #TODO(Stathi) Compute beta value
+        error = reconstruction_error + beta*KLD
+        
+        # Optimization step
         error.backward()
-        # self.optimizer.step()
+        self.optimizer.step()
         return error
 
-    def load(self, file_name):
+    def load(self, directory):
         """Load networks' parameters
 
         Args:
-            file_name (string): Path to the saved models
+            directory (string): Path to the saved models
         """
-        # TODO(oleguer): Load networks' parameters
-        raise NotImplementedError
+        self.encoder = torch.load(os.path.join(directory, self.ENCODER_FILENAME))
+        self.transformer = torch.load(os.path.join(directory, self.TRANSFORMER_FILENAME))
+        self.hnn = torch.load(os.path.join(directory, self.HAMILTONIAN_FILENAME))
+        self.decoder = torch.load(os.path.join(directory, self.DECODER_FILENAME))
 
-    def save(self, file_name):
+    def save(self, directory):
         """Save networks' parameters
 
         Args:
-            file_name (string): Path where to save the models
+            directory (string): Path where to save the models, if does not exist it, is created
         """
-        # TODO(oleguer): Save networks' parameters
-        raise NotImplementedError
+        pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
+        torch.save(self.encoder, os.path.join(directory, self.ENCODER_FILENAME))
+        torch.save(self.transformer, os.path.join(directory, self.TRANSFORMER_FILENAME))
+        torch.save(self.hnn, os.path.join(directory, self.HAMILTONIAN_FILENAME))
+        torch.save(self.decoder, os.path.join(directory, self.DECODER_FILENAME))

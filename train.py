@@ -1,5 +1,7 @@
 """Script to train the Hamiltonian Generative Network
 """
+import os
+
 import torch
 import yaml
 
@@ -71,14 +73,16 @@ if __name__ == "__main__":
               seq_len=params["rollout"]["seq_length"],
               channels=params["rollout"]["n_channels"])
 
-    for i in range(params["optimization"]["training_steps"]):  # For each training step
-        # Sample rollouts from the environment NOTE: This will be changed into the dataloader once its implemented
-        rollouts = env.sample_random_rollouts(
-            seed=i,
-            number_of_frames=params["rollout"]["seq_length"],
-            delta_time=params["rollout"]["delta_time"],
-            number_of_rollouts=params["optimization"]["batch_size"],
-            color=(params["rollout"]["n_channels"]==3))
+    # for i in range(params["optimization"]["epochs"]):  # For each training step
+    #     # Sample rollouts from the environment NOTE: This will be changed into the dataloader once its implemented
+    #     rollouts = env.sample_random_rollouts(
+    #         seed=i,
+    #         number_of_frames=params["rollout"]["seq_length"],
+    #         delta_time=params["rollout"]["delta_time"],
+    #         number_of_rollouts=params["optimization"]["batch_size"],
+    #         color=(params["rollout"]["n_channels"]==3))
 
-        error = hgn.fit(rollouts)
-        break
+    #     error = hgn.fit(rollouts)
+    #     break
+
+hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
