@@ -3,9 +3,9 @@ import pathlib
 
 import torch
 
+from networks.inference_net import concat_rgb
 from utilities.integrator import Integrator
 from utilities.hgn_result import HgnResult
-
 
 class HGN():
     """Hamiltonian Generative Network model.
@@ -55,24 +55,25 @@ class HGN():
         self.optimizer = optimizer
         self.loss = loss
 
-    def forward(self, rollout, n_steps=None):
-        """Get the prediction of the HGN for a given rollout of n_steps.
+    def forward(self, rollout_batch, n_steps=None):
+        """Get the prediction of the HGN for a given rollout_batch of n_steps.
 
         Args:
-            rollout (torch.Tensor(N, C, H, W)): Image sequence of the system evolution concatenated along the channels' axis.
+            rollout_batch (torch.Tensor(N, C, H, W)): Image sequence of the system evolution concatenated along the channels' axis.
             n_steps (integer, optional): Number of guessed steps, if None will match seq_len. Defaults to None.
 
         Returns:
             HgnResult: Bundle of the intermediate and final results of the HGN output.
         """
-        assert (rollout.size()[1] == self.channels * self.seq_len)  # Wrong rollout channel dim
+        rollout_batch = concat_rgb(rollout_batch)
+        assert (rollout_batch.size()[1] == self.channels * self.seq_len)  # Wrong rollout_batch channel dim
         n_steps = self.seq_len if n_steps is None else n_steps  # If n_steps not specified, match input sequence length
 
         prediction = HgnResult()
-        prediction.set_input(rollout)
+        prediction.set_input(rollout_batch)
 
         # Latent distribution
-        z, z_mean, z_logvar = self.encoder(rollout)
+        z, z_mean, z_logvar = self.encoder(rollout_batch)
         prediction.set_z(z_mean=z_mean, z_logvar=z_logvar, z_sample=z)
 
         # Initial state
@@ -80,7 +81,7 @@ class HGN():
         prediction.append_state(q=q, p=p)
 
         # Initial state reconstruction
-        x_reconstructed = self.decoder(q=q)
+        x_reconstructed = self.decoder(q)
         prediction.append_reconstruction(x_reconstructed)
 
         # Estimate predictions
@@ -105,7 +106,7 @@ class HGN():
         """
         # Re-set gradients and forward new batch
         self.optimizer.zero_grad()
-        prediction = self.forward(rollout=rollouts)
+        prediction = self.forward(rollout_batch=rollouts)
         
         # Compute frame reconstruction error
         reconstruction_error = self.loss(input=prediction.input,
