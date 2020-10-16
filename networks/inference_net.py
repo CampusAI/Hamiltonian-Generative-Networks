@@ -110,17 +110,18 @@ class EncoderNet(nn.Module):
             the sequence of frames.
 
         Returns:
-            A tuple (z, mu, stddev), which are all N x 48 x H x W tensors. z is the latent encoding
-            for the given input sequence, while mu and stddev are distribution parameters.
+            A tuple (z, mu, log_var), which are all N x 48 x H x W tensors. z is the latent encoding
+            for the given input sequence, while mu and log_var are distribution parameters.
         """
         x = self.activation(self.input_conv(x))
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
-        mean = self.activation(self.out_mean(x))
-        stddev = torch.exp(0.5 * self.activation(self.out_logvar(x)))
+        mean = self.out_mean(x)
+        log_var = self.out_logvar(x)
+        stddev = torch.exp(0.5 * log_var)
         epsilon = torch.randn_like(mean)
         z = mean + stddev * epsilon
-        return z, mean, stddev
+        return z, mean, log_var
 
 
 class TransformerNet(nn.Module):
@@ -234,8 +235,8 @@ class TransformerNet(nn.Module):
             Two tensors of shape (batch_size, channels/2, ...) resulting from splitting the given
             tensor along the second dimension.
         """
-        assert encoding.shape[
-            1] % 2 == 0, 'The number of in_channels is odd. Cannot split properly.'
+        assert encoding.shape[1] % 2 == 0,\
+            'The number of in_channels is odd. Cannot split properly.'
         half_len = int(encoding.shape[1] / 2)
         q = encoding[:, :half_len]
         p = encoding[:, half_len:]
