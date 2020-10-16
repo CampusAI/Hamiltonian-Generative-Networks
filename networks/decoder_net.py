@@ -99,16 +99,16 @@ class DecoderNet(nn.Module):
                 layers for the i-th residual block.
         """
         super().__init__()
-        if all(var is None for var in(n_residual_blocks, n_filters, kernel_sizes)):
+        if all(var is None for var in (n_residual_blocks, n_filters, kernel_sizes)):
             n_residual_blocks = DecoderNet.DEFAULT_PARAMS['n_residual_blocks']
             n_filters = DecoderNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = DecoderNet.DEFAULT_PARAMS['kernel_sizes']
-        elif all(var is not None for var in(n_residual_blocks, n_filters, kernel_sizes)):
-            assert len(kernel_sizes) == n_residual_blocks, \
-                'kernel_sizes and upsample must be of length n_residual_blocks ('\
-                + str(n_residual_blocks) + ' in this case).'
-            assert len(n_filters) == n_residual_blocks - 1, 'n_filters must be of length ' \
-                'n_residual_blocks -1 (' + str(n_residual_blocks - 1) + ' in this case).'
+        elif all(var is not None for var in (n_residual_blocks, n_filters, kernel_sizes)):
+            assert len(kernel_sizes) == n_residual_blocks + 1, \
+                'kernel_sizes and upsample must be of length n_residual_blocks + 1 ('\
+                + str(n_residual_blocks + 1) + ' in this case).'
+            assert len(n_filters) == n_residual_blocks, 'n_filters must be of length ' \
+                'n_residual_blocks (' + str(n_residual_blocks) + ' in this case).'
         else:
             raise ValueError('Args n_residual_blocks, n_filters, kernel_size, upsample '
                              'can only be either all None, or all defined by the user.')
@@ -143,10 +143,3 @@ class DecoderNet(nn.Module):
             x = layer(x)
         x = self.out_conv(x)  # TODO: activation?
         return x
-
-
-if __name__ == '__main__':
-    decoder = DecoderNet(in_channels=16, out_channels=3)
-    inp = torch.randn((128, 16, 4, 4))
-    out = decoder(inp)
-    print(out.size())
