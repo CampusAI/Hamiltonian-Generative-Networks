@@ -24,7 +24,7 @@ class Pendulum(Environment):
         self.mass = mass
         self.length = length
         self.g = g
-        super(Pendulum, self).__init__(q=q, p=p)
+        super().__init__(q=q, p=p)
 
     def set(self, q, p):
         """Sets initial conditions for pendulum
