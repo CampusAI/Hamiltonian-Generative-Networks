@@ -121,12 +121,12 @@ if __name__ == "__main__":
         rollout_batch = rollout_batch.float().to(device)
         error, kld = hgn.fit(rollout_batch)
         fit_time = time.time() - time_start
-
+        if (i+1) % 100 == 0:
+            writer.add_scalar('data/error', error, i)
         if (i+1) % 1000 == 0:
             errors.append(float(error))
-            writer.add_scalar('data/error', error, i)
-        if (i+1) % 5000 == 0:
-            add_video('data/input', rollout_batch, i)
+        if (i+1) % 1000 == 0:
+            writer.add_video('data/input', rollout_batch.detach().cpu(), i)
         # KLD_errors.append(float(kld))
         msg = "Loss: %s, KL: %s, Sampling time: %.3f, Fit time: %.3f" % (
             round(error, 4), round(kld, 4), sampling_time, fit_time)
