@@ -2,9 +2,9 @@
 """
 import os
 
-from tensorboardX import SummaryWriter
 import time
 import torch
+from torch.utils.tensorboard import SummaryWriter
 import tqdm
 import yaml
 
@@ -125,7 +125,6 @@ if __name__ == "__main__":
             writer.add_scalar('data/error', error, i)
         if (i+1) % 1000 == 0:
             errors.append(float(error))
-        if (i+1) % 1000 == 0:
             writer.add_video('data/input', rollout_batch.detach().cpu(), i)
         # KLD_errors.append(float(kld))
         msg = "Loss: %s, KL: %s, Sampling time: %.3f, Fit time: %.3f" % (
