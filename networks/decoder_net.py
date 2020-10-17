@@ -10,8 +10,7 @@ from torch import nn
 class ResidualBlock(nn.Module):
     """A residual block that up-samples the input image by a factor of 2.
     """
-
-    def __init__(self, in_channels, n_filters=64, kernel_size=3, padding='same', upsample=True):
+    def __init__(self, in_channels, n_filters=64, kernel_size=3):
         """Instantiate the residual block, composed by a 2x up-sampling and two convolutional
         layers.
 
@@ -19,39 +18,28 @@ class ResidualBlock(nn.Module):
             in_channels (int): Number of input channels.
             n_filters (int): Number of filters, and thus output channels.
             kernel_size (int): Size of the convolutional kernels.
-            padding (Union[str, int]): Padding for the convolutional kernels. Can be an int,
-                or 'same' to automatically compute the padding to preserve the image size.
-            upsample (bool): Whether to upsample the image.
         """
         super().__init__()
         self.channels = in_channels
         self.n_filters = n_filters
-        self.upsample = upsample
-        if isinstance(padding, int):
-            use_padding = padding
-        elif padding == 'same':
-            use_padding = int(kernel_size / 2)
-        else:
-            raise ValueError('Padding argument not understood. Must be integer or "same".')
+        padding = int(kernel_size / 2)
         self.conv1 = nn.Conv2d(
             in_channels=in_channels,
             out_channels=n_filters,
             kernel_size=kernel_size,
-            padding=use_padding,
+            padding=padding,
         )
         self.conv2 = nn.Conv2d(
             in_channels=n_filters,
             out_channels=n_filters,
             kernel_size=kernel_size,
-            padding=use_padding,
+            padding=padding,
         )
         if in_channels != n_filters:
-            self.dim_match_conv = nn.Conv2d(
-                in_channels=in_channels,
-                out_channels=n_filters,
-                kernel_size=1,
-                padding=0
-            )
+            self.dim_match_conv = nn.Conv2d(in_channels=in_channels,
+                                            out_channels=n_filters,
+                                            kernel_size=1,
+                                            padding=0)
         self.leaky_relu = nn.LeakyReLU()
         self.upsample = nn.UpsamplingNearest2d(scale_factor=2)
         self.sigmoid = nn.Sigmoid()
@@ -69,11 +57,11 @@ class ResidualBlock(nn.Module):
                 is the number of in_channels.
 
         Returns:
-            A torch.Tensor with the upsampled images, of shape (N, n_filters, H, W).
+            A torch.Tensor with the up-sampled images, of shape (N, n_filters, H, W).
         """
-        if self.upsample:
-            x = self.upsample(x)
-        residual = self.dim_match_conv(x) if self.channels != self.n_filters else x
+        x = self.upsample(x)
+        residual = self.dim_match_conv(
+            x) if self.channels != self.n_filters else x
         x = self.leaky_relu(self.conv1(x))
         x = self.leaky_relu(self.conv2(x))
         x = self.sigmoid(x + residual)
@@ -89,13 +77,16 @@ class DecoderNet(nn.Module):
 
     DEFAULT_PARAMS = {
         'n_residual_blocks': 3,
-        'n_filters': [64, 64],
-        'kernel_sizes': [3, 3, 3],
-        'upsample': [True, True, True]
+        'n_filters': [64, 64, 64],
+        'kernel_sizes': [3, 3, 3, 3],
     }
 
-    def __init__(self, in_channels, out_channels=3, n_residual_blocks=None, n_filters=None,
-                 kernel_sizes=None, upsample=None):
+    def __init__(self,
+                 in_channels,
+                 out_channels=3,
+                 n_residual_blocks=None,
+                 n_filters=None,
+                 kernel_sizes=None):
         """Create the decoder network composed of the given number of residual blocks.
 
         Args:
@@ -107,36 +98,37 @@ class DecoderNet(nn.Module):
                 Therefore, n_filters must be of length n_residual_blocks - 1
             kernel_sizes(list): List where the i-th element is the kernel size of convolutional
                 layers for the i-th residual block.
-            upsample (list): List of booleans where the i-th element tells whether to upsample
-                the image in the i-th residual block.
         """
         super().__init__()
-        if all(var is None for var in(n_residual_blocks, n_filters, kernel_sizes, upsample)):
+        if all(var is None for var in (n_residual_blocks, n_filters, kernel_sizes)):
             n_residual_blocks = DecoderNet.DEFAULT_PARAMS['n_residual_blocks']
             n_filters = DecoderNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = DecoderNet.DEFAULT_PARAMS['kernel_sizes']
-            upsample = DecoderNet.DEFAULT_PARAMS['upsample']
-        elif all(var is not None for var in(n_residual_blocks, n_filters, kernel_sizes, upsample)):
-            assert len(kernel_sizes) == n_residual_blocks and len(upsample) == n_residual_blocks,\
-                'kernel_sizes and upsample must be of length n_residual_blocks ('\
-                + str(n_residual_blocks) + ' in this case).'
-            assert len(n_filters) == n_residual_blocks - 1, 'n_filters must be of length ' \
-                'n_residual_blocks -1 (' + str(n_residual_blocks - 1) + ' in this case).'
+        elif all(var is not None for var in (n_residual_blocks, n_filters, kernel_sizes)):
+            assert len(kernel_sizes) == n_residual_blocks + 1, \
+                'kernel_sizes and upsample must be of length n_residual_blocks + 1 ('\
+                + str(n_residual_blocks + 1) + ' in this case).'
+            assert len(n_filters) == n_residual_blocks, 'n_filters must be of length ' \
+                'n_residual_blocks (' + str(n_residual_blocks) + ' in this case).'
         else:
-            raise ValueError('Args n_residual_blocks, n_filters, kernel_size, upsample '
-                             'can only be either all None, or all defined by the user.')
-        filters = [in_channels] + n_filters + [out_channels]
-        self.residual_blocks = nn.ModuleList(
-            [
-                ResidualBlock(
-                    in_channels=filters[i],
-                    n_filters=filters[i+1],
-                    kernel_size=kernel_sizes[i],
-                    upsample=upsample[i]
-                )
-                for i in range(n_residual_blocks)
-            ]
+            raise ValueError(
+                'Args n_residual_blocks, n_filters, kernel_size, upsample '
+                'can only be either all None, or all defined by the user.')
+        filters = [in_channels] + n_filters
+        self.residual_blocks = nn.ModuleList([
+            ResidualBlock(
+                in_channels=int(filters[i]),
+                n_filters=int(filters[i + 1]),
+                kernel_size=int(kernel_sizes[i]),
+            ) for i in range(n_residual_blocks)
+        ])
+        self.out_conv = nn.Conv2d(
+            in_channels=filters[-1],
+            out_channels=out_channels,
+            kernel_size=kernel_sizes[-1],
+            padding=int(kernel_sizes[-1] / 2)  # To not resize the image
         )
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         """Apply the three residual blocks and the final convolutional layer.
@@ -149,11 +141,5 @@ class DecoderNet(nn.Module):
         """
         for layer in self.residual_blocks:
             x = layer(x)
+        x = self.sigmoid(self.out_conv(x))
         return x
-
-
-if __name__ == '__main__':
-    decoder = DecoderNet(in_channels=16, out_channels=3)
-    inp = torch.randn((1, 16, 4, 4))
-    out = decoder(inp)
-    print(out.size())

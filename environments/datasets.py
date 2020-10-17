@@ -2,9 +2,6 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from pendulum import Pendulum
-
-
 class EnvironmentSampler(Dataset):
     """Dataset for rollout sampling
     Given an environment and sampling conditions, the dataset samples rollouts as pytorch tensors.
@@ -89,6 +86,8 @@ class EnvironmentSampler(Dataset):
 # Sample code for DataLoader call
 if __name__ == "__main__":
     import time
+    from .pendulum import Pendulum
+
     pd = Pendulum(mass=.5, length=1, g=3)
     trainDS = EnvironmentSampler(environment=pd,
                                  dataset_len=100,
