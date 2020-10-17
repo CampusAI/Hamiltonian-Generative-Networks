@@ -105,7 +105,7 @@ if __name__ == "__main__":
                                               shuffle=False,
                                               batch_size=None)
 
-    # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
     # import cv2
     errors = []
@@ -119,7 +119,7 @@ if __name__ == "__main__":
         # cv2.imshow("img", 0.5 + 0.5*rollout_batch[0, 0, 0].numpy())
         # cv2.waitKey(0)
         rollout_batch = rollout_batch.float().to(device)
-        error, kld = hgn.fit(rollout_batch)
+        error, kld, prediction = hgn.fit(rollout_batch)
         fit_time = time.time() - time_start
         if (i+1) % 100 == 0:
             writer.add_scalar('data/error', error, i)
