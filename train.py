@@ -105,7 +105,7 @@ if __name__ == "__main__":
                                               shuffle=False,
                                               batch_size=None)
 
-    hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
     # import cv2
     errors = []
@@ -126,6 +126,8 @@ if __name__ == "__main__":
         if (i+1) % 1000 == 0:
             errors.append(float(error))
             writer.add_video('data/input', rollout_batch.detach().cpu(), i)
+            writer.add_video('data/reconstruction',
+                             prediction.reconstructed_rollout.unsqueeze(2).detach().cpu(), i)
         # KLD_errors.append(float(kld))
         msg = "Loss: %s, KL: %s, Sampling time: %.3f, Fit time: %.3f" % (
             round(error, 4), round(kld, 4), sampling_time, fit_time)
