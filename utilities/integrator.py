@@ -18,7 +18,8 @@ class Integrator:
         """
         if method not in self.METHODS:
             msg = "%s is not a supported method. " % (method)
-            msg += "Available methods are: " + "".join("%s " % m for m in self.METHODS)
+            msg += "Available methods are: " + "".join("%s " % m
+                                                       for m in self.METHODS)
             raise KeyError(msg)
 
         self.delta_t = delta_t
@@ -39,9 +40,17 @@ class Integrator:
         energy = hnn(q=q, p=p)
 
         # dq_dt = dH/dp
-        dq_dt = torch.autograd.grad(energy, p, create_graph=True, retain_graph=True)[0]
+        dq_dt = torch.autograd.grad(energy,
+                                    p,
+                                    create_graph=True,
+                                    retain_graph=True,
+                                    grad_outputs=torch.ones_like(energy))[0]
         # dp_dt = -dH/dq
-        dp_dt = -torch.autograd.grad(energy, q, create_graph=True, retain_graph=True)[0]
+        dp_dt = -torch.autograd.grad(energy,
+                                     q,
+                                     create_graph=True,
+                                     retain_graph=True,
+                                     grad_outputs=torch.ones_like(energy))[0]
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
@@ -92,10 +101,11 @@ class Integrator:
         k4_q, k4_p = self._get_grads(q_3, p_3, hnn)
 
         # Runge-Kutta 4 integration
-        q_next = q + self.delta_t * ((k1_q/6) + (k2_q/3) + (k3_q/3) + (k4_q/6))
-        p_next = p + self.delta_t * ((k1_p/6) + (k2_p/3) + (k3_p/3) + (k4_p/6))
+        q_next = q + self.delta_t * ((k1_q / 6) + (k2_q / 3) + (k3_q / 3) +
+                                     (k4_q / 6))
+        p_next = p + self.delta_t * ((k1_p / 6) + (k2_p / 3) + (k3_p / 3) +
+                                     (k4_p / 6))
         return q_next, p_next
-
 
     def step(self, q, p, hnn):
         """Compute next latent-space position and momentum.
