@@ -2,6 +2,8 @@
 """
 import os
 
+from tensorboardX import SummaryWriter
+import time
 import torch
 import tqdm
 import yaml
@@ -21,6 +23,9 @@ if __name__ == "__main__":
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
+
+    # Initialize tensorboard writer
+    writer = SummaryWriter()
 
     # Set device
     device = "cuda:" + str(
@@ -99,26 +104,35 @@ if __name__ == "__main__":
     data_loader = torch.utils.data.DataLoader(trainDS,
                                               shuffle=False,
                                               batch_size=None)
-    
+
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
-    
+
     # import cv2
     errors = []
     # KLD_errors = []
     pbar = tqdm.tqdm(data_loader)
-    i = 0
-    for rollout_batch in pbar:
+    time_end = time.time()
+    for i, rollout_batch in enumerate(pbar):
+        time_start = time.time()
+        sampling_time = time_start - time_end
         # print(rollout_batch.shape)
         # cv2.imshow("img", 0.5 + 0.5*rollout_batch[0, 0, 0].numpy())
         # cv2.waitKey(0)
         rollout_batch = rollout_batch.float().to(device)
         error, kld = hgn.fit(rollout_batch)
-        if i == 0:
+        fit_time = time.time() - time_start
+
+        if (i+1) % 1000 == 0:
             errors.append(float(error))
+            writer.add_scalar('data/error', error, i)
+        if (i+1) % 5000 == 0:
+            add_video('data/input', rollout_batch, i)
         # KLD_errors.append(float(kld))
-        msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
+        msg = "Loss: %s, KL: %s, Sampling time: %.3f, Fit time: %.3f" % (
+            round(error, 4), round(kld, 4))
         pbar.set_description(msg)
-        i = (i + 1) % 1000
+        time_end = time.time()
+
     # import matplotlib.pyplot as plt
     # plt.plot(list(range(len(errors))), errors)
     # plt.plot(list(range(len(errors))), KLD_errors)
@@ -138,7 +152,7 @@ if __name__ == "__main__":
     #     radius_bound=params["dataset"]["radius_bound"],
     #     world_size=params["dataset"]["world_size"],
     #     seed=1)
-    
+
     # test_rollout = test_rollout.transpose((0, 1, 4, 2, 3))
     # # visualize_rollout(test_rollout)
     # test_rollout = torch.tensor(test_rollout).float().to(device)
