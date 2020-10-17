@@ -15,14 +15,19 @@ from networks.hamiltonian_net import HamiltonianNet
 from networks.decoder_net import DecoderNet
 import utilities
 
-params_file = "experiment_params/default.yaml"
 
-if __name__ == "__main__":
-    # Read parameters
-    with open(params_file, 'r') as f:
-        params = yaml.load(f, Loader=yaml.FullLoader)
 
-    # Set device
+def train(params):
+    """Instantiate and train the HGN.
+
+    Args:
+        params (dictionary): Experiment parameters (see experiment_params folder)
+
+    Returns:
+        (HGN): Trained Hamiltonian Generative Network 
+        (list(float)): Training losses
+    """
+     # Set device
     device = "cuda:" + str(
         params["gpu_id"]) if torch.cuda.is_available() else "cpu"
 
@@ -103,23 +108,15 @@ if __name__ == "__main__":
         rollout_batch = rollout_batch.float().to(device)
         error = hgn.fit(rollout_batch)
         errors.append(float(error))
-    print("errors:\n", errors)
+    return HGN, errors
 
-    test_rollout = env.sample_random_rollouts(
-        number_of_frames=params["rollout"]["seq_length"],
-        delta_time=params["rollout"]["delta_time"],
-        number_of_rollouts=1,
-        img_size=params["dataset"]["img_size"],
-        noise_std=params["dataset"]["noise_std"],
-        radius_bound=params["dataset"]["radius_bound"],
-        world_size=params["dataset"]["world_size"],
-        seed=1)
-    
-    # visualize_rollout(test_rollout)
-    test_rollout = test_rollout.transpose((0, 1, 4, 2, 3))
-    test_rollout = torch.tensor(test_rollout).float().to(device)
-    print(test_rollout.size())
-    prediction = hgn.forward(test_rollout, n_steps=10)
-    prediction.visualize()
 
+if __name__ == "__main__":
+    params_file = "experiment_params/default.yaml"
+
+    # Read parameters
+    with open(params_file, 'r') as f:
+        params = yaml.load(f, Loader=yaml.FullLoader)
+
+    hgn, errors = train(params)
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
