@@ -129,7 +129,7 @@ if __name__ == "__main__":
             add_video('data/input', rollout_batch, i)
         # KLD_errors.append(float(kld))
         msg = "Loss: %s, KL: %s, Sampling time: %.3f, Fit time: %.3f" % (
-            round(error, 4), round(kld, 4))
+            round(error, 4), round(kld, 4), sampling_time, fit_time)
         pbar.set_description(msg)
         time_end = time.time()
 
