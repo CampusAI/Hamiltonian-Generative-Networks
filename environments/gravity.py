@@ -23,7 +23,7 @@ class NObjectGravity(Environment):
             q (ndarray, optional): Object generalized positions in 2-D space: Positions (m). Defaults to None
             p (ndarray, optional): Object generalized momentums in 2-D space : Linear momentums (kg*m/s). Defaults to None
         Raises:
-            NotImplementedError: If more than 2 objects are considered
+            NotImplementedError: If more than 7 objects are considered
         """
         self.mass = mass
         self.colors = ['y', 'r', 'g', 'b', 'c', 'p', 'w']
