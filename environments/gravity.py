@@ -101,7 +101,8 @@ class NObjectGravity(Environment):
             world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
-            vid (np.ndarray): Rendered rollout as a sequence of images
+            vid (np.ndarray): Numpy array of shape (seq_len, height, width, channels)
+                containing the rendered rollout as a sequence of images.
         """
         q = self._rollout.reshape(2, self.n_objects, 2, -1)[0]
         length = q.shape[-1]
