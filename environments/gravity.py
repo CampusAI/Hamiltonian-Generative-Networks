@@ -103,7 +103,7 @@ class NObjectGravity(Environment):
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
         """
-        q = self._rollout.reshape(2, self.n_objects, 2, -1)[0, :, :, :]
+        q = self._rollout.reshape(2, self.n_objects, 2, -1)[0]
         length = q.shape[-1]
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
