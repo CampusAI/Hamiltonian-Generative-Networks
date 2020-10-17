@@ -9,7 +9,7 @@ import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from hamiltonian_generative_network import HGN
-import environments.test_env as test_env
+import envs.test_env as test_env
 import networks.debug_networks as debug_networks
 import utilities.integrator as integrator
 

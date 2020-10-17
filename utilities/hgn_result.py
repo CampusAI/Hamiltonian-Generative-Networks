@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from environments.environments import visualize_rollout
+from envs.environments import visualize_rollout
 
 
 class HgnResult():

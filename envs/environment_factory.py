@@ -1,9 +1,13 @@
 """Environment factory class. Given a valid environment name and its constructor args, returns an instantiation of it
 """
-from .environments import Environment
-# TODO(Oleguer): Fix this, its not very nice to have to import all classes
-from .pendulum import Pendulum
-from .spring import Spring
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from environments import Environment
+from pendulum import Pendulum
+from spring import Spring
 
 
 class EnvFactory():
@@ -44,6 +48,7 @@ if __name__ == "__main__":
                                         delta_time=0.1,
                                         number_of_rollouts=16,
                                         img_size=32,
+                                        color=False,
                                         noise_std=0.,
                                         seed=23)
     fig = plt.figure()
