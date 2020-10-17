@@ -12,7 +12,7 @@ Re-implementation of Hamiltonian Generative Networks [paper](https://arxiv.org/a
 
 To train the HGN, run [train.py](train.py)
 
-- **[Environments](envs/)**: You can find the implementation of the physical environments used to get the ground truth data.
+- **[Environments](environments/)**: You can find the implementation of the physical environments used to get the ground truth data.
 
 - **[Networks](networks/)**: Contains the definitions of the main ANNs used: Encoder, Transformer, Hamiltonian, and Decoder.
 

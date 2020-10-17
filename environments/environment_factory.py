@@ -5,7 +5,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from environments import Environment
+from environment import Environment
 from pendulum import Pendulum
 from spring import Spring
 

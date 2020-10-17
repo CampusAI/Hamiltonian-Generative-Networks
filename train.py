@@ -6,9 +6,9 @@ import torch
 from tqdm import tqdm
 import yaml
 
-from envs.datasets import EnvironmentSampler
-from envs.environments import visualize_rollout
-from envs.environment_factory import EnvFactory
+from environments.datasets import EnvironmentSampler
+from environments.environment import visualize_rollout
+from environments.environment_factory import EnvFactory
 from hamiltonian_generative_network import HGN
 from networks.inference_net import EncoderNet, TransformerNet
 from networks.hamiltonian_net import HamiltonianNet
