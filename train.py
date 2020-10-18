@@ -117,7 +117,7 @@ def train(params):
 
 
 if __name__ == "__main__":
-    params_file = "experiment_params/overfit_test.yaml"
+    params_file = "experiment_params/randomized_test.yaml"
     
     # Read parameters
     with open(params_file, 'r') as f:
