@@ -18,11 +18,12 @@ dataset:
   radius_bound: [0.5, 1.5]
   world_size: 1.5
   random: True
+  data_root: "datasets/"
 
 # Define rollout
 rollout:
   seq_length: 20
-  delta_time: 0.1
+  delta_time: 0.125
   n_channels: 1
 
 # Define networks architectures
@@ -52,8 +53,8 @@ networks:
 
 # Define optimization
 optimization:
-  epochs: 50000
-  batch_size: 1
+  epochs: 10
+  batch_size: 10
   # Learning rates
   encoder_lr: 2.e-4
   transformer_lr: 2.e-4

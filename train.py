@@ -7,7 +7,7 @@ import torch
 import tqdm
 import yaml
 
-from environments.datasets import EnvironmentSampler
+from environments.datasets import EnvironmentSampler, EnvironmentLoader
 from environments.environment import visualize_rollout
 from environments.environment_factory import EnvFactory
 from hamiltonian_generative_network import HGN
@@ -18,14 +18,13 @@ from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
 
 
-
 def train(params):
     """Instantiate and train the HGN.
 
     Args:
         params (dictionary): Experiment parameters (see experiment_params folder)
     """
-     # Set device
+    # Set device
     device = "cuda:" + str(
         params["gpu_id"]) if torch.cuda.is_available() else "cpu"
 
@@ -82,7 +81,8 @@ def train(params):
               seq_len=params["rollout"]["seq_length"],
               channels=params["rollout"]["n_channels"])
 
-    # Dataloader
+    # Dataloaded
+    """
     dataset_len = params["optimization"]["epochs"] * params["optimization"][
         "batch_size"]
     seed = None if params["dataset"]["random"] else 0
@@ -98,10 +98,12 @@ def train(params):
         radius_bound=params["dataset"]["radius_bound"],
         world_size=params["dataset"]["world_size"],
         seed=seed)
+    """
+    trainDS = EnvironmentLoader(params["dataset"]["data_root"])
     # Dataloader instance test, batch_mode disabled
     data_loader = torch.utils.data.DataLoader(trainDS,
                                               shuffle=False,
-                                              batch_size=None)
+                                              batch_size=params["optimization"]["batch_size"])
 
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
     training_logger = TrainingLogger(hyper_params=params,
@@ -109,24 +111,27 @@ def train(params):
                                      rollout_freq=100)
 
     # Initialize tensorboard writer
-    pbar = tqdm.tqdm(data_loader)
-    for i, rollout_batch in enumerate(pbar):
-        rollout_batch = rollout_batch.float().to(device)
-        error, kld, prediction = hgn.fit(rollout_batch)
-        training_logger.step(losses=(error, kld),
-                             rollout_batch=rollout_batch,
-                             prediction=prediction)
-        msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
-        pbar.set_description(msg)
-    hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    for ep in range(params["optimization"]["epochs"]):
+        print("Epoch " + str(ep))
+        pbar = tqdm.tqdm(data_loader)
+        for i, rollout_batch in enumerate(pbar):
+            rollout_batch = rollout_batch.float().to(device)
+            error, kld, prediction = hgn.fit(rollout_batch)
+            training_logger.step(losses=(error, kld),
+                                 rollout_batch=rollout_batch,
+                                 prediction=prediction)
+            msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
+            pbar.set_description(msg)
+        hgn.save(os.path.join(
+            params["model_save_dir"], params["experiment_id"]))
 
 
 if __name__ == "__main__":
-    params_file = "experiment_params/default.yaml"
-    
+    params_file = "experiment_params/randomized_test_2.yaml"
+
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-    
+
     # Train HGN network
     train(params)
