@@ -4,7 +4,6 @@ import os
 
 import time
 import torch
-from torch.utils.tensorboard import SummaryWriter
 import tqdm
 import yaml
 
@@ -15,17 +14,15 @@ from hamiltonian_generative_network import HGN
 from networks.inference_net import EncoderNet, TransformerNet
 from networks.hamiltonian_net import HamiltonianNet
 from networks.decoder_net import DecoderNet
-import utilities
+from utilities.integrator import Integrator
+from utilities.training_logger import TrainingLogger
 
-params_file = "experiment_params/small.yaml"
+params_file = "experiment_params/overfit_test.yaml"
 
 if __name__ == "__main__":
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-
-    # Initialize tensorboard writer
-    writer = SummaryWriter()
 
     # Set device
     device = "cuda:" + str(
@@ -48,9 +45,8 @@ if __name__ == "__main__":
         **params["networks"]["decoder"]).to(device)
 
     # Define HGN integrator
-    integrator = utilities.integrator.Integrator(
-        delta_t=params["rollout"]["delta_time"],
-        method=params["integrator"]["method"])
+    integrator = Integrator(delta_t=params["rollout"]["delta_time"],
+                            method=params["integrator"]["method"])
 
     # Define optimization modules
     optim_params = [
@@ -99,40 +95,25 @@ if __name__ == "__main__":
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
         world_size=params["dataset"]["world_size"],
-        seed=None)
+        seed=0)
     # Dataloader instance test, batch_mode disabled
     data_loader = torch.utils.data.DataLoader(trainDS,
                                               shuffle=False,
                                               batch_size=None)
 
-    # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    training_logger = TrainingLogger(loss_freq=100, rollout_freq=100)
 
-    # import cv2
-    errors = []
-    # KLD_errors = []
+    # Initialize tensorboard writer
     pbar = tqdm.tqdm(data_loader)
-    time_end = time.time()
     for i, rollout_batch in enumerate(pbar):
-        time_start = time.time()
-        sampling_time = time_start - time_end
-        # print(rollout_batch.shape)
-        # cv2.imshow("img", 0.5 + 0.5*rollout_batch[0, 0, 0].numpy())
-        # cv2.waitKey(0)
         rollout_batch = rollout_batch.float().to(device)
         error, kld, prediction = hgn.fit(rollout_batch)
-        fit_time = time.time() - time_start
-        if (i+1) % 100 == 0:
-            writer.add_scalar('data/error', error, i)
-        if (i+1) % 1000 == 0:
-            errors.append(float(error))
-            writer.add_video('data/input', rollout_batch.detach().cpu(), i)
-            writer.add_video('data/reconstruction',
-                             prediction.reconstructed_rollout.unsqueeze(2).detach().cpu(), i)
-        # KLD_errors.append(float(kld))
-        msg = "Loss: %s, KL: %s, Sampling time: %.3f, Fit time: %.3f" % (
-            round(error, 4), round(kld, 4), sampling_time, fit_time)
+        training_logger.step(losses=(error, kld),
+                             rollout_batch=rollout_batch,
+                             prediction=prediction)
+        msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
         pbar.set_description(msg)
-        time_end = time.time()
 
     # import matplotlib.pyplot as plt
     # plt.plot(list(range(len(errors))), errors)
@@ -141,8 +122,6 @@ if __name__ == "__main__":
     # print("errors:\n", errors)
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
-    import numpy as np
-    np.save("errors", errors)
     # test_rollout = env.sample_random_rollouts(
     #     number_of_frames=params["rollout"]["seq_length"],
     #     delta_time=params["rollout"]["delta_time"],
