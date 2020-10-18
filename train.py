@@ -8,7 +8,7 @@ import tqdm
 import yaml
 
 from environments.datasets import EnvironmentSampler
-from environments.environments import visualize_rollout
+from environments.environment import visualize_rollout
 from environments.environment_factory import EnvFactory
 from hamiltonian_generative_network import HGN
 from networks.inference_net import EncoderNet, TransformerNet
@@ -18,8 +18,14 @@ from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
 
 
+
 def train(params):
-    # Set device
+    """Instantiate and train the HGN.
+
+    Args:
+        params (dictionary): Experiment parameters (see experiment_params folder)
+    """
+     # Set device
     device = "cuda:" + str(
         params["gpu_id"]) if torch.cuda.is_available() else "cpu"
 
@@ -112,12 +118,11 @@ def train(params):
                              prediction=prediction)
         msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
         pbar.set_description(msg)
-
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
 
 if __name__ == "__main__":
-    params_file = "experiment_params/randomized_test.yaml"
+    params_file = "experiment_params/default.yaml"
     
     # Read parameters
     with open(params_file, 'r') as f:
