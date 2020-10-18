@@ -17,13 +17,8 @@ from networks.decoder_net import DecoderNet
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
 
-params_file = "experiment_params/overfit_test.yaml"
 
-if __name__ == "__main__":
-    # Read parameters
-    with open(params_file, 'r') as f:
-        params = yaml.load(f, Loader=yaml.FullLoader)
-
+def train(params):
     # Set device
     device = "cuda:" + str(
         params["gpu_id"]) if torch.cuda.is_available() else "cpu"
@@ -84,6 +79,7 @@ if __name__ == "__main__":
     # Dataloader
     dataset_len = params["optimization"]["epochs"] * params["optimization"][
         "batch_size"]
+    seed = None if params["dataset"]["random"] else 0
     trainDS = EnvironmentSampler(
         environment=env,
         dataset_len=dataset_len,
@@ -95,14 +91,16 @@ if __name__ == "__main__":
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
         world_size=params["dataset"]["world_size"],
-        seed=0)
+        seed=seed)
     # Dataloader instance test, batch_mode disabled
     data_loader = torch.utils.data.DataLoader(trainDS,
                                               shuffle=False,
                                               batch_size=None)
 
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
-    training_logger = TrainingLogger(hyper_params=params, loss_freq=100, rollout_freq=100)
+    training_logger = TrainingLogger(hyper_params=params,
+                                     loss_freq=100,
+                                     rollout_freq=100)
 
     # Initialize tensorboard writer
     pbar = tqdm.tqdm(data_loader)
@@ -115,30 +113,15 @@ if __name__ == "__main__":
         msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
         pbar.set_description(msg)
 
-    # import matplotlib.pyplot as plt
-    # plt.plot(list(range(len(errors))), errors)
-    # plt.plot(list(range(len(errors))), KLD_errors)
-    # plt.show()
-    # print("errors:\n", errors)
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
-    # test_rollout = env.sample_random_rollouts(
-    #     number_of_frames=params["rollout"]["seq_length"],
-    #     delta_time=params["rollout"]["delta_time"],
-    #     number_of_rollouts=1,
-    #     img_size=params["dataset"]["img_size"],
-    #     color=params["rollout"]["n_channels"] == 3,
-    #     noise_std=params["dataset"]["noise_std"],
-    #     radius_bound=params["dataset"]["radius_bound"],
-    #     world_size=params["dataset"]["world_size"],
-    #     seed=1)
 
-    # test_rollout = test_rollout.transpose((0, 1, 4, 2, 3))
-    # # visualize_rollout(test_rollout)
-    # test_rollout = torch.tensor(test_rollout).float().to(device)
-    # prediction = hgn.forward(test_rollout, n_steps=10)
-    # for i in range(prediction.reconstructed_rollout.size()[1]):
-    #     first_img = prediction.reconstructed_rollout[0, i].detach().numpy()
-    #     cv2.imshow("img", first_img)
-    #     cv2.waitKey(0)
-    # prediction.visualize()
+if __name__ == "__main__":
+    params_file = "experiment_params/overfit_test.yaml"
+    
+    # Read parameters
+    with open(params_file, 'r') as f:
+        params = yaml.load(f, Loader=yaml.FullLoader)
+    
+    # Train HGN network
+    train(params)

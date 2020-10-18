@@ -1,10 +1,12 @@
+import os
+
 from torch.utils.tensorboard import SummaryWriter
 
 
 class TrainingLogger:
     def __init__(self, hyper_params, loss_freq=100, rollout_freq=1000):
-        self.writer = SummaryWriter()
-        self.writer.add_text('data/hyperparams', str(hyper_params))
+        self.writer = SummaryWriter(log_dir=os.path.join("runs", hyper_params["experiment_id"]))
+        self.writer.add_text('data/hyperparams', str(hyper_params), 0)
         self.iteration = 0
         self.loss_freq = loss_freq
         self.rollout_freq = rollout_freq
