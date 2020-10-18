@@ -46,8 +46,14 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _draw(self):
-        """Returns array of the environment evolution
+    def _draw(self, img_size, color, world_size):
+        """Returns array of the environment evolution.
+
+        Args:
+            img_size (int): Size of the frames (in pixels).
+            color (bool): Whether to have colored or grayscale frames.
+            world_size (float): Spatial extent of the window where the rendering is taking place
+                (in meters).
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
@@ -76,8 +82,8 @@ class Environment(ABC):
         Raises:
             AssertError: If p or q are None
         """
-        assert self.q != None
-        assert self.p != None
+        assert self.q is not None
+        assert self.p is not None
 
         t_eval = np.linspace(0, total_time,
                              round(total_time / delta_time) + 1)[:-1]
