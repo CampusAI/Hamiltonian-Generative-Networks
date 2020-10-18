@@ -102,7 +102,7 @@ if __name__ == "__main__":
                                               batch_size=None)
 
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
-    training_logger = TrainingLogger(loss_freq=100, rollout_freq=100)
+    training_logger = TrainingLogger(hyper_params=params, loss_freq=100, rollout_freq=100)
 
     # Initialize tensorboard writer
     pbar = tqdm.tqdm(data_loader)

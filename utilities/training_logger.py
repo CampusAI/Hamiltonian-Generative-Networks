@@ -2,8 +2,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class TrainingLogger:
-    def __init__(self, loss_freq=100, rollout_freq=1000):
+    def __init__(self, hyper_params, loss_freq=100, rollout_freq=1000):
         self.writer = SummaryWriter()
+        self.writer.add_text('data/hyperparams', str(hyper_params))
         self.iteration = 0
         self.loss_freq = loss_freq
         self.rollout_freq = rollout_freq
