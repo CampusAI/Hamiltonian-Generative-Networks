@@ -25,7 +25,8 @@ class EnvironmentSampler(Dataset):
                  noise_std,
                  radius_bound,
                  world_size,
-                 seed):
+                 seed,
+                 dtype=torch.float):
         """Instantiate the EnvironmentSampler.
 
         Args:
@@ -43,6 +44,7 @@ class EnvironmentSampler(Dataset):
                 r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
             world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
             seed (int): Seed for reproducibility.
+            dtype (torch.type): Type of the sampled tensors.
         """
         self.environment = environment
         self.dataset_len = dataset_len
@@ -55,6 +57,7 @@ class EnvironmentSampler(Dataset):
         self.radius_bound = radius_bound
         self.world_size = world_size
         self.seed = seed
+        self.dtype = dtype
 
     def __len__(self):
         """Get dataset length
@@ -84,6 +87,7 @@ class EnvironmentSampler(Dataset):
             radius_bound=self.radius_bound,
             world_size=self.world_size,
             seed=self.seed)
+        rolls = torch.from_numpy(rolls).type(self.dtype)
         return conversions.to_channels_first(rolls)
 
 
