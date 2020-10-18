@@ -17,6 +17,7 @@ dataset:
   noise_std: 0
   radius_bound: [1.3, 2.3]
   world_size: 1.5
+  random: True
 
 # Define rollout
 rollout:
