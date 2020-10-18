@@ -246,22 +246,6 @@ class TransformerNet(nn.Module):
         return q, p
 
 
-def concat_rgb(sequences_batch):
-    """Concatenate the images along channel dimension.
-
-    Args:
-        sequences_batch (torch.Tensor): A Tensor with shape (batch_size, seq_len, channels, height, width)
-            containing the images of the sequence.
-
-    Returns:
-        A Tensor with shape (batch_size, seq_len * channels, height, width) with the images
-        concatenated along the channel dimension.
-    """
-    batch_size, seq_len, channels, h, w = sequences_batch.size()
-    return torch.reshape(sequences_batch,
-                         shape=(batch_size, seq_len * channels, h, w))
-
-
 if __name__ == '__main__':
     encoder = EncoderNet(seq_len=10,
                          in_channels=3,
