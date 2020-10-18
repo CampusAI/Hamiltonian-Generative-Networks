@@ -20,7 +20,7 @@ dataset:
 
 # Define rollout
 rollout:
-  seq_length: 30
+  seq_length: 10
   delta_time: 0.1
   n_channels: 1
 
@@ -55,7 +55,7 @@ integrator:
 
 # Define optimization
 optimization:
-  epochs: 1000
+  epochs: 2000
   batch_size: 1
   # Learning rates
   encoder_lr: 1.5e-3
