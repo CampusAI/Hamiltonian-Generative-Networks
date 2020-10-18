@@ -119,9 +119,9 @@ class EncoderNet(nn.Module):
         mean = self.out_mean(x)
         log_var = self.out_logvar(x)
         stddev = torch.exp(0.5 * log_var)
-        # epsilon = torch.randn_like(mean)
-        # z = mean + stddev * epsilon
-        return mean, mean, log_var
+        epsilon = torch.randn_like(mean)
+        z = mean + stddev * epsilon
+        return z, mean, log_var
 
 
 class TransformerNet(nn.Module):
