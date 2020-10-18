@@ -20,9 +20,9 @@ dataset:
 
 # Define rollout
 rollout:
-  seq_length: 1
+  seq_length: 30
   delta_time: 0.1
-  n_channels: 1
+  n_channels: 3
 
 # Define networks architectures
 networks:
