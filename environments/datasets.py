@@ -91,11 +91,11 @@ class EnvironmentSampler(Dataset):
 
 
 class EnvironmentLoader(Dataset):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, data_mean=1., data_std=1.):
         self.root_dir = root_dir
         self.file_list = os.listdir(root_dir)
-        self.data_mean = .5
-        self.data_std = .5
+        self.data_mean = data_mean
+        self.data_std = data_std
 
     def __len__(self):
         return len(self.file_list)
