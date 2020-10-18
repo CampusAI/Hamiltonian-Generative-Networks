@@ -102,12 +102,13 @@ class EncoderNet(nn.Module):
         self.activation = act_func
         self.type(dtype)
 
-    def forward(self, x):
+    def forward(self, x, sample=True):
         """Compute the encoding of the given sequence of images.
 
         Args:
             x (torch.Tensor): A (batch_size, seq_len * channels, height, width) tensor containing
             the sequence of frames.
+            sample (bool): Whether to sample from the encoding distribution or returning the mean.
 
         Returns:
             A tuple (z, mu, log_var), which are all N x 48 x H x W tensors. z is the latent encoding
@@ -117,11 +118,14 @@ class EncoderNet(nn.Module):
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
         mean = self.out_mean(x)
-        log_var = self.out_logvar(x)
-        stddev = torch.exp(0.5 * log_var)
-        epsilon = torch.randn_like(mean)
-        z = mean + stddev * epsilon
-        return z, mean, log_var
+        if sample:
+            log_var = self.out_logvar(x)
+            stddev = torch.exp(0.5 * log_var)
+            epsilon = torch.randn_like(mean)
+            z = mean + stddev * epsilon
+            return z, mean, log_var
+        else:
+            return mean, None, None  # Return None to ensure that they're not used in loss
 
 
 class TransformerNet(nn.Module):
@@ -167,8 +171,7 @@ class TransformerNet(nn.Module):
         super().__init__()
         if all(var is None for var in (hidden_conv_layers, n_filters,
                                        kernel_sizes, strides)):
-            hidden_conv_layers = TransformerNet.DEFAULT_PARAMS[
-                'hidden_conv_layers']
+            hidden_conv_layers = TransformerNet.DEFAULT_PARAMS['hidden_conv_layers']
             n_filters = TransformerNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = TransformerNet.DEFAULT_PARAMS['kernel_sizes']
             strides = TransformerNet.DEFAULT_PARAMS['strides']
