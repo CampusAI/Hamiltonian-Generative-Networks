@@ -104,7 +104,7 @@ class EnvironmentLoader(Dataset):
         rolls = np.load(os.path.join(
             self.root_dir, self.file_list[i]))['arr_0']
         rolls = (rolls - self.data_mean) / self.data_std
-        return rolls.transpose((0, 1, 4, 2, 3))
+        return rolls.transpose((0, 3, 1, 2))
 
 
 # Sample code for DataLoader call
