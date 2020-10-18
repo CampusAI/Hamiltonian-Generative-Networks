@@ -1,3 +1,6 @@
+import os
+
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -7,6 +10,7 @@ class EnvironmentSampler(Dataset):
     """Dataset for rollout sampling
     Given an environment and sampling conditions, the dataset samples rollouts as pytorch tensors.
     """
+
     def __init__(self,
                  environment,
                  dataset_len,
@@ -87,6 +91,23 @@ class EnvironmentSampler(Dataset):
         return rolls.transpose((0, 1, 4, 2, 3))
 
 
+class EnvironmentLoader(Dataset):
+    def __init__(self, root_dir, data_mean=0., data_std=1.):
+        self.root_dir = root_dir
+        self.file_list = os.listdir(root_dir)
+        self.data_mean = data_mean
+        self.data_std = data_std
+
+    def __len__(self):
+        return len(self.file_list)
+
+    def __getitem__(self, i):
+        rolls = np.load(os.path.join(
+            self.root_dir, self.file_list[i]))['arr_0']
+        rolls = (rolls - self.data_mean) / self.data_std
+        return rolls.transpose((0, 3, 1, 2))
+
+
 # Sample code for DataLoader call
 if __name__ == "__main__":
     import time
@@ -124,4 +145,15 @@ if __name__ == "__main__":
     sample = next(iter(train))
     end = time.time()
 
+    print(sample.size(), "Sampled in " + str(end - start) + " s")
+
+    trainDS = EnvironmentLoader('../datasets/pendulum_data/train')
+
+    train = torch.utils.data.DataLoader(trainDS,
+                                        shuffle=False,
+                                        batch_size=10,
+                                        num_workers=4)
+    start = time.time()
+    sample = next(iter(train))
+    end = time.time()
     print(sample.size(), "Sampled in " + str(end - start) + " s")
