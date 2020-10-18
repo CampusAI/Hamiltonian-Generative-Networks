@@ -42,7 +42,7 @@ networks:
   hamiltonian:
     hidden_conv_layers: 5
     in_shape: [16, 4, 4]  # Should be coherent with transformer output
-    n_filters: [16, 32, 32, 32, 32, 32, 32]
+    n_filters: [32, 32, 32, 32, 32, 32, 32]
     kernel_sizes: [3, 3, 3, 3, 3, 3, 3]
     strides: [1, 1, 1, 1, 1, 1, 1]
   decoder:
