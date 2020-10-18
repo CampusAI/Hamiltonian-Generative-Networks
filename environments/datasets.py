@@ -91,7 +91,7 @@ class EnvironmentSampler(Dataset):
 
 
 class EnvironmentLoader(Dataset):
-    def __init__(self, root_dir, data_mean=1., data_std=1.):
+    def __init__(self, root_dir, data_mean=0., data_std=1.):
         self.root_dir = root_dir
         self.file_list = os.listdir(root_dir)
         self.data_mean = data_mean
