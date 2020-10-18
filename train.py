@@ -2,8 +2,9 @@
 """
 import os
 
+import time
 import torch
-from tqdm import tqdm
+import tqdm
 import yaml
 
 from environments.datasets import EnvironmentSampler
@@ -13,7 +14,8 @@ from hamiltonian_generative_network import HGN
 from networks.inference_net import EncoderNet, TransformerNet
 from networks.hamiltonian_net import HamiltonianNet
 from networks.decoder_net import DecoderNet
-import utilities
+from utilities.integrator import Integrator
+from utilities.training_logger import TrainingLogger
 
 
 
@@ -22,10 +24,6 @@ def train(params):
 
     Args:
         params (dictionary): Experiment parameters (see experiment_params folder)
-
-    Returns:
-        (HGN): Trained Hamiltonian Generative Network 
-        (list(float)): Training losses
     """
      # Set device
     device = "cuda:" + str(
@@ -40,17 +38,16 @@ def train(params):
                          **params["networks"]["encoder"]).to(device)
     transformer = TransformerNet(
         in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"])
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"])
+        **params["networks"]["transformer"]).to(device)
+    hnn = HamiltonianNet(**params["networks"]["hamiltonian"]).to(device)
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
         out_channels=params["rollout"]["n_channels"],
-        **params["networks"]["decoder"])
+        **params["networks"]["decoder"]).to(device)
 
     # Define HGN integrator
-    integrator = utilities.integrator.Integrator(
-        delta_t=params["rollout"]["delta_time"],
-        method=params["integrator"]["method"])
+    integrator = Integrator(delta_t=params["rollout"]["delta_time"],
+                            method=params["integrator"]["method"])
 
     # Define optimization modules
     optim_params = [
@@ -88,6 +85,7 @@ def train(params):
     # Dataloader
     dataset_len = params["optimization"]["epochs"] * params["optimization"][
         "batch_size"]
+    seed = None if params["dataset"]["random"] else 0
     trainDS = EnvironmentSampler(
         environment=env,
         dataset_len=dataset_len,
@@ -95,28 +93,40 @@ def train(params):
         delta_time=params["rollout"]["delta_time"],
         number_of_rollouts=params["optimization"]["batch_size"],
         img_size=params["dataset"]["img_size"],
+        color=params["rollout"]["n_channels"] == 3,
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
         world_size=params["dataset"]["world_size"],
-        seed=None)
+        seed=seed)
     # Dataloader instance test, batch_mode disabled
     data_loader = torch.utils.data.DataLoader(trainDS,
                                               shuffle=False,
                                               batch_size=None)
-    errors = []
-    for rollout_batch in tqdm(data_loader):
+
+    # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    training_logger = TrainingLogger(hyper_params=params,
+                                     loss_freq=100,
+                                     rollout_freq=100)
+
+    # Initialize tensorboard writer
+    pbar = tqdm.tqdm(data_loader)
+    for i, rollout_batch in enumerate(pbar):
         rollout_batch = rollout_batch.float().to(device)
-        error = hgn.fit(rollout_batch)
-        errors.append(float(error))
-    return HGN, errors
+        error, kld, prediction = hgn.fit(rollout_batch)
+        training_logger.step(losses=(error, kld),
+                             rollout_batch=rollout_batch,
+                             prediction=prediction)
+        msg = "Loss: %s, KL: %s" % (round(error, 4), round(kld, 4))
+        pbar.set_description(msg)
+    hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
 
 if __name__ == "__main__":
     params_file = "experiment_params/default.yaml"
-
+    
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-
-    hgn, errors = train(params)
-    hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    
+    # Train HGN network
+    train(params)

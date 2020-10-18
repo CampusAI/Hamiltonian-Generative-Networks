@@ -113,18 +113,20 @@ class HGN():
                                 target=prediction.reconstructed_rollout)
     
         # Compute KL divergence
-        mu = prediction.z_mean
-        logvar = prediction.z_logvar
-        KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())  # NOTE(oleguer): Sum or mean?
-        
+        KLD = 0. # TODO(oleguer): Use KL divergence
+        # mu = prediction.z_mean
+        # logvar = prediction.z_logvar
+        # KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())  # NOTE(oleguer): Sum or mean?
+
         # Compute loss
-        beta = 1  #TODO(Stathi) Compute beta value
+        beta = 0.  #TODO(Stathi) Compute beta value
         error = reconstruction_error + beta*KLD
         
         # Optimization step
         error.backward()
         self.optimizer.step()
-        return float(error.detach().numpy())
+        # return float(reconstruction_error.detach().cpu().numpy()), float(KLD.detach().cpu().numpy()), prediction
+        return float(reconstruction_error.detach().cpu().numpy()), 0, prediction
 
     def load(self, directory):
         """Load networks' parameters
