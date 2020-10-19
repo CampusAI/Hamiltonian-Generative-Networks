@@ -2,8 +2,8 @@
 """
 import os
 
-import time
 import numpy as np
+import time
 import torch
 import tqdm
 import yaml
