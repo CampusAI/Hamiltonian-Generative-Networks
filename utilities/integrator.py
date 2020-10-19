@@ -113,7 +113,7 @@ class Integrator:
                                      (k4_p / 6))
         return q_next, p_next
 
-    def _leapfrog_step(self, q, p, hnn):
+    def _lf_step(self, q, p, hnn):
         """Compute next latent-space position and momentum using LeapFrog integration method.
 
         Args:

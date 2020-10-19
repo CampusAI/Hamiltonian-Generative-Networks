@@ -18,7 +18,7 @@ dataset:
   radius_bound: [0.5, 1.5]
   world_size: 1.5
   random: True
-  data_root: "local_storage/carlesbr/pendulum_data/train"
+  data_root: "/local_storage/carlesbr/pendulum_data/train"
 
 # Define rollout
 rollout:
