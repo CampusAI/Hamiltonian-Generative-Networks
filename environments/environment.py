@@ -143,8 +143,8 @@ def visualize_rollout(rollout):
     """Visualization for a single sample rollout of a physical system.
 
     Args:
-        rollout (ndarray): Rollout of an environment.
-            Its shape should be (Nframes, Height, Width, Channels)
+        rollout (numpy.ndarray): Numpy array containing the sequence of images. It's shape must be
+            (seq_len, height, width, channels).
     """
     fig = plt.figure()
     img = []
