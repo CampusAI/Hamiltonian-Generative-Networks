@@ -113,7 +113,7 @@ def train(params, dtype=torch.float):
     for i, rollout_batch in enumerate(pbar):
         # rollout_batch has shape (batch_len, seq_len, channels, height, width)
         rollout_batch = rollout_batch.to(device)
-        error, kld, prediction = hgn.fit(rollout_batch)
+        error, kld, prediction = hgn.fit(rollout_batch, variational=True)
         training_logger.step(losses=(error, kld),
                              rollout_batch=rollout_batch,
                              prediction=prediction)
