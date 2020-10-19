@@ -27,10 +27,10 @@ class Integrator:
 
     def _get_grads(self, q, p, hnn):
         """Apply the Hamiltonian equations to the Hamiltonian network to get dq_dt, dp_dt.
-
+           If q or p are set to None, the derivative for that variable is skipped.
         Args:
-            q (torch.Tensor): Latent-space position tensor.
-            p (torch.Tensor): Latent-space momentum tensor.
+            q (torch.Tensor | None): Latent-space position tensor.
+            p (torch.Tensor | None): Latent-space momentum tensor.
             hnn (HamiltonianNet): Hamiltonian Neural Network.
 
         Returns:
@@ -40,17 +40,23 @@ class Integrator:
         energy = hnn(q=q, p=p)
 
         # dq_dt = dH/dp
-        dq_dt = torch.autograd.grad(energy,
-                                    p,
-                                    create_graph=True,
-                                    retain_graph=True,
-                                    grad_outputs=torch.ones_like(energy))[0]
+        if p is not None:
+            dq_dt = torch.autograd.grad(energy,
+                                        p,
+                                        create_graph=True,
+                                        retain_graph=True,
+                                        grad_outputs=torch.ones_like(energy))[0]
+        else:
+            dq_dt = None
         # dp_dt = -dH/dq
-        dp_dt = -torch.autograd.grad(energy,
-                                     q,
-                                     create_graph=True,
-                                     retain_graph=True,
-                                     grad_outputs=torch.ones_like(energy))[0]
+        if q is not None:
+            dp_dt = -torch.autograd.grad(energy,
+                                         q,
+                                         create_graph=True,
+                                         retain_graph=True,
+                                         grad_outputs=torch.ones_like(energy))[0]
+        else:
+            dp_dt = None
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
@@ -107,6 +113,27 @@ class Integrator:
                                      (k4_p / 6))
         return q_next, p_next
 
+    def _leapfrog_step(self, q, p, hnn):
+        """Compute next latent-space position and momentum using LeapFrog integration method.
+
+        Args:
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
+            hnn (HamiltonianNet): Hamiltonian Neural Network.
+
+        Returns:
+            tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
+        """
+        # get acceleration
+        _, dp_dt = self._get_grads(q, None, hnn)
+        # leapfrog step
+        p_next_half = p + dp_dt*(self.delta_t)/2
+        q_next = q + p_next_half*self.delta_t
+        # momentum synchronization
+        _, dp_next_dt = self._get_grads(q_next, None, hnn)
+        p_next = p_next_half + dp_next_dt*(self.delta_t)/2
+        return q_next, p_next
+
     def step(self, q, p, hnn):
         """Compute next latent-space position and momentum.
 
@@ -114,7 +141,7 @@ class Integrator:
             q (torch.Tensor): Latent-space position tensor.
             p (torch.Tensor): Latent-space momentum tensor.
             hnn (HamiltonianNet): Hamiltonian Neural Network.
-        
+
         Raises:
             NotImplementedError: If the integration method requested is not implemented.
 
@@ -125,4 +152,6 @@ class Integrator:
             return self._euler_step(q, p, hnn)
         if self.method == "RK4":
             return self._rk_step(q, p, hnn)
+        if self.method == "Leapfrog":
+            return self._lf_step(q, p, hnn)
         raise NotImplementedError
