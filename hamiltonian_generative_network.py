@@ -163,3 +163,10 @@ class HGN:
         torch.save(self.transformer, os.path.join(directory, self.TRANSFORMER_FILENAME))
         torch.save(self.hnn, os.path.join(directory, self.HAMILTONIAN_FILENAME))
         torch.save(self.decoder, os.path.join(directory, self.DECODER_FILENAME))
+
+    def debug_mode(self):
+        """Set the network to debug mode, i.e. allow intermediate gradients to be retrieved.
+        """
+        for module in [self.encoder, self.transformer, self.decoder, self.hnn]:
+            for name, layer in module.named_parameters():
+                layer.retain_grad()
