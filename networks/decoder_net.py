@@ -88,7 +88,8 @@ class DecoderNet(nn.Module):
                  out_channels=3,
                  n_residual_blocks=None,
                  n_filters=None,
-                 kernel_sizes=None):
+                 kernel_sizes=None,
+                 dtype=torch.float):
         """Create the decoder network composed of the given number of residual blocks.
 
         Args:
@@ -122,6 +123,7 @@ class DecoderNet(nn.Module):
                 in_channels=int(filters[i]),
                 n_filters=int(filters[i + 1]),
                 kernel_size=int(kernel_sizes[i]),
+                dtype=dtype
             ) for i in range(n_residual_blocks)
         ])
         self.out_conv = nn.Conv2d(
@@ -131,6 +133,7 @@ class DecoderNet(nn.Module):
             padding=int(kernel_sizes[-1] / 2)  # To not resize the image
         )
         self.sigmoid = nn.Sigmoid()
+        self.type(dtype)
 
     def forward(self, x):
         """Apply the three residual blocks and the final convolutional layer.
