@@ -56,7 +56,7 @@ networks:
 
 # Define HGN Integrator
 integrator:
-  method: "leapfrog"
+  method: "Leapfrog"
 
 # Define optimization
 optimization:
