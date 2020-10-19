@@ -244,27 +244,3 @@ class TransformerNet(nn.Module):
         q = encoding[:, :half_len]
         p = encoding[:, half_len:]
         return q, p
-
-
-if __name__ == '__main__':
-    encoder = EncoderNet(seq_len=10,
-                         in_channels=3,
-                         out_channels=48,
-                         hidden_conv_layers=9,
-                         kernel_sizes=[3 for i in range(11)],
-                         n_filters=[64 for i in range(10)],
-                         strides=[1 for i in range(11)])
-    transformer = TransformerNet(in_channels=48,
-                                 out_channels=32,
-                                 hidden_conv_layers=4,
-                                 kernel_sizes=[3, 3, 3, 3, 3, 4],
-                                 n_filters=[32, 48, 64, 96, 128],
-                                 strides=[2, 2, 2, 1, 1, 2])
-
-    inp = torch.randn((128, 10, 3, 32, 32))
-    inp = concat_rgb(inp)
-    encoded, mean, var = encoder(inp)
-
-    q, p = transformer(encoded)
-    print(q.size())
-    print(p.size())
