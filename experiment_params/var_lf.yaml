@@ -1,0 +1,69 @@
+# Experiment ID
+experiment_id: "var_lf"
+model_save_dir: "saved_models"
+
+gpu_id: 0  # Will use this gpu if available
+
+# Define environment
+environment:
+  name: "Pendulum"
+  mass: 0.5
+  length: 1
+  g: 3
+
+# Define data characteristics
+dataset:
+  img_size: 32
+  noise_std: 0
+  radius_bound: [0.5, 2.0]
+  world_size: 1.5
+  random: True
+  data_root: "None"
+  # data_root: "datasets/pendulum_data/train"  # Should be of 50k samples
+
+# Define rollout
+rollout:
+  seq_length: 30
+  delta_time: 0.125
+  n_channels: 1
+
+# Define networks architectures
+networks:
+  variational: True
+  dtype : "float"
+  encoder:
+    hidden_conv_layers: 4
+    n_filters: [32, 64, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1, 1]  # first + hidden + last
+    out_channels: 48
+  transformer:
+    hidden_conv_layers: 1
+    n_filters: [64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3]  # first + hidden + last
+    strides: [2, 2, 2]  # first + hidden + last
+    out_channels: 16  # Channels of q, and p splitted
+  hamiltonian:
+    hidden_conv_layers: 4
+    in_shape: [16, 4, 4]  # Should be coherent with transformer output
+    n_filters: [32, 64, 64, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1]  # first + hidden + last
+  decoder:
+    n_residual_blocks: 3
+    n_filters: [64, 64, 64]
+    kernel_sizes: [3, 3, 3, 3]
+
+# Define HGN Integrator
+integrator:
+  method: "Leapfrog"
+
+# Define optimization
+optimization:
+  epochs: 6
+  batch_size: 16
+  # Learning rates
+  encoder_lr: 2e-4
+  transformer_lr: 2e-4
+  hnn_lr: 2e-4
+  decoder_lr: 2e-4
