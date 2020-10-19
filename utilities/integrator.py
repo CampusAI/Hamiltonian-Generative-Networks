@@ -4,14 +4,14 @@ import torch
 class Integrator:
     """HGN integrator class: Implements different integration methods for Hamiltonian differential equations.
     """
-    METHODS = ["Euler", "RK4", "leapfrog"]
+    METHODS = ["Euler", "RK4", "Leapfrog"]
 
     def __init__(self, delta_t, method="Euler"):
         """Initialize HGN integrator.
 
         Args:
             delta_t (float): Time difference between integration steps.
-            method (str, optional): Integration method, must be "Euler", "RK4", or "leapfrog". Defaults to "Euler".
+            method (str, optional): Integration method, must be "Euler", "RK4", or "Leapfrog". Defaults to "Euler".
 
         Raises:
             KeyError: If the integration method passed is invalid.
