@@ -8,7 +8,7 @@ import torch
 import tqdm
 import yaml
 
-from environments.datasets import EnvironmentSampler
+from environments.datasets import EnvironmentSampler, EnvironmentLoader
 from environments.environment import visualize_rollout
 from environments.environment_factory import EnvFactory
 from hamiltonian_generative_network import HGN
@@ -95,6 +95,7 @@ def train(params):
               channels=params["rollout"]["n_channels"])
 
     # Dataloader
+    """
     dataset_len = params["optimization"]["epochs"] * params["optimization"][
         "batch_size"]
     seed = None if params["dataset"]["random"] else 0
@@ -109,12 +110,13 @@ def train(params):
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
         world_size=params["dataset"]["world_size"],
-        seed=seed,
-        dtype=dtype)
+        seed=seed)
+    """
+    trainDS = EnvironmentLoader(params["dataset"]["data_root"])
     # Dataloader instance test, batch_mode disabled
     data_loader = torch.utils.data.DataLoader(trainDS,
                                               shuffle=False,
-                                              batch_size=None)
+                                              batch_size=params["optimization"]["batch_size"])
 
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
     training_logger = TrainingLogger(hyper_params=params,
@@ -123,25 +125,28 @@ def train(params):
                                      model_freq=1000)
 
     # Initialize tensorboard writer
-    pbar = tqdm.tqdm(data_loader)
-    for _, rollout_batch in enumerate(pbar):
-        # rollout_batch has shape (batch_len, seq_len, channels, height, width)
-        rollout_batch = rollout_batch.to(device)
-        error, kld, prediction = hgn.fit(
-            rollout_batch, variational=params["networks"]["variational"])
-        training_logger.step(losses=(error, kld),
-                             rollout_batch=rollout_batch,
-                             prediction=prediction,
-                             model=hgn)
-        msg = "Loss: %s" % np.round(error, 5)
-        if kld is not None:
-            msg += ", , KL: %s" % np.round(kld, 5)
-        pbar.set_description(msg)
-    hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
+    for ep in range(params["optimization"]["epochs"]):
+        print("Epoch " + str(ep))
+        pbar = tqdm.tqdm(data_loader)
+        for _, rollout_batch in enumerate(pbar):
+            # rollout_batch has shape (batch_len, seq_len, channels, height, width)
+            rollout_batch = rollout_batch.to(device)
+            error, kld, prediction = hgn.fit(
+                rollout_batch, variational=params["networks"]["variational"])
+            training_logger.step(losses=(error, kld),
+                                 rollout_batch=rollout_batch,
+                                 prediction=prediction,
+                                 model=hgn)
+            msg = "Loss: %s" % np.round(error, 5)
+            if kld is not None:
+                msg += ", , KL: %s" % np.round(kld, 5)
+            pbar.set_description(msg)
+        hgn.save(os.path.join(
+            params["model_save_dir"], params["experiment_id"]))
 
 
 if __name__ == "__main__":
-    params_file = "experiment_params/default.yaml"
+    params_file = "experiment_params/no-var_kl.yaml"
 
     # Read parameters
     with open(params_file, 'r') as f:

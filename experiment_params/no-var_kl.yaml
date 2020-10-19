@@ -18,8 +18,7 @@ dataset:
   radius_bound: [0.5, 2.0]
   world_size: 1.5
   random: True
-  data_root: "None"
-  # data_root: "datasets/pendulum_data/train"  # Should be of 50k samples
+  data_root: "/local_storage/carlesbr/pendulum_data/train"  # Should be of 50k samples
 
 # Define rollout
 rollout:
@@ -35,7 +34,7 @@ networks:
     hidden_conv_layers: 4
     n_filters: [32, 64, 64, 64, 64]  # first + hidden
     kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
-    strides: [1, 1, 1, 1, 1, 1, 1]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1]  # first + hidden + last
     out_channels: 48
   transformer:
     hidden_conv_layers: 1
