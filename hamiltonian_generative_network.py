@@ -67,13 +67,18 @@ class HGN:
             variational (bool): Whether to sample from the encoder distribution or take the mean.
 
         Returns:
-            An HgnResult object containing data of the forward pass over the given minibatch.
+            (utilities.HgnResult): An HgnResult object containing data of the forward pass over the
+                given minibatch.
         """
-        prediction = HgnResult(batch_shape=rollout_batch.shape)
+        n_steps = self.seq_len if n_steps is None else n_steps
+
+        # Instantiate prediction object
+        prediction_shape = list(rollout_batch.shape)
+        prediction_shape[1] = n_steps
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape))
         prediction.set_input(rollout_batch)
 
         rollout_batch = conversions.concat_rgb(rollout_batch)
-        n_steps = self.seq_len if n_steps is None else n_steps
 
         # Latent distribution
         z, z_mean, z_logvar = self.encoder(rollout_batch, sample=variational)

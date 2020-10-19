@@ -27,24 +27,26 @@ rollout:
 
 # Define networks architectures
 networks:
+  variational: True
+  dtype : "float"
   encoder:
     hidden_conv_layers: 6
-    n_filters: [32, 64, 64, 64, 64, 64, 64]
-    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]
-    strides: [1, 1, 1, 1, 1, 1, 1, 1]
+    n_filters: [32, 64, 64, 64, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1, 1, 1]  # first + hidden + last
     out_channels: 48
   transformer:
-    hidden_conv_layers: 2
-    n_filters: [64, 64, 64]
-    kernel_sizes: [3, 3, 3, 3]
-    strides: [2, 2, 2, 1]
+    hidden_conv_layers: 1
+    n_filters: [64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3]  # first + hidden + last
+    strides: [2, 2, 2]  # first + hidden + last
     out_channels: 16  # Channels of q, and p splitted
   hamiltonian:
-    hidden_conv_layers: 6
+    hidden_conv_layers: 4
     in_shape: [16, 4, 4]  # Should be coherent with transformer output
-    n_filters: [32, 64, 64, 64, 64, 64, 64, 64]
-    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]
-    strides: [1, 1, 1, 1, 1, 1, 1, 1]
+    n_filters: [32, 64, 64, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1]  # first + hidden + last
   decoder:
     n_residual_blocks: 3
     n_filters: [64, 64, 64]
@@ -52,7 +54,7 @@ networks:
 
 # Define HGN Integrator
 integrator:
-  method: "Euler"
+  method: "RK4"
 
 # Define optimization
 optimization:

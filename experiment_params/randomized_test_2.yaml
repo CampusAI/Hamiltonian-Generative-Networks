@@ -1,5 +1,5 @@
 # Experiment ID
-experiment_id: "randomized_test"
+experiment_id: "randomized_test_2"
 model_save_dir: "saved_models"
 
 gpu_id: 0  # Will use this gpu if available
@@ -15,7 +15,7 @@ environment:
 dataset:
   img_size: 32
   noise_std: 0
-  radius_bound: [0.5, 0.9]
+  radius_bound: [0.5, 1.5]
   world_size: 1.5
   random: True
 
@@ -29,22 +29,22 @@ rollout:
 networks:
   encoder:
     hidden_conv_layers: 3
-    n_filters: [16, 8, 8, 8]  # cl + 1
-    kernel_sizes: [3, 3, 3, 3, 3]  # cl + 2
-    strides: [1, 1, 1, 1, 1]  # cl + 2
-    out_channels: 8
+    n_filters: [32, 32, 32, 32]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1]  # first + hidden + last
+    out_channels: 32
   transformer:
-    hidden_conv_layers: 2
-    n_filters: [16, 16, 16]  # cl + 1
-    kernel_sizes: [3, 3, 3, 3]  # cl + 2
-    strides: [2, 2, 2, 1]  # cl + 2
+    hidden_conv_layers: 1
+    n_filters: [32, 32]  # first + hidden
+    kernel_sizes: [3, 3, 3]  # first + hidden + last
+    strides: [2, 2, 1]  # first + hidden + last
     out_channels: 16  # Channels of q, and p splitted
   hamiltonian:
-    hidden_conv_layers: 5
+    hidden_conv_layers: 4
     in_shape: [16, 4, 4]  # Should be coherent with transformer output
-    n_filters: [32, 32, 32, 32, 32, 32, 32]
-    kernel_sizes: [3, 3, 3, 3, 3, 3, 3]
-    strides: [1, 1, 1, 1, 1, 1, 1]
+    n_filters: [32, 32, 32, 32, 32]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1]  # first + hidden + last
   decoder:
     n_residual_blocks: 3
     n_filters: [16, 16, 16]
@@ -52,15 +52,14 @@ networks:
 
 # Define optimization
 optimization:
-  epochs: 100000
+  epochs: 50000
   batch_size: 1
   # Learning rates
-  encoder_lr: 5.e-4
-  transformer_lr: 5.e-4
-  hnn_lr: 5.e-4
-  decoder_lr: 5.e-4
+  encoder_lr: 2.e-4
+  transformer_lr: 2.e-4
+  hnn_lr: 2.e-4
+  decoder_lr: 2.e-4
 
 # Define HGN Integrator
 integrator:
   method: "RK4"
-  # method: "Euler"

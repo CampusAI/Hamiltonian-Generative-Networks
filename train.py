@@ -3,10 +3,10 @@
 import os
 
 import time
+import numpy as np
 import torch
 import tqdm
 import yaml
-import numpy as np
 
 from environments.datasets import EnvironmentSampler
 from environments.environment import visualize_rollout
@@ -20,18 +20,26 @@ from utilities.training_logger import TrainingLogger
 from utilities import debug_utils
 
 
-def load_hgn(params, dtype, device):
-    # Instantiate networks
-    encoder = EncoderNet(
-        seq_len=params["rollout"]["seq_length"], in_channels=params["rollout"]["n_channels"],
-        **params["networks"]["encoder"], dtype=dtype).to(device)
+def load_hgn(params, device, dtype):
+    """Instantiate and train the Hamiltonian Generative Network.
+
+    Args:
+        params (dict): Experiment parameters (see experiment_params folder).
+    """
+    encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
+                         in_channels=params["rollout"]["n_channels"],
+                         **params["networks"]["encoder"],
+                         dtype=dtype).to(device)
     transformer = TransformerNet(
         in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"], dtype=dtype).to(device)
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"], dtype=dtype).to(device)
+        **params["networks"]["transformer"],
+        dtype=dtype).to(device)
+    hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
+                         dtype=dtype).to(device)
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
-        out_channels=params["rollout"]["n_channels"], **params["networks"]["decoder"],
+        out_channels=params["rollout"]["n_channels"],
+        **params["networks"]["decoder"],
         dtype=dtype).to(device)
     # Define HGN integrator
     integrator = Integrator(delta_t=params["rollout"]["delta_time"],
@@ -70,25 +78,28 @@ def load_hgn(params, dtype, device):
     return hgn
 
 
-def train(params, variational, dtype=torch.float):
+def train(params):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
-        variational (bool): Whether to perform variational or deterministic training.
-        dtype (torch.dtype): Data type to be used in tensor computations.
     """
     # Set device
     device = "cuda:" + str(
         params["gpu_id"]) if torch.cuda.is_available() else "cpu"
 
+    # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
+    dtype = torch.__getattribute__(params["networks"]["dtype"])
+
     # Pick environment
     env = EnvFactory.get_environment(**params["environment"])
 
+    # Load hgn from parameters to deice
     hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Dataloader
-    dataset_len = params["optimization"]["epochs"] * params["optimization"]["batch_size"]
+    dataset_len = params["optimization"]["epochs"] * params["optimization"][
+        "batch_size"]
     seed = None if params["dataset"]["random"] else 0
     trainDS = EnvironmentSampler(
         environment=env,
@@ -118,7 +129,8 @@ def train(params, variational, dtype=torch.float):
     for i, rollout_batch in enumerate(pbar):
         # rollout_batch has shape (batch_len, seq_len, channels, height, width)
         rollout_batch = rollout_batch.to(device)
-        error, kld, prediction = hgn.fit(rollout_batch, variational=variational)
+        error, kld, prediction = hgn.fit(
+            rollout_batch, variational=params["networks"]["variational"])
         training_logger.step(losses=(error, kld),
                              rollout_batch=rollout_batch,
                              prediction=prediction)
@@ -131,10 +143,10 @@ def train(params, variational, dtype=torch.float):
 
 if __name__ == "__main__":
     params_file = "experiment_params/default.yaml"
-    
+
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-    
+
     # Train HGN network
-    train(params, variational=True, dtype=torch.float)
+    train(params)
