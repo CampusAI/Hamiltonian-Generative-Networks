@@ -4,8 +4,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class TrainingLogger:
-
-    def __init__(self, hyper_params, loss_freq=100, rollout_freq=1000):
+    def __init__(self,
+                 hyper_params,
+                 loss_freq=100,
+                 rollout_freq=1000,
+                 model_freq=1000):
         """Instantiate a TrainingLogger.
 
         Args:
@@ -14,14 +17,19 @@ class TrainingLogger:
                 TensorBoard. Defaults to 100.
             rollout_freq (int, optional): Frequency at which videos are updated in TensorBoard.
                 Defaults to 1000.
+            model_freq (int, optional): Frequency at which a checkpoint of the model is saved.
+                Defaults to 1000.
         """
-        self.writer = SummaryWriter(log_dir=os.path.join("runs", hyper_params["experiment_id"]))
+        self.writer = SummaryWriter(
+            log_dir=os.path.join("runs", hyper_params["experiment_id"]))
         self.writer.add_text('data/hyperparams', str(hyper_params), 0)
+        self.hparams = hyper_params
         self.iteration = 0
         self.loss_freq = loss_freq
         self.rollout_freq = rollout_freq
+        self.model_freq = model_freq
 
-    def step(self, losses, rollout_batch, prediction):
+    def step(self, losses, rollout_batch, prediction, model):
         """Perform a logging step: update inner iteration counter and log info if needed.
 
         Args:
@@ -35,7 +43,8 @@ class TrainingLogger:
             self.writer.add_scalar('data/reconstruction_loss', losses[0],
                                    self.iteration)
             if losses[1] is not None:
-                self.writer.add_scalar('data/kld_loss', losses[1], self.iteration)
+                self.writer.add_scalar('data/kld_loss', losses[1],
+                                       self.iteration)
 
         if self.iteration % self.rollout_freq == 0:
             self.writer.add_video('data/input',
@@ -44,4 +53,10 @@ class TrainingLogger:
                 'data/reconstruction',
                 prediction.reconstructed_rollout.detach().cpu(),
                 self.iteration)
+
+        if self.iteration % self.model_freq == 0:
+            save_dir = os.path.join(
+                self.hparams["model_save_dir"], self.hparams["experiment_id"] +
+                "_checkpoint_" + str(self.iteration))
+            model.save(save_dir)
         self.iteration += 1

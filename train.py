@@ -119,18 +119,20 @@ def train(params):
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
     training_logger = TrainingLogger(hyper_params=params,
                                      loss_freq=100,
-                                     rollout_freq=100)
+                                     rollout_freq=100,
+                                     model_freq=1000)
 
     # Initialize tensorboard writer
     pbar = tqdm.tqdm(data_loader)
-    for i, rollout_batch in enumerate(pbar):
+    for _, rollout_batch in enumerate(pbar):
         # rollout_batch has shape (batch_len, seq_len, channels, height, width)
         rollout_batch = rollout_batch.to(device)
         error, kld, prediction = hgn.fit(
             rollout_batch, variational=params["networks"]["variational"])
         training_logger.step(losses=(error, kld),
                              rollout_batch=rollout_batch,
-                             prediction=prediction)
+                             prediction=prediction,
+                             model=hgn)
         msg = "Loss: %s" % np.round(error, 5)
         if kld is not None:
             msg += ", , KL: %s" % np.round(kld, 5)
