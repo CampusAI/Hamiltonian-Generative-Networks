@@ -3,10 +3,10 @@
 import os
 
 import time
+import numpy as np
 import torch
 import tqdm
 import yaml
-import numpy as np
 
 from environments.datasets import EnvironmentSampler
 from environments.environment import visualize_rollout
