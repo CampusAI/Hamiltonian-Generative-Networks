@@ -67,7 +67,7 @@ class HGN:
             variational (bool): Whether to sample from the encoder distribution or take the mean.
 
         Returns:
-            An HgnResult object containing data of the forward pass over the given minibatch.
+            (utilities.HgnResult): An HgnResult object containing data of the forward pass over the given minibatch.
         """
         prediction = HgnResult(batch_shape=rollout_batch.shape)
         prediction.set_input(rollout_batch)
