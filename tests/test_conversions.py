@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 from utilities import conversions
 
@@ -52,3 +53,12 @@ def test_concat_rgb():
                 expected[:, i, j] = rgb
         assert torch.equal(expected, concat_seq)
 
+
+def test_batch_to_sequence():
+    batch_size, seq_len, height, width, channels = 15, 10, 32, 32, 3
+    batch = np.random.normal(size=(batch_size, seq_len, height, width, channels))
+    sequence = conversions.batch_to_sequence(batch)
+
+    for b in range(batch_size):
+        for s in range(seq_len):
+            assert np.array_equal(batch[b], sequence[b*seq_len: (b+1)*seq_len])

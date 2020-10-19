@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def to_channels_last(tensor):
@@ -42,3 +43,18 @@ def concat_rgb(batch):
     """
     batch_size, seq_len, channels, h, w = batch.size()
     return batch.reshape((batch_size, seq_len * channels, h, w))
+
+
+def batch_to_sequence(batch):
+    """Convert a batch of sequence of images into a single sequence composed by the concatenation
+    of sequences in the batch.
+
+    Args:
+        batch (numpy.ndarray): Numpy array of sequences of images, must have shape
+            (batch_size, seq_len, height, width, channels).
+
+    Returns:
+        A numpy array of shape (batch_size * seq_len, height, width, channels) with the
+        concatenation of the given batch of sequences.
+    """
+    return np.concatenate(batch, axis=0)
