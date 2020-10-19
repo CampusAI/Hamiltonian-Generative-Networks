@@ -71,12 +71,13 @@ class HGN:
                 given minibatch.
         """
         n_steps = self.seq_len if n_steps is None else n_steps
+        rollout_batch = conversions.concat_rgb(rollout_batch)
+
+        # Instantiate prediction object
         prediction_shape = rollout_batch.shape
         prediction_shape[1] = n_steps
         prediction = HgnResult(batch_shape=prediction_shape)
         prediction.set_input(rollout_batch)
-
-        rollout_batch = conversions.concat_rgb(rollout_batch)
 
         # Latent distribution
         z, z_mean, z_logvar = self.encoder(rollout_batch, sample=variational)
