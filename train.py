@@ -19,11 +19,13 @@ from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
 
 
-def train(params, dtype=torch.float):
+def train(params, variational, dtype=torch.float):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
-        params (dict): Experiment parameters (see experiment_params folder)
+        params (dict): Experiment parameters (see experiment_params folder).
+        variational (bool): Whether to perform variational or deterministic training.
+        dtype (torch.dtype): Data type to be used in tensor computations.
     """
     # Set device
     device = "cuda:" + str(
@@ -113,11 +115,13 @@ def train(params, dtype=torch.float):
     for i, rollout_batch in enumerate(pbar):
         # rollout_batch has shape (batch_len, seq_len, channels, height, width)
         rollout_batch = rollout_batch.to(device)
-        error, kld, prediction = hgn.fit(rollout_batch, variational=True)
+        error, kld, prediction = hgn.fit(rollout_batch, variational=variational)
         training_logger.step(losses=(error, kld),
                              rollout_batch=rollout_batch,
                              prediction=prediction)
-        msg = "Loss: %s, KL: %s" % (np.round(error, 4), np.round(kld, 4))
+        msg = "Loss: %s" % np.round(error, 5)
+        if kld is not None:
+            msg += ", , KL: %s" % np.round(kld, 5)
         pbar.set_description(msg)
     hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
@@ -130,4 +134,4 @@ if __name__ == "__main__":
         params = yaml.load(f, Loader=yaml.FullLoader)
     
     # Train HGN network
-    train(params, dtype=torch.double)
+    train(params, variational=True, dtype=torch.double)
