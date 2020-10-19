@@ -17,23 +17,10 @@ from networks.hamiltonian_net import HamiltonianNet
 from networks.decoder_net import DecoderNet
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
+from utilities import debug_utils
 
 
-def train(params, variational, dtype=torch.float):
-    """Instantiate and train the Hamiltonian Generative Network.
-
-    Args:
-        params (dict): Experiment parameters (see experiment_params folder).
-        variational (bool): Whether to perform variational or deterministic training.
-        dtype (torch.dtype): Data type to be used in tensor computations.
-    """
-    # Set device
-    device = "cuda:" + str(
-        params["gpu_id"]) if torch.cuda.is_available() else "cpu"
-
-    # Pick environment
-    env = EnvFactory.get_environment(**params["environment"])
-
+def load_hgn(params, dtype, device):
     # Instantiate networks
     encoder = EncoderNet(
         seq_len=params["rollout"]["seq_length"], in_channels=params["rollout"]["n_channels"],
@@ -46,11 +33,9 @@ def train(params, variational, dtype=torch.float):
         in_channels=params["networks"]["transformer"]["out_channels"],
         out_channels=params["rollout"]["n_channels"], **params["networks"]["decoder"],
         dtype=dtype).to(device)
-
     # Define HGN integrator
     integrator = Integrator(delta_t=params["rollout"]["delta_time"],
                             method=params["integrator"]["method"])
-
     # Define optimization modules
     optim_params = [
         {
@@ -72,7 +57,6 @@ def train(params, variational, dtype=torch.float):
     ]
     optimizer = torch.optim.Adam(optim_params)
     loss = torch.nn.MSELoss()
-
     # Instantiate Hamiltonian Generative Network
     hgn = HGN(encoder=encoder,
               transformer=transformer,
@@ -83,6 +67,25 @@ def train(params, variational, dtype=torch.float):
               optimizer=optimizer,
               seq_len=params["rollout"]["seq_length"],
               channels=params["rollout"]["n_channels"])
+    return hgn
+
+
+def train(params, variational, dtype=torch.float):
+    """Instantiate and train the Hamiltonian Generative Network.
+
+    Args:
+        params (dict): Experiment parameters (see experiment_params folder).
+        variational (bool): Whether to perform variational or deterministic training.
+        dtype (torch.dtype): Data type to be used in tensor computations.
+    """
+    # Set device
+    device = "cuda:" + str(
+        params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+
+    # Pick environment
+    env = EnvFactory.get_environment(**params["environment"])
+
+    hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Dataloader
     dataset_len = params["optimization"]["epochs"] * params["optimization"]["batch_size"]
