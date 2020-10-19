@@ -3,11 +3,12 @@ import pathlib
 
 import torch
 
-from networks.inference_net import concat_rgb
+from utilities import conversions
 from utilities.integrator import Integrator
 from utilities.hgn_result import HgnResult
 
-class HGN():
+
+class HGN:
     """Hamiltonian Generative Network model.
     
     This class models the HGN and implements its training and evaluation.
@@ -30,12 +31,12 @@ class HGN():
         """Instantiate a Hamiltonian Generative Network.
 
         Args:
-            encoder (EncoderNet): Encoder neural network.
-            transformer (TransformerNet): Transformer neural network.
-            hnn (HamiltonianNet): Hamiltonian neural network.
-            decoder (DecoderNet): Decoder neural network.
+            encoder (networks.inference_net.EncoderNet): Encoder neural network.
+            transformer (networks.inference_net.TransformerNet): Transformer neural network.
+            hnn (networks.hamiltonian_net.HamiltonianNet): Hamiltonian neural network.
+            decoder (networks.decoder_net.DecoderNet): Decoder neural network.
             integrator (Integrator): HGN integrator.
-            optimizer (torch.optim): PyTorch Network optimizer.
+            optimizer (torch.optim.Optimizer): PyTorch Network optimizer.
             loss (torch.nn.modules.loss): PyTorch Loss.
             seq_len (int): Number of frames in each rollout.
             channels (int, optional): Number of channels of the images. Defaults to 3.
@@ -55,25 +56,31 @@ class HGN():
         self.optimizer = optimizer
         self.loss = loss
 
-    def forward(self, rollout_batch, n_steps=None):
+    def forward(self, rollout_batch, n_steps=None, variational=True):
         """Get the prediction of the HGN for a given rollout_batch of n_steps.
 
         Args:
-            rollout_batch (torch.Tensor(N, C, H, W)): Image sequence of the system evolution concatenated along the channels' axis.
-            n_steps (integer, optional): Number of guessed steps, if None will match seq_len. Defaults to None.
+            rollout_batch (torch.Tensor): Minibatch of rollouts as a Tensor of shape
+                (batch_size, seq_len, channels, height, width).
+            n_steps (integer, optional): Number of guessed steps, if None will match seq_len.
+                Defaults to None.
+            variational (bool): Whether to sample from the encoder distribution or take the mean.
 
         Returns:
-            HgnResult: Bundle of the intermediate and final results of the HGN output.
+            (utilities.HgnResult): An HgnResult object containing data of the forward pass over the
+                given minibatch.
         """
-        rollout_batch = concat_rgb(rollout_batch)
-        assert (rollout_batch.size()[1] == self.channels * self.seq_len)  # Wrong rollout_batch channel dim
-        n_steps = self.seq_len if n_steps is None else n_steps  # If n_steps not specified, match input sequence length
+        n_steps = self.seq_len if n_steps is None else n_steps
+        rollout_batch = conversions.concat_rgb(rollout_batch)
 
-        prediction = HgnResult()
+        # Instantiate prediction object
+        prediction_shape = rollout_batch.shape
+        prediction_shape[1] = n_steps
+        prediction = HgnResult(batch_shape=prediction_shape)
         prediction.set_input(rollout_batch)
 
         # Latent distribution
-        z, z_mean, z_logvar = self.encoder(rollout_batch)
+        z, z_mean, z_logvar = self.encoder(rollout_batch, sample=variational)
         prediction.set_z(z_mean=z_mean, z_logvar=z_logvar, z_sample=z)
 
         # Initial state
@@ -95,38 +102,48 @@ class HGN():
             prediction.append_reconstruction(x_reconstructed)
         return prediction
 
-    def fit(self, rollouts):
+    def fit(self, rollouts, variational=True):
         """Perform a training step with the given rollouts batch.
 
+        TODO: Move the whole fit() code inside forward if adding hooks to the training, as direct
+            calls to self.forward() do not trigger them.
+
         Args:
-            rollouts (torch.Tensor(N, C, H, W)): Image sequence of the system evolution concatenated along the channels' axis.
+            rollouts (torch.Tensor): Tensor of shape (batch_size, seq_len, channels, height, width)
+                corresponding to a batch of sampled rollouts.
+            variational (bool): Whether to sample from the encoder and compute the KL loss,
+                or train in fully deterministic mode.
 
         Returns:
-            float: Loss obtained forwarding the given rollouts batch.
+            A tuple (reconstruction_error, kl_error, result) where reconstruction_error and
+            kl_error are floats and result is the HgnResult object with data of the forward pass.
         """
         # Re-set gradients and forward new batch
         self.optimizer.zero_grad()
-        prediction = self.forward(rollout_batch=rollouts)
+        prediction = self.forward(rollout_batch=rollouts, variational=variational)
         
         # Compute frame reconstruction error
         reconstruction_error = self.loss(input=prediction.input,
-                                target=prediction.reconstructed_rollout)
-    
-        # Compute KL divergence
-        KLD = 0. # TODO(oleguer): Use KL divergence
-        # mu = prediction.z_mean
-        # logvar = prediction.z_logvar
-        # KLD = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())  # NOTE(oleguer): Sum or mean?
+                                         target=prediction.reconstructed_rollout)
 
-        # Compute loss
-        beta = 0.  #TODO(Stathi) Compute beta value
-        error = reconstruction_error + beta*KLD
+        total_loss = reconstruction_error
+        kl_div = None
+        if variational:
+            # Compute KL divergence
+            mu = prediction.z_mean
+            logvar = prediction.z_logvar
+            # TODO(Oleguer) Sum or mean?
+            kl_div = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+            # Compute loss
+            beta = 0.01  # TODO(Stathi) Compute beta value
+            total_loss += beta * kl_div
         
         # Optimization step
-        error.backward()
+        total_loss.backward()
         self.optimizer.step()
-        # return float(reconstruction_error.detach().cpu().numpy()), float(KLD.detach().cpu().numpy()), prediction
-        return float(reconstruction_error.detach().cpu().numpy()), 0, prediction
+        reconstruction_error_np = reconstruction_error.detach().numpy()
+        kl_div_np = kl_div.detach().numpy() if kl_div is not None else None
+        return reconstruction_error_np, kl_div_np, prediction
 
     def load(self, directory):
         """Load networks' parameters
@@ -150,3 +167,10 @@ class HGN():
         torch.save(self.transformer, os.path.join(directory, self.TRANSFORMER_FILENAME))
         torch.save(self.hnn, os.path.join(directory, self.HAMILTONIAN_FILENAME))
         torch.save(self.decoder, os.path.join(directory, self.DECODER_FILENAME))
+
+    def debug_mode(self):
+        """Set the network to debug mode, i.e. allow intermediate gradients to be retrieved.
+        """
+        for module in [self.encoder, self.transformer, self.decoder, self.hnn]:
+            for name, layer in module.named_parameters():
+                layer.retain_grad()

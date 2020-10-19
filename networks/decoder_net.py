@@ -10,7 +10,7 @@ from torch import nn
 class ResidualBlock(nn.Module):
     """A residual block that up-samples the input image by a factor of 2.
     """
-    def __init__(self, in_channels, n_filters=64, kernel_size=3):
+    def __init__(self, in_channels, n_filters=64, kernel_size=3, dtype=torch.float):
         """Instantiate the residual block, composed by a 2x up-sampling and two convolutional
         layers.
 
@@ -18,6 +18,7 @@ class ResidualBlock(nn.Module):
             in_channels (int): Number of input channels.
             n_filters (int): Number of filters, and thus output channels.
             kernel_size (int): Size of the convolutional kernels.
+            dtype (torch.dtype): Type to be used in tensors.
         """
         super().__init__()
         self.channels = in_channels
@@ -43,6 +44,7 @@ class ResidualBlock(nn.Module):
         self.leaky_relu = nn.LeakyReLU()
         self.upsample = nn.UpsamplingNearest2d(scale_factor=2)
         self.sigmoid = nn.Sigmoid()
+        self.type(dtype)
 
     def forward(self, x):
         """Apply 2x up-sampling, followed by two convolutional layers with leaky relu. A sigmoid
@@ -86,7 +88,8 @@ class DecoderNet(nn.Module):
                  out_channels=3,
                  n_residual_blocks=None,
                  n_filters=None,
-                 kernel_sizes=None):
+                 kernel_sizes=None,
+                 dtype=torch.float):
         """Create the decoder network composed of the given number of residual blocks.
 
         Args:
@@ -120,6 +123,7 @@ class DecoderNet(nn.Module):
                 in_channels=int(filters[i]),
                 n_filters=int(filters[i + 1]),
                 kernel_size=int(kernel_sizes[i]),
+                dtype=dtype
             ) for i in range(n_residual_blocks)
         ])
         self.out_conv = nn.Conv2d(
@@ -129,6 +133,7 @@ class DecoderNet(nn.Module):
             padding=int(kernel_sizes[-1] / 2)  # To not resize the image
         )
         self.sigmoid = nn.Sigmoid()
+        self.type(dtype)
 
     def forward(self, x):
         """Apply the three residual blocks and the final convolutional layer.

@@ -7,35 +7,45 @@ import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from environments.environment import visualize_rollout
+from utilities import conversions
 
 
 class HgnResult():
     """Class to bundle HGN guessed output information
     """
-    def __init__(self):
+    def __init__(self, batch_shape):
+        """Instantiate the HgnResult that will contain all the information of the forward pass
+        over a single batch of rollouts.
+
+        Args:
+            batch_shape (torch.Size): Shape of a batch of reconstructed rollouts, returned by
+                batch.shape.
+        """
         self.input = None
         self.z_mean = None
         self.z_logvar = None
         self.z_sample = None
         self.q_s = []
         self.p_s = []
-        self.reconstructed_rollout = None
+        self.reconstructed_rollout = torch.empty(batch_shape)
+        self.reconstruction_ptr = 0
 
     def set_input(self, rollout):
         """Store ground truth of system evolution
 
         Args:
-            rollout (torch.Tensor): Ground truth of the system evolution, concatenated along last axis
+            rollout (torch.Tensor): Tensor of shape (batch_size, seq_len, channels, height, width)
+                containing the ground truth rollouts of a batch.
         """
         self.input = rollout
 
     def set_z(self, z_mean, z_logvar, z_sample):
-        """Store latent variable conditions
+        """Store latent encodings and correspondent distribution parameters.
 
         Args:
-            z_mean (torch.Tensor): Mean of q_z
-            z_logvar (torch.Tensor): Standard dev of q_z
-            z_sample (torch.Tensor): Sample taken from q_z distribution
+            z_mean (torch.Tensor): Batch of means of the latent distribution.
+            z_logvar (torch.Tensor): Batch of log variances of the latent distributions.
+            z_sample (torch.Tensor): Batch of latent encodings.
         """
         self.z_mean = z_mean
         self.z_logvar = z_logvar
@@ -45,8 +55,8 @@ class HgnResult():
         """Append the guessed position (q) and momentum (p) to guessed list 
 
         Args:
-            q (torch.Tensor): Position encoded information
-            p (torch.Tensor): Momentum encoded information
+            q (torch.Tensor): Tensor with the abstract position.
+            p (torch.Tensor): Tensor with the abstract momentum.
         """
         self.q_s.append(q)
         self.p_s.append(p)
@@ -55,22 +65,18 @@ class HgnResult():
         """Append guessed reconstruction
 
         Args:
-            reconstruction (torch.Tensor): Decoder of the HGN output
+            reconstruction (torch.Tensor): Tensor of shape (seq_len, channels, height, width)
+                containing the reconstructed rollout.
         """
-        if self.reconstructed_rollout is None:
-            self.reconstructed_rollout = reconstruction
-        else:
-            self.reconstructed_rollout = torch.cat(
-                (self.reconstructed_rollout, reconstruction), dim=1)
+        assert self.reconstruction_ptr < self.reconstructed_rollout.shape[1],\
+            'Trying to add rollout number ' + str(self.reconstruction_ptr) + ' when batch has ' +\
+            str(self.reconstructed_rollout.shape[0])
+        self.reconstructed_rollout[:, self.reconstruction_ptr] = reconstruction
+        self.reconstruction_ptr += 1
 
     def visualize(self):
-        """Visualize predicted rollout
+        """Visualize the predicted rollout.
         """
-        rollout = self.reconstructed_rollout.detach().numpy()
-        rollout = np.squeeze(rollout, axis=0)
-        rollout = np.array(np.split(rollout, len(self.q_s), axis=0))
-        rollout = rollout.transpose((0, 2, 3, 1))
-        rollout = np.array(250*rollout, dtype=np.uint8)
-        if (rollout.shape[-1] == 1):
-            rollout = np.squeeze(rollout, axis=-1)
-        visualize_rollout(rollout)
+        rollout_batch = conversions.to_channels_last(self.reconstructed_rollout).detach().numpy()
+        sequence = conversions.batch_to_sequence(rollout_batch)
+        visualize_rollout(sequence)

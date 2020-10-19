@@ -12,30 +12,6 @@ from networks import hamiltonian_net
 from networks import decoder_net
 
 
-def test_concat_rgb():
-    """Test that concat_rgb correctly reshapes the tensor by concatenating sequences along
-    channel dimensions
-    """
-    batch_len = 2
-    seq_len = 5
-    channels = 3
-    img_size = 32
-    batch = torch.randn((batch_len, seq_len, channels, img_size, img_size))
-    concatenated = inference_net.concat_rgb(batch)
-
-    for concat_seq, batch_seq in zip(concatenated, batch):
-        expected = torch.empty((seq_len * channels, 32, 32))
-        for i in range(32):
-            for j in range(32):
-                rgb = torch.empty(channels * seq_len)
-                for s in range(seq_len):
-                    rgb[s * channels + 0] = batch_seq[s, 0, i, j]
-                    rgb[s * channels + 1] = batch_seq[s, 1, i, j]
-                    rgb[s * channels + 2] = batch_seq[s, 2, i, j]
-                expected[:, i, j] = rgb
-        assert torch.equal(expected, concat_seq)
-
-
 def test_to_phase_space():
     batch_size = 10
     channels = 48
