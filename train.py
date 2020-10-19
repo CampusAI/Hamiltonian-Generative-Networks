@@ -134,4 +134,4 @@ if __name__ == "__main__":
         params = yaml.load(f, Loader=yaml.FullLoader)
     
     # Train HGN network
-    train(params, variational=True, dtype=torch.double)
+    train(params, variational=True, dtype=torch.float)
