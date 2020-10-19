@@ -10,7 +10,7 @@ from torch import nn
 class ResidualBlock(nn.Module):
     """A residual block that up-samples the input image by a factor of 2.
     """
-    def __init__(self, in_channels, n_filters=64, kernel_size=3):
+    def __init__(self, in_channels, n_filters=64, kernel_size=3, dtype=torch.float):
         """Instantiate the residual block, composed by a 2x up-sampling and two convolutional
         layers.
 
@@ -18,6 +18,7 @@ class ResidualBlock(nn.Module):
             in_channels (int): Number of input channels.
             n_filters (int): Number of filters, and thus output channels.
             kernel_size (int): Size of the convolutional kernels.
+            dtype (torch.dtype): Type to be used in tensors.
         """
         super().__init__()
         self.channels = in_channels
@@ -43,6 +44,7 @@ class ResidualBlock(nn.Module):
         self.leaky_relu = nn.LeakyReLU()
         self.upsample = nn.UpsamplingNearest2d(scale_factor=2)
         self.sigmoid = nn.Sigmoid()
+        self.type(dtype)
 
     def forward(self, x):
         """Apply 2x up-sampling, followed by two convolutional layers with leaky relu. A sigmoid
