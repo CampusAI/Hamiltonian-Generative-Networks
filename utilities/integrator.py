@@ -27,10 +27,10 @@ class Integrator:
 
     def _get_grads(self, q, p, hnn):
         """Apply the Hamiltonian equations to the Hamiltonian network to get dq_dt, dp_dt.
-           If q or p are set to None, the derivative for that variable is skipped.
+
         Args:
-            q (torch.Tensor | None): Latent-space position tensor.
-            p (torch.Tensor | None): Latent-space momentum tensor.
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
             hnn (HamiltonianNet): Hamiltonian Neural Network.
 
         Returns:
@@ -40,23 +40,19 @@ class Integrator:
         energy = hnn(q=q, p=p)
 
         # dq_dt = dH/dp
-        if p is not None:
-            dq_dt = torch.autograd.grad(energy,
-                                        p,
-                                        create_graph=True,
-                                        retain_graph=True,
-                                        grad_outputs=torch.ones_like(energy))[0]
-        else:
-            dq_dt = None
+        dq_dt = torch.autograd.grad(energy,
+                                    p,
+                                    create_graph=True,
+                                    retain_graph=True,
+                                    grad_outputs=torch.ones_like(energy))[0]
+
         # dp_dt = -dH/dq
-        if q is not None:
-            dp_dt = -torch.autograd.grad(energy,
-                                         q,
-                                         create_graph=True,
-                                         retain_graph=True,
-                                         grad_outputs=torch.ones_like(energy))[0]
-        else:
-            dp_dt = None
+        dp_dt = -torch.autograd.grad(energy,
+                                     q,
+                                     create_graph=True,
+                                     retain_graph=True,
+                                     grad_outputs=torch.ones_like(energy))[0]
+
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
@@ -125,12 +121,12 @@ class Integrator:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
         # get acceleration
-        _, dp_dt = self._get_grads(q, None, hnn)
+        _, dp_dt = self._get_grads(q, p, hnn)
         # leapfrog step
         p_next_half = p + dp_dt*(self.delta_t)/2
         q_next = q + p_next_half*self.delta_t
         # momentum synchronization
-        _, dp_next_dt = self._get_grads(q_next, None, hnn)
+        _, dp_next_dt = self._get_grads(q_next, p_next_half, hnn)
         p_next = p_next_half + dp_next_dt*(self.delta_t)/2
         return q_next, p_next
 
