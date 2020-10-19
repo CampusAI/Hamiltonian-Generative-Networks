@@ -27,6 +27,8 @@ rollout:
 
 # Define networks architectures
 networks:
+  variational: True
+  dtype : "float"
   encoder:
     hidden_conv_layers: 6
     n_filters: [32, 64, 64, 64, 64, 64, 64]

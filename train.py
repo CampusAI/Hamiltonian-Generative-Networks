@@ -19,13 +19,11 @@ from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
 
 
-def train(params, variational, dtype=torch.float):
+def train(params):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
-        variational (bool): Whether to perform variational or deterministic training.
-        dtype (torch.dtype): Data type to be used in tensor computations.
     """
     # Set device
     device = "cuda:" + str(
@@ -35,16 +33,28 @@ def train(params, variational, dtype=torch.float):
     env = EnvFactory.get_environment(**params["environment"])
 
     # Instantiate networks
-    encoder = EncoderNet(
-        seq_len=params["rollout"]["seq_length"], in_channels=params["rollout"]["n_channels"],
-        **params["networks"]["encoder"], dtype=dtype).to(device)
+    dtype = torch.float
+    if params["networks"]["dtype"] == "double":
+        dtype = torch.double
+    elif params["networks"]["dtype"] != "float":
+        raise KeyError(
+            'Data type must be "float" or "double", %s not supported' %
+            params["networks"]["dtype"])
+
+    encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
+                         in_channels=params["rollout"]["n_channels"],
+                         **params["networks"]["encoder"],
+                         dtype=dtype).to(device)
     transformer = TransformerNet(
         in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"], dtype=dtype).to(device)
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"], dtype=dtype).to(device)
+        **params["networks"]["transformer"],
+        dtype=dtype).to(device)
+    hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
+                         dtype=dtype).to(device)
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
-        out_channels=params["rollout"]["n_channels"], **params["networks"]["decoder"],
+        out_channels=params["rollout"]["n_channels"],
+        **params["networks"]["decoder"],
         dtype=dtype).to(device)
 
     # Define HGN integrator
@@ -85,7 +95,8 @@ def train(params, variational, dtype=torch.float):
               channels=params["rollout"]["n_channels"])
 
     # Dataloader
-    dataset_len = params["optimization"]["epochs"] * params["optimization"]["batch_size"]
+    dataset_len = params["optimization"]["epochs"] * params["optimization"][
+        "batch_size"]
     seed = None if params["dataset"]["random"] else 0
     trainDS = EnvironmentSampler(
         environment=env,
@@ -115,7 +126,8 @@ def train(params, variational, dtype=torch.float):
     for i, rollout_batch in enumerate(pbar):
         # rollout_batch has shape (batch_len, seq_len, channels, height, width)
         rollout_batch = rollout_batch.to(device)
-        error, kld, prediction = hgn.fit(rollout_batch, variational=variational)
+        error, kld, prediction = hgn.fit(
+            rollout_batch, variational=params["networks"]["variational"])
         training_logger.step(losses=(error, kld),
                              rollout_batch=rollout_batch,
                              prediction=prediction)
@@ -128,10 +140,10 @@ def train(params, variational, dtype=torch.float):
 
 if __name__ == "__main__":
     params_file = "experiment_params/default.yaml"
-    
+
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-    
+
     # Train HGN network
-    train(params, variational=True, dtype=torch.float)
+    train(params)
