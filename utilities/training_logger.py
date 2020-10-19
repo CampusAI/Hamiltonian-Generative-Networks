@@ -22,7 +22,7 @@ class TrainingLogger:
         self.rollout_freq = rollout_freq
 
     def step(self, losses, rollout_batch, prediction):
-        """Perform a logging step: Update inner iteration counter and log info if needed
+        """Perform a logging step: update inner iteration counter and log info if needed.
 
         Args:
             losses (tuple): Tuple of two floats, corresponding to reconstruction loss and KLD.
@@ -34,7 +34,8 @@ class TrainingLogger:
         if self.iteration % self.loss_freq == 0:
             self.writer.add_scalar('data/reconstruction_loss', losses[0],
                                    self.iteration)
-            self.writer.add_scalar('data/kld_loss', losses[1], self.iteration)
+            if losses[1] is not None:
+                self.writer.add_scalar('data/kld_loss', losses[1], self.iteration)
 
         if self.iteration % self.rollout_freq == 0:
             self.writer.add_video('data/input',
