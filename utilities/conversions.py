@@ -27,3 +27,18 @@ def to_channels_first(tensor):
         Any change applied to this out tensor will be applied to the input tensor.
     """
     return tensor.permute(0, 1, 4, 2, 3)
+
+
+def concat_rgb(batch):
+    """Concatenate the images along channel dimension.
+
+    Args:
+        batch (torch.Tensor): A Tensor with shape (batch_size, seq_len, channels, height, width)
+            containing the images of the sequence.
+
+    Returns:
+        A Tensor with shape (batch_size, seq_len * channels, height, width) with the images
+        concatenated along the channel dimension.
+    """
+    batch_size, seq_len, channels, h, w = batch.size()
+    return batch.reshape((batch_size, seq_len * channels, h, w))
