@@ -55,7 +55,7 @@ networks:
 
 # Define HGN Integrator
 integrator:
-  method: "RK4"
+  method: "Leapfrog"
 
 # Define optimization
 optimization:
