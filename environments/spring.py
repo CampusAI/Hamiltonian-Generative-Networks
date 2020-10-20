@@ -11,12 +11,13 @@ class Spring(Environment):
         x'' = -(k/m)*x
 
     """
+
     def __init__(self, mass, elastic_cst, q=None, p=None):
         """Constructor for spring system
 
         Args:
-            mass (float): Spring mass
-            elastic_cst (float): Spring elastic constant
+            mass (float): Spring mass (kg)
+            elastic_cst (float): Spring elastic constant (kg/s^2)
             q ([float], optional): Generalized position in 1-D space: Position (m). Defaults to None
             p ([float], optional): Generalized momentum in 1-D space: Linear momentum (kg*m/s). Defaults to None
         """
@@ -86,12 +87,14 @@ class Spring(Environment):
 
         return vid
 
-    def _sample_init_conditions(self, radius):
+    def _sample_init_conditions(self, radius_bound):
         """Samples random initial conditions for the environment
 
         Args:
-            radius (float): Radius of the sampling process
+            radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
         """
+        radius_lb, radius_ub = radius_bound
+        radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
         states = np.random.rand(2) * 2. - 1
         states = (states / np.sqrt((states**2).sum())) * radius
         self.set([states[0]], [states[1]])
