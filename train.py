@@ -44,18 +44,18 @@ def train(params):
     encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
                          in_channels=params["rollout"]["n_channels"],
                          **params["networks"]["encoder"],
-                         dtype=dtype).to(device)
+                         dtype=dtype).to(device).float()
     transformer = TransformerNet(
         in_channels=params["networks"]["encoder"]["out_channels"],
         **params["networks"]["transformer"],
-        dtype=dtype).to(device)
+        dtype=dtype).to(device).float()
     hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
-                         dtype=dtype).to(device)
+                         dtype=dtype).to(device).float()
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
         out_channels=params["rollout"]["n_channels"],
         **params["networks"]["decoder"],
-        dtype=dtype).to(device)
+        dtype=dtype).to(device).float()
 
     # Define HGN integrator
     integrator = Integrator(delta_t=params["rollout"]["delta_time"],
@@ -130,7 +130,7 @@ def train(params):
         pbar = tqdm.tqdm(data_loader)
         for _, rollout_batch in enumerate(pbar):
             # rollout_batch has shape (batch_len, seq_len, channels, height, width)
-            rollout_batch = rollout_batch.to(device)
+            rollout_batch = rollout_batch.to(device).float()
             error, kld, prediction = hgn.fit(
                 rollout_batch, variational=params["networks"]["variational"])
             training_logger.step(losses=(error, kld),
