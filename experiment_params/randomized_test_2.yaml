@@ -1,0 +1,65 @@
+# Experiment ID
+experiment_id: "randomized_test_2"
+model_save_dir: "saved_models"
+
+gpu_id: 0  # Will use this gpu if available
+
+# Define environment
+environment:
+  name: "Pendulum"
+  mass: 0.5
+  length: 1
+  g: 3
+
+# Define data characteristics
+dataset:
+  img_size: 32
+  noise_std: 0
+  radius_bound: [0.5, 1.5]
+  world_size: 1.5
+  random: True
+
+# Define rollout
+rollout:
+  seq_length: 20
+  delta_time: 0.1
+  n_channels: 1
+
+# Define networks architectures
+networks:
+  encoder:
+    hidden_conv_layers: 3
+    n_filters: [32, 32, 32, 32]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1]  # first + hidden + last
+    out_channels: 32
+  transformer:
+    hidden_conv_layers: 1
+    n_filters: [32, 32]  # first + hidden
+    kernel_sizes: [3, 3, 3]  # first + hidden + last
+    strides: [2, 2, 1]  # first + hidden + last
+    out_channels: 16  # Channels of q, and p splitted
+  hamiltonian:
+    hidden_conv_layers: 4
+    in_shape: [16, 4, 4]  # Should be coherent with transformer output
+    n_filters: [32, 32, 32, 32, 32]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1]  # first + hidden + last
+  decoder:
+    n_residual_blocks: 3
+    n_filters: [16, 16, 16]
+    kernel_sizes: [3, 3, 3, 3]
+
+# Define optimization
+optimization:
+  epochs: 50000
+  batch_size: 1
+  # Learning rates
+  encoder_lr: 2.e-4
+  transformer_lr: 2.e-4
+  hnn_lr: 2.e-4
+  decoder_lr: 2.e-4
+
+# Define HGN Integrator
+integrator:
+  method: "RK4"

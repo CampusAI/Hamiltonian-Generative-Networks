@@ -46,19 +46,25 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _draw(self):
-        """Returns array of the environment evolution
+    def _draw(self, img_size, color, world_size):
+        """Returns array of the environment evolution.
+
+        Args:
+            img_size (int): Size of the frames (in pixels).
+            color (bool): Whether to have colored or grayscale frames.
+            world_size (float): Spatial extent of the window where the rendering is taking place
+                (in meters).
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
         """
         raise NotImplementedError
 
-    def _sample_init_conditions(self, radius):
+    def _sample_init_conditions(self, radius_bound):
         """Samples random initial conditions for the environment
 
         Args:
-            radius (float): Radius of the sampling process
+            radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
@@ -76,8 +82,12 @@ class Environment(ABC):
         Raises:
             AssertError: If p or q are None
         """
-        assert self.q.all() != None
-        assert self.p.all() != None
+        if isinstance(self.q, np.ndarray):
+            assert self.q.all() != None
+            assert self.p.all() != None
+        else:
+            assert self.q != None
+            assert self.p != None
 
         t_eval = np.linspace(0, total_time,
                              round(total_time / delta_time) + 1)[:-1]
@@ -122,8 +132,7 @@ class Environment(ABC):
         total_time = number_of_frames * delta_time
         batch_sample = []
         for i in range(number_of_rollouts):
-            radius = np.random.rand() * (radius_ub - radius_lb) + radius_lb
-            self._sample_init_conditions(radius)
+            self._sample_init_conditions(radius_bound)
             self._evolution(total_time, delta_time)
             if noise_std > 0.:
                 self._rollout += np.random.randn(
@@ -137,8 +146,8 @@ def visualize_rollout(rollout):
     """Visualization for a single sample rollout of a physical system.
 
     Args:
-        rollout (ndarray): Rollout of an environment.
-            Its shape should be (Nframes, Height, Width, Channels)
+        rollout (numpy.ndarray): Numpy array containing the sequence of images. It's shape must be
+            (seq_len, height, width, channels).
     """
     fig = plt.figure()
     img = []

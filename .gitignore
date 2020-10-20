@@ -133,3 +133,8 @@ dmypy.json
 
 # Visual studio
 .vscode/
+
+saved_models/
+datasets/
+
+runs/
