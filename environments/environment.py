@@ -82,7 +82,6 @@ class Environment(ABC):
         Raises:
             AssertError: If p or q are None
         """
-
         if isinstance(self.q, np.ndarray):
             assert self.q.all() != None
             assert self.p.all() != None
