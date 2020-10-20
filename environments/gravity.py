@@ -17,7 +17,7 @@ class NObjectGravity(Environment):
         """Contructor for spring system
 
         Args:
-            mass ([float]): Object masses (kg).
+            mass (list): List of floats corresponding to object masses (kg).
             gravity_cst (float): Constant for the intensity of gravitational field (m^3/kg*s^2)
             orbit_noise (float, optional): Noise for object orbits when sampling initial conditions
             q (ndarray, optional): Object generalized positions in 2-D space: Positions (m). Defaults to None
