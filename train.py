@@ -104,8 +104,7 @@ def train(params, test=True):
     # Either generate data on-the-fly or load the data from disk
     data_loader = None
     if params["dataset"]["on_the_fly_data"]:
-        dataset_len = params["optimization"]["epochs"] * params[
-            "optimization"]["batch_size"]
+        dataset_len = params["dataset"]["on_the_fly_rollouts"]
         trainDS = EnvironmentSampler(
             environment=env,
             dataset_len=dataset_len,
