@@ -60,3 +60,11 @@ class TrainingLogger:
                 "_checkpoint_" + str(self.iteration))
             model.save(save_dir)
         self.iteration += 1
+
+    def log_test_error(self, test_error):
+        """Add test error to tensorboard as text
+
+        Args:
+            test_error (float): Test reconstruction error
+        """
+        self.writer.add_text('data/test_error', str(test_error), 0)
