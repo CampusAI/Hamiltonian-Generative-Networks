@@ -1,10 +1,10 @@
-import yaml
-import sys
 import os
+import sys
+import yaml
 
 from matplotlib import pyplot as plt
-import numpy as np
 from matplotlib.lines import Line2D
+import numpy as np
 import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

@@ -1,12 +1,12 @@
 """Script to train the Hamiltonian Generative Network
 """
 import os
+import yaml
 
 import numpy as np
 import time
 import torch
 import tqdm
-import yaml
 
 from environments.datasets import EnvironmentSampler
 from environments.environment import visualize_rollout
@@ -21,10 +21,11 @@ from utilities import debug_utils
 
 
 def load_hgn(params, device, dtype):
-    """Instantiate and train the Hamiltonian Generative Network.
+    """Return the Hamiltonian Generative Network created from the given parameters.
 
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
+        device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
     """
     encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
                          in_channels=params["rollout"]["n_channels"],
