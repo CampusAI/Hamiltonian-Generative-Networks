@@ -17,8 +17,9 @@ dataset:
   noise_std: 0
   radius_bound: [1.3, 2.3]
   world_size: 1.5
-  on_the_fly_data: False  # If false will lead the data from data_root (ignoring all other dataset and env params)
-  data_root: "/local_storage/carlesbr/pendulum_data/train"  # Should be of 50k samples
+  on_the_fly_data: True  # If false will lead the data from train_data
+  train_data: "/local_storage/carlesbr/pendulum_data/train"  # Should be of 50k samples
+  test_data: "/local_storage/carlesbr/pendulum_data/test"  # Should be of 50k samples
 
 # Define rollout
 rollout:
@@ -60,7 +61,7 @@ integrator:
 # Define optimization
 optimization:
   epochs: 5
-  batch_size: 1
+  batch_size: 16
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4
