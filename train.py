@@ -82,7 +82,7 @@ def load_hgn(params, device, dtype):
     return hgn
 
 
-def train(params):
+def train(params, test=True):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
@@ -119,10 +119,9 @@ def train(params):
             world_size=params["dataset"]["world_size"],
             seed=None)
 
-        data_loader = torch.utils.data.DataLoader(
-            trainDS,
-            shuffle=False,
-            batch_size=None)
+        data_loader = torch.utils.data.DataLoader(trainDS,
+                                                  shuffle=False,
+                                                  batch_size=None)
     else:
         trainDS = EnvironmentLoader(params["dataset"]["train_data"])
 
@@ -142,7 +141,8 @@ def train(params):
     model_save_file = os.path.join(params["model_save_dir"],
                                    params["experiment_id"])
     for ep in range(params["optimization"]["epochs"]):
-        print("Epoch %s / %s" % (str(ep), str(params["optimization"]["epochs"])))
+        print("Epoch %s / %s" %
+              (str(ep), str(params["optimization"]["epochs"])))
         pbar = tqdm.tqdm(data_loader)
         for _, rollout_batch in enumerate(pbar):
             # Move to device and change dtype
@@ -166,20 +166,28 @@ def train(params):
             pbar.set_description(msg)
         # Save model
         hgn.save(model_save_file)
-    return hgn
 
-# def test(hgn, params):
-#     test_DS = EnvironmentLoader(params["dataset"]["test_data"])
-#     data_loader = torch.utils.data.DataLoader(
-#         test_DS,
-#         shuffle=False,
-#         batch_size=1)
+    # Test result
+    if test:
+        loss = torch.nn.MSELoss()
+        test_DS = EnvironmentLoader(params["dataset"]["test_data"])
+        data_loader = torch.utils.data.DataLoader(
+            test_DS,
+            shuffle=True,
+            batch_size=params["optimization"]["batch_size"])
 
-#     pbar = tqdm.tqdm(data_loader)
-#     for _, rollout_batch in enumerate(pbar):
-#         rollout_batch = rollout_batch.to(device).type(dtype)
-#         result = hgn.forward()
-
+        print("Testing...")
+        pbar = tqdm.tqdm(data_loader)
+        test_error = 0
+        for _, rollout_batch in enumerate(pbar):
+            rollout_batch = rollout_batch.to(device).type(dtype)
+            prediction = hgn.forward(
+                rollout_batch=rollout_batch,
+                variational=params["networks"]["variational"])
+            error = loss(input=prediction.input,
+                         target=prediction.reconstructed_rollout)
+            test_error += error / len(data_loader)
+        training_logger.log_test_error(test_error)
 
 
 if __name__ == "__main__":
@@ -190,5 +198,5 @@ if __name__ == "__main__":
         params = yaml.load(f, Loader=yaml.FullLoader)
 
     # Train HGN network
-    hgn = train(params)
+    hgn = train(params, test=True)
     # test(hgn, params)
