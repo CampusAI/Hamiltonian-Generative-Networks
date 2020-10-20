@@ -1,12 +1,17 @@
+import os
+import sys
+
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from pendulum import Pendulum
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utilities import conversions
 
 
 class EnvironmentSampler(Dataset):
-    """Dataset for rollout sampling
+    """Dataset for rollout sampling.
+
     Given an environment and sampling conditions, the dataset samples rollouts as pytorch tensors.
     """
     def __init__(self,
@@ -16,13 +21,13 @@ class EnvironmentSampler(Dataset):
                  delta_time,
                  number_of_rollouts,
                  img_size,
+                 color,
                  noise_std,
                  radius_bound,
                  world_size,
                  seed,
-                 data_mean=.5,
-                 data_std=.5):
-        """Constructor method
+                 dtype=torch.float):
+        """Instantiate the EnvironmentSampler.
 
         Args:
             environment (Environment): Instance belonging to Environment abstract base class.
@@ -32,27 +37,27 @@ class EnvironmentSampler(Dataset):
             number_of_rollouts (int): Number of rollouts to generate.
             img_size (int): Size of the frames (in pixels).
             color (bool): Whether to have colored or grayscale frames.
-            noise_std (float): Standard deviation of the gaussian noise source, no noise for noise_std=0.
+            noise_std (float): Standard deviation of the gaussian noise source, no noise for
+                noise_std=0.
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius
                 r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
             world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
             seed (int): Seed for reproducibility.
-            data_mean (float): Data mean for standaritzation. Defaults to 0.5.
-            data_std (float): Data std for standaritzation. Defaults to 0.5.
+            dtype (torch.type): Type of the sampled tensors.
         """
         self.environment = environment
         self.dataset_len = dataset_len
-        self.data_mean = data_mean
-        self.data_std = data_std
         self.number_of_frames = number_of_frames
         self.delta_time = delta_time
         self.number_of_rollouts = number_of_rollouts
         self.img_size = img_size
+        self.color = color
         self.noise_std = noise_std
         self.radius_bound = radius_bound
         self.world_size = world_size
         self.seed = seed
+        self.dtype = dtype
 
     def __len__(self):
         """Get dataset length
@@ -69,31 +74,31 @@ class EnvironmentSampler(Dataset):
         Args:
             i (int): Index of the dataset sample (ignored since we sample random data).
         Returns:
-            (Torch.tensor): Tensor of shape (Batch, Nframes, Channels, Height, Width).
-                Contains standarized sampled rollouts        
+            (Torch.tensor): Tensor of shape (batch_len, seq_len, channels, height, width) with the
+                sampled rollouts.
         """
         rolls = self.environment.sample_random_rollouts(
             number_of_frames=self.number_of_frames,
             delta_time=self.delta_time,
             number_of_rollouts=self.number_of_rollouts,
             img_size=self.img_size,
+            color=self.color,
             noise_std=self.noise_std,
             radius_bound=self.radius_bound,
             world_size=self.world_size,
             seed=self.seed)
-        # standarization
-        rolls = (rolls - self.data_mean) / self.data_std
-        return rolls.transpose((0, 1, 4, 2, 3))
+        rolls = torch.from_numpy(rolls).type(self.dtype)
+        return conversions.to_channels_first(rolls)
 
 
 # Sample code for DataLoader call
 if __name__ == "__main__":
     import time
+    from .pendulum import Pendulum
+
     pd = Pendulum(mass=.5, length=1, g=3)
     trainDS = EnvironmentSampler(environment=pd,
                                  dataset_len=100,
-                                 data_mean=.5,
-                                 data_std=.5,
                                  number_of_frames=100,
                                  delta_time=.1,
                                  number_of_rollouts=4,

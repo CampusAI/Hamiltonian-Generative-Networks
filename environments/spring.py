@@ -1,6 +1,6 @@
 import numpy as np
 
-from environments import Environment, visualize_rollout
+from environment import Environment, visualize_rollout
 
 
 class Spring(Environment):

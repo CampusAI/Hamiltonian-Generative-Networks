@@ -45,7 +45,7 @@ class EncoderNet(nn.Module):
         Args:
             seq_len (int): Number of frames that compose a sequence.
             in_channels (int): Number of channels of images in the input sequence.
-            out_channels (int): Number of in_channels of the output latent encoding.
+            out_channels (int): Number of channels of the output latent encoding.
             hidden_conv_layers (int): Number of hidden convolutional layers (excluding the input
                 and the two output layers for mean and variance).
             n_filters (list): List with number of filters for each of the hidden layers.
@@ -102,25 +102,29 @@ class EncoderNet(nn.Module):
         self.activation = act_func
         self.type(dtype)
 
-    def forward(self, x):
+    def forward(self, x, sample=True):
         """Compute the encoding of the given sequence of images.
 
         Args:
             x (torch.Tensor): A (batch_size, seq_len * channels, height, width) tensor containing
             the sequence of frames.
+            sample (bool): Whether to sample from the encoding distribution or returning the mean.
 
         Returns:
-            A tuple (z, mu, stddev), which are all N x 48 x H x W tensors. z is the latent encoding
-            for the given input sequence, while mu and stddev are distribution parameters.
+            A tuple (z, mu, log_var), which are all N x 48 x H x W tensors. z is the latent encoding
+            for the given input sequence, while mu and log_var are distribution parameters.
         """
         x = self.activation(self.input_conv(x))
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
-        mean = self.activation(self.out_mean(x))
-        stddev = torch.exp(0.5 * self.activation(self.out_logvar(x)))
+        mean = self.out_mean(x)
+        if not sample:
+            return mean, None, None  # Return None to ensure that they're not used in loss
+        log_var = self.out_logvar(x)
+        stddev = torch.exp(0.5 * log_var)
         epsilon = torch.randn_like(mean)
         z = mean + stddev * epsilon
-        return z, mean, stddev
+        return z, mean, log_var
 
 
 class TransformerNet(nn.Module):
@@ -166,8 +170,7 @@ class TransformerNet(nn.Module):
         super().__init__()
         if all(var is None for var in (hidden_conv_layers, n_filters,
                                        kernel_sizes, strides)):
-            hidden_conv_layers = TransformerNet.DEFAULT_PARAMS[
-                'hidden_conv_layers']
+            hidden_conv_layers = TransformerNet.DEFAULT_PARAMS['hidden_conv_layers']
             n_filters = TransformerNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = TransformerNet.DEFAULT_PARAMS['kernel_sizes']
             strides = TransformerNet.DEFAULT_PARAMS['strides']
@@ -234,49 +237,9 @@ class TransformerNet(nn.Module):
             Two tensors of shape (batch_size, channels/2, ...) resulting from splitting the given
             tensor along the second dimension.
         """
-        assert encoding.shape[
-            1] % 2 == 0, 'The number of in_channels is odd. Cannot split properly.'
+        assert encoding.shape[1] % 2 == 0,\
+            'The number of in_channels is odd. Cannot split properly.'
         half_len = int(encoding.shape[1] / 2)
         q = encoding[:, :half_len]
         p = encoding[:, half_len:]
         return q, p
-
-
-def concat_rgb(sequences_batch):
-    """Concatenate the images along channel dimension.
-
-    Args:
-        sequences_batch (torch.Tensor): A Tensor with shape (batch_size, seq_len, channels, height, width)
-            containing the images of the sequence.
-
-    Returns:
-        A Tensor with shape (batch_size, seq_len * channels, height, width) with the images
-        concatenated along the channel dimension.
-    """
-    batch_size, seq_len, channels, h, w = sequences_batch.size()
-    return torch.reshape(sequences_batch,
-                         shape=(batch_size, seq_len * channels, h, w))
-
-
-if __name__ == '__main__':
-    encoder = EncoderNet(seq_len=10,
-                         in_channels=3,
-                         out_channels=48,
-                         hidden_conv_layers=9,
-                         kernel_sizes=[3 for i in range(11)],
-                         n_filters=[64 for i in range(10)],
-                         strides=[1 for i in range(11)])
-    transformer = TransformerNet(in_channels=48,
-                                 out_channels=32,
-                                 hidden_conv_layers=4,
-                                 kernel_sizes=[3, 3, 3, 3, 3, 4],
-                                 n_filters=[32, 48, 64, 96, 128],
-                                 strides=[2, 2, 2, 1, 1, 2])
-
-    inp = torch.randn((128, 10, 3, 32, 32))
-    inp = concat_rgb(inp)
-    encoded, mean, var = encoder(inp)
-
-    q, p = transformer(encoded)
-    print(q.size())
-    print(p.size())

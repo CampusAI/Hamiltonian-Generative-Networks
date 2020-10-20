@@ -46,8 +46,14 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _draw(self):
-        """Returns array of the environment evolution
+    def _draw(self, img_size, color, world_size):
+        """Returns array of the environment evolution.
+
+        Args:
+            img_size (int): Size of the frames (in pixels).
+            color (bool): Whether to have colored or grayscale frames.
+            world_size (float): Spatial extent of the window where the rendering is taking place
+                (in meters).
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
@@ -76,6 +82,7 @@ class Environment(ABC):
         Raises:
             AssertError: If p or q are None
         """
+
         if isinstance(self.q, np.ndarray):
             assert self.q.all() != None
             assert self.p.all() != None
@@ -140,8 +147,8 @@ def visualize_rollout(rollout):
     """Visualization for a single sample rollout of a physical system.
 
     Args:
-        rollout (ndarray): Rollout of an environment.
-            Its shape should be (Nframes, Height, Width, Channels)
+        rollout (numpy.ndarray): Numpy array containing the sequence of images. It's shape must be
+            (seq_len, height, width, channels).
     """
     fig = plt.figure()
     img = []
