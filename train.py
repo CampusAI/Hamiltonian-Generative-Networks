@@ -1,12 +1,12 @@
 """Script to train the Hamiltonian Generative Network
 """
 import os
+import yaml
 
 import numpy as np
 import time
 import torch
 import tqdm
-import yaml
 
 from environments.datasets import EnvironmentSampler
 from environments.environment import visualize_rollout
@@ -17,30 +17,16 @@ from networks.hamiltonian_net import HamiltonianNet
 from networks.decoder_net import DecoderNet
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
+from utilities import debug_utils
 
 
-def train(params):
-    """Instantiate and train the Hamiltonian Generative Network.
+def load_hgn(params, device, dtype):
+    """Return the Hamiltonian Generative Network created from the given parameters.
 
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
+        device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
     """
-    # Set device
-    device = "cuda:" + str(
-        params["gpu_id"]) if torch.cuda.is_available() else "cpu"
-
-    # Pick environment
-    env = EnvFactory.get_environment(**params["environment"])
-
-    # Instantiate networks
-    dtype = torch.float
-    if params["networks"]["dtype"] == "double":
-        dtype = torch.double
-    elif params["networks"]["dtype"] != "float":
-        raise KeyError(
-            'Data type must be "float" or "double", %s not supported' %
-            params["networks"]["dtype"])
-
     encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
                          in_channels=params["rollout"]["n_channels"],
                          **params["networks"]["encoder"],
@@ -56,11 +42,9 @@ def train(params):
         out_channels=params["rollout"]["n_channels"],
         **params["networks"]["decoder"],
         dtype=dtype).to(device)
-
     # Define HGN integrator
     integrator = Integrator(delta_t=params["rollout"]["delta_time"],
                             method=params["integrator"]["method"])
-
     # Define optimization modules
     optim_params = [
         {
@@ -82,7 +66,6 @@ def train(params):
     ]
     optimizer = torch.optim.Adam(optim_params)
     loss = torch.nn.MSELoss()
-
     # Instantiate Hamiltonian Generative Network
     hgn = HGN(encoder=encoder,
               transformer=transformer,
@@ -93,6 +76,27 @@ def train(params):
               optimizer=optimizer,
               seq_len=params["rollout"]["seq_length"],
               channels=params["rollout"]["n_channels"])
+    return hgn
+
+
+def train(params):
+    """Instantiate and train the Hamiltonian Generative Network.
+
+    Args:
+        params (dict): Experiment parameters (see experiment_params folder).
+    """
+    # Set device
+    device = "cuda:" + str(
+        params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+
+    # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
+    dtype = torch.__getattribute__(params["networks"]["dtype"])
+
+    # Pick environment
+    env = EnvFactory.get_environment(**params["environment"])
+
+    # Load hgn from parameters to deice
+    hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Dataloader
     dataset_len = params["optimization"]["epochs"] * params["optimization"][
