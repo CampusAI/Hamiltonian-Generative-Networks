@@ -27,7 +27,7 @@ class HgnResult():
         self.z_sample = None
         self.q_s = []
         self.p_s = []
-        self.reconstructed_rollout = torch.empty(batch_shape)
+        self.reconstructed_rollout = None
         self.reconstruction_ptr = 0
 
     def set_input(self, rollout):
@@ -71,7 +71,10 @@ class HgnResult():
         assert self.reconstruction_ptr < self.reconstructed_rollout.shape[1],\
             'Trying to add rollout number ' + str(self.reconstruction_ptr) + ' when batch has ' +\
             str(self.reconstructed_rollout.shape[0])
-        self.reconstructed_rollout[:, self.reconstruction_ptr] = reconstruction
+        if self.reconstructed_rollout is None:
+            self.reconstructed_rollout = reconstruction
+        else:
+            self.reconstructed_rollout[:, self.reconstruction_ptr] = reconstruction
         self.reconstruction_ptr += 1
 
     def visualize(self):
