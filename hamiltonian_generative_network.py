@@ -26,6 +26,7 @@ class HGN:
                  integrator,
                  optimizer,
                  loss,
+                 device,
                  seq_len,
                  channels=3):
         """Instantiate a Hamiltonian Generative Network.
@@ -38,12 +39,14 @@ class HGN:
             integrator (Integrator): HGN integrator.
             optimizer (torch.optim.Optimizer): PyTorch Network optimizer.
             loss (torch.nn.modules.loss): PyTorch Loss.
+            device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
             seq_len (int): Number of frames in each rollout.
             channels (int, optional): Number of channels of the images. Defaults to 3.
         """
         # Parameters
         self.seq_len = seq_len
         self.channels = channels
+        self.device = device
 
         # Modules
         self.encoder = encoder
@@ -75,7 +78,7 @@ class HGN:
         # Instantiate prediction object
         prediction_shape = list(rollout_batch.shape)
         prediction_shape[1] = n_steps
-        prediction = HgnResult(batch_shape=torch.Size(prediction_shape))
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape), device=self.device)
         prediction.set_input(rollout_batch)
 
         # Concat along channel dimension
