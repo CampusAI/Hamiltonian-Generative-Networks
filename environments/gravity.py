@@ -65,7 +65,7 @@ class NObjectGravity(Environment):
                 state, in the format of np.array([q,p]).reshape(-1).
 
         Returns:
-            equations ([float]): Movement equations of the physical system
+            equations (numpy.ndarray): Numpy array with derivatives of q and p w.r.t. time
         """
         # Convert states to n_object arrays of q and p
         states_resh = states.reshape(2, self.n_objects, 2)
