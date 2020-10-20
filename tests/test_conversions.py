@@ -14,7 +14,8 @@ def test_to_channels_last():
             for h in range(height):
                 for w in range(width):
                     for c in range(channels):
-                        assert tensor[b, s, c, h, w] == converted[b, s, h, w, c]
+                        assert tensor[b, s, c, h, w] == converted[b, s, h, w,
+                                                                  c]
 
 
 def test_to_channels_first():
@@ -27,7 +28,8 @@ def test_to_channels_first():
             for h in range(height):
                 for w in range(width):
                     for c in range(channels):
-                        assert tensor[b, s, h, w, c] == converted[b, s, c, h, w]
+                        assert tensor[b, s, h, w, c] == converted[b, s, c, h,
+                                                                  w]
 
 
 def test_concat_rgb():
@@ -56,9 +58,11 @@ def test_concat_rgb():
 
 def test_batch_to_sequence():
     batch_size, seq_len, height, width, channels = 15, 10, 32, 32, 3
-    batch = np.random.normal(size=(batch_size, seq_len, height, width, channels))
+    batch = np.random.normal(size=(batch_size, seq_len, height, width,
+                                   channels))
     sequence = conversions.batch_to_sequence(batch)
 
     for b in range(batch_size):
         for s in range(seq_len):
-            assert np.array_equal(batch[b], sequence[b*seq_len: (b+1)*seq_len])
+            assert np.array_equal(batch[b],
+                                  sequence[b * seq_len:(b + 1) * seq_len])

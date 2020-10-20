@@ -31,8 +31,8 @@ class HGN:
         """Instantiate a Hamiltonian Generative Network.
 
         Args:
-            encoder (networks.inference_net.EncoderNet): Encoder neural network.
-            transformer (networks.inference_net.TransformerNet): Transformer neural network.
+            encoder (networks.encoder_net.EncoderNet): Encoder neural network.
+            transformer (networks.transformer_net.TransformerNet): Transformer neural network.
             hnn (networks.hamiltonian_net.HamiltonianNet): Hamiltonian neural network.
             decoder (networks.decoder_net.DecoderNet): Decoder neural network.
             integrator (Integrator): HGN integrator.
