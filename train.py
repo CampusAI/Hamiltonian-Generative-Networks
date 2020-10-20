@@ -76,6 +76,7 @@ def load_hgn(params, device, dtype):
               integrator=integrator,
               loss=loss,
               optimizer=optimizer,
+              device=device,
               seq_len=params["rollout"]["seq_length"],
               channels=params["rollout"]["n_channels"])
     return hgn
@@ -101,7 +102,7 @@ def train(params):
     hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Either generate data on-the-fly or load the data from disk
-    trainDS = None
+    data_loader = None
     if params["dataset"]["on_the_fly_data"]:
         dataset_len = params["optimization"]["epochs"] * params[
             "optimization"]["batch_size"]
@@ -117,14 +118,19 @@ def train(params):
             radius_bound=params["dataset"]["radius_bound"],
             world_size=params["dataset"]["world_size"],
             seed=None)
-    else:
-        trainDS = EnvironmentLoader(params["dataset"]["data_root"])
 
-    # Dataloader instance test, batch_mode disabled
-    data_loader = torch.utils.data.DataLoader(
-        trainDS,
-        shuffle=False,
-        batch_size=params["optimization"]["batch_size"])
+        data_loader = torch.utils.data.DataLoader(
+            trainDS,
+            shuffle=False,
+            batch_size=None)
+    else:
+        trainDS = EnvironmentLoader(params["dataset"]["train_data"])
+
+        # Dataloader instance test, batch_mode enabled
+        data_loader = torch.utils.data.DataLoader(
+            trainDS,
+            shuffle=True,
+            batch_size=params["optimization"]["batch_size"])
 
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
     training_logger = TrainingLogger(hyper_params=params,
@@ -136,7 +142,7 @@ def train(params):
     model_save_file = os.path.join(params["model_save_dir"],
                                    params["experiment_id"])
     for ep in range(params["optimization"]["epochs"]):
-        print("Epoch %s / %s" % str(ep), str(params["optimization"]["epochs"]))
+        print("Epoch %s / %s" % (str(ep), str(params["optimization"]["epochs"])))
         pbar = tqdm.tqdm(data_loader)
         for _, rollout_batch in enumerate(pbar):
             # Move to device and change dtype
@@ -144,7 +150,7 @@ def train(params):
 
             # Do an optimization step
             error, kld, prediction = hgn.fit(
-                rollout_batch=rollout_batch,
+                rollouts=rollout_batch,
                 variational=params["networks"]["variational"])
 
             # Log progress
@@ -160,14 +166,29 @@ def train(params):
             pbar.set_description(msg)
         # Save model
         hgn.save(model_save_file)
+    return hgn
+
+# def test(hgn, params):
+#     test_DS = EnvironmentLoader(params["dataset"]["test_data"])
+#     data_loader = torch.utils.data.DataLoader(
+#         test_DS,
+#         shuffle=False,
+#         batch_size=1)
+
+#     pbar = tqdm.tqdm(data_loader)
+#     for _, rollout_batch in enumerate(pbar):
+#         rollout_batch = rollout_batch.to(device).type(dtype)
+#         result = hgn.forward()
+
 
 
 if __name__ == "__main__":
-    params_file = "experiment_params/no-var_kl.yaml"
+    params_file = "experiment_params/default.yaml"
 
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
 
     # Train HGN network
-    train(params)
+    hgn = train(params)
+    # test(hgn, params)
