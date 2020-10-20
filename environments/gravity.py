@@ -61,7 +61,8 @@ class NObjectGravity(Environment):
 
         Args:
             t (float): Time parameter of the dynamic equations.
-            states ([float]) Phase states at time t
+            states (numpy.ndarray): 1-D array that contains the information of the phase
+                state, in the format of np.array([q,p]).reshape(-1).
 
         Returns:
             equations ([float]): Movement equations of the physical system
