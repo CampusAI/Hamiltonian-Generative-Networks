@@ -6,7 +6,7 @@ class Integrator:
     """
     METHODS = ["Euler", "RK4", "Leapfrog"]
 
-    def __init__(self, delta_t, method="Euler"):
+    def __init__(self, delta_t, method="Leapfrog"):
         """Initialize HGN integrator.
 
         Args:
@@ -31,20 +31,24 @@ class Integrator:
         Args:
             q (torch.Tensor): Latent-space position tensor.
             p (torch.Tensor): Latent-space momentum tensor.
-            hnn (HamiltonianNet): Hamiltonian Neural Network.
+            hnn (networks.hamiltonian_net.HamiltonianNet): Hamiltonian Neural Network.
 
         Returns:
             tuple(torch.Tensor, torch.Tensor): Position and momentum time derivatives: dq_dt, dp_dt.
         """
+        if hnn.potential_learning and self.method != 'Leapfrog':
+            raise ValueError('Potential learning can only be used with leapfrog integration.')
         # Compute energy of the system
-        energy = hnn(q=q, p=p)
+        energy = hnn(p=p, q=q) if not hnn.potential_learning else hnn(q=q)
 
-        # dq_dt = dH/dp
-        dq_dt = torch.autograd.grad(energy,
-                                    p,
-                                    create_graph=True,
-                                    retain_graph=True,
-                                    grad_outputs=torch.ones_like(energy))[0]
+        dq_dt = None
+        if not hnn.potential_learning:
+            # dq_dt = dH/dp
+            dq_dt = torch.autograd.grad(energy,
+                                        p,
+                                        create_graph=True,
+                                        retain_graph=True,
+                                        grad_outputs=torch.ones_like(energy))[0]
 
         # dp_dt = -dH/dq
         dp_dt = -torch.autograd.grad(energy,

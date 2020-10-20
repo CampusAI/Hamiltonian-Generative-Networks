@@ -28,6 +28,7 @@ rollout:
 # Define networks architectures
 networks:
   variational: True
+  potential_learning: False
   dtype : "float"
   encoder:
     hidden_conv_layers: 6
@@ -54,7 +55,7 @@ networks:
 
 # Define HGN Integrator
 integrator:
-  method: "RK4"
+  method: "Leapfrog"
 
 # Define optimization
 optimization:

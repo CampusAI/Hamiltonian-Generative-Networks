@@ -35,8 +35,10 @@ def load_hgn(params, device, dtype):
         in_channels=params["networks"]["encoder"]["out_channels"],
         **params["networks"]["transformer"],
         dtype=dtype).to(device)
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
-                         dtype=dtype).to(device)
+    hnn = HamiltonianNet(
+        **params["networks"]["hamiltonian"],
+        potential_learning=params["networks"]["potential_learning"],
+        dtype=dtype).to(device)
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
         out_channels=params["rollout"]["n_channels"],
