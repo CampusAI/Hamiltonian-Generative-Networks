@@ -17,7 +17,6 @@ from networks.hamiltonian_net import HamiltonianNet
 from networks.decoder_net import DecoderNet
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
-from utilities import debug_utils
 
 
 def load_hgn(params, device, dtype):
