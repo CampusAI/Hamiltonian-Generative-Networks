@@ -1,3 +1,5 @@
+from utilities import conversions
+from environments.environment import visualize_rollout
 import os
 import sys
 
@@ -6,13 +8,12 @@ import numpy as np
 import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from environments.environment import visualize_rollout
-from utilities import conversions
 
 
 class HgnResult():
     """Class to bundle HGN guessed output information
     """
+
     def __init__(self, batch_shape):
         """Instantiate the HgnResult that will contain all the information of the forward pass
         over a single batch of rollouts.
@@ -69,18 +70,20 @@ class HgnResult():
                 containing the reconstructed rollout.
         """
         # TODO Fix this error. Workaround solution
-        #assert self.reconstruction_ptr < self.reconstructed_rollout.shape[1],\
+        # assert self.reconstruction_ptr < self.reconstructed_rollout.shape[1],\
         #    'Trying to add rollout number ' + str(self.reconstruction_ptr) + ' when batch has ' +\
         #    str(self.reconstructed_rollout.shape[0])
         if self.reconstructed_rollout is None:
             self.reconstructed_rollout = reconstruction
         else:
-            self.reconstructed_rollout[:, self.reconstruction_ptr] = reconstruction
+            self.reconstructed_rollout = torch.cat(
+                (self.reconstructed_rollout, reconstruction), dim=1)
         self.reconstruction_ptr += 1
 
     def visualize(self):
         """Visualize the predicted rollout.
         """
-        rollout_batch = conversions.to_channels_last(self.reconstructed_rollout).detach().numpy()
+        rollout_batch = conversions.to_channels_last(
+            self.reconstructed_rollout).detach().numpy()
         sequence = conversions.batch_to_sequence(rollout_batch)
         visualize_rollout(sequence)
