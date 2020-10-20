@@ -94,11 +94,9 @@ class EnvironmentSampler(Dataset):
 
 
 class EnvironmentLoader(Dataset):
-    def __init__(self, root_dir, data_mean=0., data_std=1.):
+    def __init__(self, root_dir):
         self.root_dir = root_dir
         self.file_list = os.listdir(root_dir)
-        self.data_mean = data_mean
-        self.data_std = data_std
 
     def __len__(self):
         return len(self.file_list)
@@ -106,7 +104,6 @@ class EnvironmentLoader(Dataset):
     def __getitem__(self, i):
         rolls = np.load(os.path.join(
             self.root_dir, self.file_list[i]))['arr_0']
-        rolls = (rolls - self.data_mean) / self.data_std
         return rolls.transpose((0, 3, 1, 2))
 
 
