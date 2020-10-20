@@ -12,7 +12,6 @@ class ChaoticPendulum(Environment):
             + mgL*(3 - 2*cos q_1 - cos q_2)
 
     """
-
     def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
@@ -42,7 +41,8 @@ class ChaoticPendulum(Environment):
             return
         if len(q) != 2 or len(p) != 2:
             raise ValueError(
-                "q and p must be 2 objects in 1-D space: Angular momentum and Phase.")
+                "q and p must be 2 objects in 1-D space: Angular momentum and Phase."
+            )
         self.q = q
         self.p = p
 
@@ -68,8 +68,9 @@ class ChaoticPendulum(Environment):
             np.cos(states_resh[0, 0] - states_resh[0, 1])
         dyn[0, :] /= quot
         #dp_1 and dp_2
-        dyn[1, :] -= 2*self.mass*self.g*self.length*np.sin(states_resh[0, :])
-        cst = 1/(2*self.mass*(self.length**2))
+        dyn[1, :] -= 2 * self.mass * self.g * self.length * np.sin(
+            states_resh[0, :])
+        cst = 1 / (2 * self.mass * (self.length**2))
         term1 = states_resh[1, 0]**2 + states_resh[1, 1]**2 + \
             2*states_resh[1, 0]*states_resh[1, 1] * \
             np.cos(states_resh[0, 0] - states_resh[0, 1])
@@ -79,11 +80,13 @@ class ChaoticPendulum(Environment):
             np.sin(states_resh[0, 0] - states_resh[0, 1])
         dterm1_dq_2 = -dterm1_dq_1
 
-        dterm2_dq_1 = 2*np.cos(states_resh[0, 0] - states_resh[0, 1])
+        dterm2_dq_1 = 2 * np.cos(states_resh[0, 0] - states_resh[0, 1])
         dterm2_dq_2 = -dterm2_dq_1
 
-        dyn[1, 0] -= cst*(dterm1_dq_1*term2 - term1*dterm2_dq_1)/(term2**2)
-        dyn[1, 1] -= cst*(dterm1_dq_2*term2 - term1*dterm2_dq_2)/(term2**2)
+        dyn[1, 0] -= cst * (dterm1_dq_1 * term2 - term1 * dterm2_dq_1) / (term2
+                                                                          **2)
+        dyn[1, 1] -= cst * (dterm1_dq_2 * term2 - term1 * dterm2_dq_2) / (term2
+                                                                          **2)
 
         return dyn.reshape(-1)
 
@@ -107,12 +110,14 @@ class ChaoticPendulum(Environment):
         grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
-            col_1 = np.exp(-(((I - self.length*np.sin(q[0, t]))**2 +
-                              (J - self.length*np.cos(q[0, t]))**2) /
-                             ((self.length/3.)**2))**4)
-            col_2 = np.exp(-(((I - self.length*np.sin(q[0, t]) - self.length*np.sin(q[1, t]))**2 +
-                              (J - self.length*np.cos(q[0, t]) - self.length*np.cos(q[1, t]))**2) /
-                             ((self.length/3.)**2))**4)
+            col_1 = np.exp(-(((I - self.length * np.sin(q[0, t]))**2 +
+                              (J - self.length * np.cos(q[0, t]))**2) /
+                             ((self.length / 3.)**2))**4)
+            col_2 = np.exp(-(((I - self.length * np.sin(q[0, t]) -
+                               self.length * np.sin(q[1, t]))**2 +
+                              (J - self.length * np.cos(q[0, t]) -
+                               self.length * np.cos(q[1, t]))**2) /
+                             ((self.length / 3.)**2))**4)
             if color:
                 vid[t, :, :, 0] += col_1
                 vid[t, :, :, 1] += col_1
@@ -142,7 +147,7 @@ if __name__ == "__main__":
 
     pd = ChaoticPendulum(mass=1., length=1, g=3)
     rolls = pd.sample_random_rollouts(number_of_frames=1000,
-                                      delta_time=1./30,
+                                      delta_time=1. / 30,
                                       number_of_rollouts=1,
                                       img_size=64,
                                       noise_std=0.,
