@@ -1,9 +1,11 @@
 """ Iterates through all the yaml files of the given directory and trains a model
 """
 import os
+import sys
 
 import yaml
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from train import train
 
 if __name__=="__main__":

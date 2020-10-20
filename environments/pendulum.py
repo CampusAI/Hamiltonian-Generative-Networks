@@ -11,6 +11,7 @@ class Pendulum(Environment):
         theta'' = -(g/l)*sin(theta)
 
     """
+
     def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
@@ -78,26 +79,28 @@ class Pendulum(Environment):
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) /
+                vid[t, :, :, 0] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
+                                             (J - self.length*np.cos(q[t]))**2) /
                                             (self.mass**2))**4)
-                vid[t, :, :, 1] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) /
+                vid[t, :, :, 1] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
+                                             (J - self.length*np.cos(q[t]))**2) /
                                             (self.mass**2))**4)
             else:
-                vid[t, :, :, 0] += np.exp(-(((I - np.sin(q[t]))**2 +
-                                             (J - np.cos(q[t]))**2) /
+                vid[t, :, :, 0] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
+                                             (J - self.length*np.cos(q[t]))**2) /
                                             (self.mass**2))**4)
             vid[t][vid[t] > 1] = 1
 
         return vid
 
-    def _sample_init_conditions(self, radius):
+    def _sample_init_conditions(self, radius_bound):
         """Samples random initial conditions for the environment
 
         Args:
-            radius (float): Radius of the sampling process
+            radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
         """
+        radius_lb, radius_ub = radius_bound
+        radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
         states = np.random.rand(2) * 2. - 1
         states = (states / np.sqrt((states**2).sum())) * radius
         self.set([states[0]], [states[1]])
@@ -112,8 +115,8 @@ if __name__ == "__main__":
                                       number_of_rollouts=16,
                                       img_size=32,
                                       noise_std=0.,
-                                      radius_bound=(1.3, 2.3),
-                                      world_size=1.5,
+                                      radius_bound=(1, 2.3),
+                                      world_size=3.5,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

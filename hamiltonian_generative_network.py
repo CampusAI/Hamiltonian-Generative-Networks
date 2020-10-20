@@ -78,6 +78,7 @@ class HGN:
         prediction = HgnResult(batch_shape=torch.Size(prediction_shape))
         prediction.set_input(rollout_batch)
 
+        # Concat along channel dimension
         rollout_batch = conversions.concat_rgb(rollout_batch)
 
         # Latent distribution

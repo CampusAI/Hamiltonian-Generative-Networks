@@ -4,14 +4,14 @@ import torch
 class Integrator:
     """HGN integrator class: Implements different integration methods for Hamiltonian differential equations.
     """
-    METHODS = ["Euler", "RK4", "leapfrog"]
+    METHODS = ["Euler", "RK4", "Leapfrog"]
 
     def __init__(self, delta_t, method="Euler"):
         """Initialize HGN integrator.
 
         Args:
             delta_t (float): Time difference between integration steps.
-            method (str, optional): Integration method, must be "Euler", "RK4", or "leapfrog". Defaults to "Euler".
+            method (str, optional): Integration method, must be "Euler", "RK4", or "Leapfrog". Defaults to "Euler".
 
         Raises:
             KeyError: If the integration method passed is invalid.
@@ -45,12 +45,14 @@ class Integrator:
                                     create_graph=True,
                                     retain_graph=True,
                                     grad_outputs=torch.ones_like(energy))[0]
+
         # dp_dt = -dH/dq
         dp_dt = -torch.autograd.grad(energy,
                                      q,
                                      create_graph=True,
                                      retain_graph=True,
                                      grad_outputs=torch.ones_like(energy))[0]
+
         return dq_dt, dp_dt
 
     def _euler_step(self, q, p, hnn):
@@ -107,6 +109,27 @@ class Integrator:
                                      (k4_p / 6))
         return q_next, p_next
 
+    def _lf_step(self, q, p, hnn):
+        """Compute next latent-space position and momentum using LeapFrog integration method.
+
+        Args:
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
+            hnn (HamiltonianNet): Hamiltonian Neural Network.
+
+        Returns:
+            tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
+        """
+        # get acceleration
+        _, dp_dt = self._get_grads(q, p, hnn)
+        # leapfrog step
+        p_next_half = p + dp_dt*(self.delta_t)/2
+        q_next = q + p_next_half*self.delta_t
+        # momentum synchronization
+        _, dp_next_dt = self._get_grads(q_next, p_next_half, hnn)
+        p_next = p_next_half + dp_next_dt*(self.delta_t)/2
+        return q_next, p_next
+
     def step(self, q, p, hnn):
         """Compute next latent-space position and momentum.
 
@@ -114,7 +137,7 @@ class Integrator:
             q (torch.Tensor): Latent-space position tensor.
             p (torch.Tensor): Latent-space momentum tensor.
             hnn (HamiltonianNet): Hamiltonian Neural Network.
-        
+
         Raises:
             NotImplementedError: If the integration method requested is not implemented.
 
@@ -125,4 +148,6 @@ class Integrator:
             return self._euler_step(q, p, hnn)
         if self.method == "RK4":
             return self._rk_step(q, p, hnn)
+        if self.method == "Leapfrog":
+            return self._lf_step(q, p, hnn)
         raise NotImplementedError
