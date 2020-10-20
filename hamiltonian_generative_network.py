@@ -143,8 +143,8 @@ class HGN:
         # Optimization step
         total_loss.backward()
         self.optimizer.step()
-        reconstruction_error_np = reconstruction_error.detach().numpy()
-        kl_div_np = kl_div.detach().numpy() if kl_div is not None else None
+        reconstruction_error_np = reconstruction_error.detach().cpu().numpy()
+        kl_div_np = kl_div.detach().cpu().numpy() if kl_div is not None else None
         return reconstruction_error_np, kl_div_np, prediction
 
     def load(self, directory):
