@@ -22,10 +22,14 @@ Re-implementation of Hamiltonian Generative Networks [paper](https://arxiv.org/a
 
 ## How to train
 The [train.py](train.py) script takes care of performing the training.
-To start a training, run `python train.py [--params param_file] [--cpu]`
+To start a training, run
+```cmd
+python train.py [--params param_file] [--name experimen_name] [--cpu]
+```
 where the optional argument `--param` can be used to specify the parameter
-file to be used. `--cpu` can be used to force training on the CPU,
-otherwise the training will be performed in the GPU (if available). 
+file to be used. `--name` can be used to overwrite the `experiment_id` of the
+yaml file and save the data under the new name. `--cpu` can be used to force
+training on the CPU, otherwise the training will be performed in the GPU (if available). 
 
 Training can be done in on-line or off-line mode.
 
@@ -44,11 +48,13 @@ example.
 A dataset can be generated starting from a `yaml` parameter file that specifies all its parameters
 in the `environment` and `dataset` sections. To create a dataset, run
 ```cmd
-python environments/generate_data.py [--params parameter_file]
+python environments/generate_data.py [--params parameter_file] [--name name]
 ```
 where the optional argument `--params` can be used to specify a parameter file from which to
-generate the dataset. If not specifies,
+generate the dataset. If not specified,
 [experiment_params/default_online.yaml](experiment_params/default_online.yaml) is used.
+The `--name` argument can be used to assign the given name to the dataset instead of using
+the `experiment_id` of the yaml.
 
-**Important:** The given parameter file must fully specify the `dataset` and `environment`
-sections. 
+**Important:** The given parameter file for dataset generation must fully specify the `dataset` and
+ `environment` sections. 
