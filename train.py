@@ -14,12 +14,23 @@ from utilities.training_logger import TrainingLogger
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 
 
-def train(params, cpu=False):
+def _avoid_overwriting(experiment_id):
+    # This function throws an error if the given experiment data already exists in runs/
+    logdir = os.path.join('runs', experiment_id)
+    if os.path.exists(logdir):
+        assert len(os.listdir(logdir)) == 0,\
+            f'Experiment id {experiment_id} already exists in runs/. Remove it, change the name ' \
+            f'in the yaml file.'
+
+
+def train(params, cpu=False, resume=False):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
     """
+    if not resume:
+        _avoid_overwriting(params['experiment_id'])  # Avoid overwriting tensorboard data
     # Set device and dtype
     if cpu:
         device = 'cpu'
@@ -39,7 +50,6 @@ def train(params, cpu=False):
         print("Training with OFFLINE data...")
         train_data_loader, test_data_loader = get_offline_dataloaders(params)
 
-    # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
 
     # Initialize training logger
     training_logger = TrainingLogger(hyper_params=params,
@@ -103,16 +113,34 @@ if __name__ == "__main__":
     parser.add_argument(
         '--params', action='store', nargs=1, required=False,
         help='Path to the yaml file with the training configuration. If not specified,'
-             'experiment_params/default_online.yaml will be used')
-    parser.add_argument('--cpu', action='store_true', required=False, default=False,
-                        help='If specified, the training will be run on cpu. Otherwise, it will'
-                             'be run on GPU, unless GPU is not available.')
+             'experiment_params/default_online.yaml will be used'
+    )
+    parser.add_argument(
+        '--name', action='store', nargs=1, required=False,
+        help='If specified, this name will be used instead of experiment_name of the yaml file.'
+    )
+    parser.add_argument(
+        '--cpu', action='store_true', required=False, default=False,
+        help='If specified, the training will be run on cpu. Otherwise, it will be run on GPU, '
+             'unless GPU is not available.'
+    )
+    parser.add_argument(
+        '--resume', action='store', required=False, nargs='?', default=None,
+        help='Resume the training from a saved model. If a path is provided, the training will '
+             'be resumed from the given checkpoint. Otherwise, the last checkpoint will be taken '
+             'from saved_models/<experiment_id>'
+    )
     args = parser.parse_args()
+
+    if args.resume is not None:
+        raise NotImplementedError('Resume training from command line is not implemented yet')
 
     params_file = args.params[0] if args.params is not None else DEFAULT_PARAM_FILE
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
 
+    if args.name is not None:
+        params['experiment_id'] = args.name[0]
     # Train HGN network
     hgn = train(params, cpu=args.cpu)
