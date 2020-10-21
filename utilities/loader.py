@@ -43,6 +43,7 @@ def load_hgn(params, device, dtype):
     # Define HGN integrator
     integrator = Integrator(delta_t=params["rollout"]["delta_time"],
                             method=params["integrator"]["method"])
+    
     # Define optimization modules
     optim_params = [
         {
@@ -64,6 +65,7 @@ def load_hgn(params, device, dtype):
     ]
     optimizer = torch.optim.Adam(optim_params)
     loss = torch.nn.MSELoss()
+    
     # Instantiate Hamiltonian Generative Network
     hgn = HGN(encoder=encoder,
               transformer=transformer,
