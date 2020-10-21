@@ -48,13 +48,16 @@ if __name__ == '__main__':
         '--params', action='store', nargs=1, type=str, required=False,
         help='YAML file from which to read the dataset parameters. If not specified,'
              'experiment_params/default_online.yaml will be used.')
+    parser.add_argument('--name', action='store', nargs=1, required=False,
+                        help='Use this name for the dataset instead of experiment_name in the '
+                             'yaml file.')
     args = parser.parse_args()
 
     parameter_file = args.params[0] if args.params is not None else DEFAULT_PARAMS_FILE
     online_params = _read_params(parameter_file)
 
     try:
-        EXP_NAME = online_params['experiment_id']
+        EXP_NAME = online_params['experiment_id'] if args.name is None else args.name[0]
         N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples']
         N_TEST_SAMPLES = online_params['dataset']['num_test_samples']
         IMG_SIZE = online_params['dataset']['img_size']
