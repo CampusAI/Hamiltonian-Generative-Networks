@@ -73,6 +73,7 @@ class Pendulum(Environment):
         length = len(q)
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
+            vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
         grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
@@ -115,8 +116,8 @@ if __name__ == "__main__":
                                       number_of_rollouts=16,
                                       img_size=32,
                                       noise_std=0.,
-                                      radius_bound=(1, 2.3),
-                                      world_size=3.5,
+                                      radius_bound=(0., 0.001),
+                                      world_size=2.,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

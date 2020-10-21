@@ -109,6 +109,7 @@ class NObjectGravity(Environment):
         length = q.shape[-1]
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
+            vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
         grid = np.arange(0, 1, 1./res)*2*world_size - world_size
@@ -201,15 +202,15 @@ class NObjectGravity(Environment):
 # Sample code for sampling rollouts
 if __name__ == "__main__":
 
-    og = NObjectGravity(mass=[1., 1., 1., 1., 1., 1., 1.],
+    og = NObjectGravity(mass=[1., 1., 1.],
                         gravity_cst=1., orbit_noise=0.1)
     rolls = og.sample_random_rollouts(number_of_frames=1000,
                                       delta_time=0.1,
                                       number_of_rollouts=1,
-                                      img_size=64,
+                                      img_size=32,
                                       noise_std=0.,
                                       radius_bound=(2., 3.2),
-                                      world_size=5,
+                                      world_size=6,
                                       seed=33)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

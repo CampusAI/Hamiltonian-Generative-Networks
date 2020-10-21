@@ -105,6 +105,7 @@ class ChaoticPendulum(Environment):
         length = q.shape[-1]
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
+            vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
         grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
@@ -147,7 +148,7 @@ if __name__ == "__main__":
 
     pd = ChaoticPendulum(mass=1., length=1, g=3)
     rolls = pd.sample_random_rollouts(number_of_frames=1000,
-                                      delta_time=1. / 30,
+                                      delta_time=.125,
                                       number_of_rollouts=1,
                                       img_size=64,
                                       noise_std=0.,
