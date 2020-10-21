@@ -18,6 +18,7 @@ dataset:
   radius_bound: [1.3, 2.3]
   world_size: 1.5
   random: True
+  dataset_length: 50000  # Number of rollouts used in training
 
 # Define rollout
 rollout:
@@ -54,12 +55,12 @@ networks:
 
 # Define HGN Integrator
 integrator:
-  method: "RK4"
+  method: "Leapfrog"
 
 # Define optimization
 optimization:
-  epochs: 5
-  batch_size: 1
+  epochs: 1
+  batch_size: 16
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4

@@ -98,8 +98,7 @@ def train(params):
     hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Dataloader
-    dataset_len = params["optimization"]["epochs"] * params["optimization"][
-        "batch_size"]
+    dataset_len = params["dataset"]["dataset_length"]
     seed = None if params["dataset"]["random"] else 0
     trainDS = EnvironmentSampler(
         environment=env,
