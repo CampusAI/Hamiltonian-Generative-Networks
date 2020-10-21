@@ -8,78 +8,10 @@ import time
 import torch
 import tqdm
 
-from environments.datasets import EnvironmentSampler, EnvironmentLoader
-from environments.environment import visualize_rollout
-from environments.environment_factory import EnvFactory
-from hamiltonian_generative_network import HGN
-from networks.decoder_net import DecoderNet
-from networks.encoder_net import EncoderNet
-from networks.hamiltonian_net import HamiltonianNet
-from networks.transformer_net import TransformerNet
+from utilities import debug_utils
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
-from utilities import debug_utils
-
-
-def load_hgn(params, device, dtype):
-    """Return the Hamiltonian Generative Network created from the given parameters.
-
-    Args:
-        params (dict): Experiment parameters (see experiment_params folder).
-        device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
-    """
-    encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
-                         in_channels=params["rollout"]["n_channels"],
-                         **params["networks"]["encoder"],
-                         dtype=dtype).to(device)
-    transformer = TransformerNet(
-        in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"],
-        dtype=dtype).to(device)
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
-                         dtype=dtype).to(device)
-    decoder = DecoderNet(
-        in_channels=params["networks"]["transformer"]["out_channels"],
-        out_channels=params["rollout"]["n_channels"],
-        **params["networks"]["decoder"],
-        dtype=dtype).to(device)
-
-    # Define HGN integrator
-    integrator = Integrator(delta_t=params["rollout"]["delta_time"],
-                            method=params["integrator"]["method"])
-    # Define optimization modules
-    optim_params = [
-        {
-            'params': encoder.parameters(),
-            'lr': params["optimization"]["encoder_lr"]
-        },
-        {
-            'params': transformer.parameters(),
-            'lr': params["optimization"]["transformer_lr"]
-        },
-        {
-            'params': hnn.parameters(),
-            'lr': params["optimization"]["hnn_lr"]
-        },
-        {
-            'params': decoder.parameters(),
-            'lr': params["optimization"]["decoder_lr"]
-        },
-    ]
-    optimizer = torch.optim.Adam(optim_params)
-    loss = torch.nn.MSELoss()
-    # Instantiate Hamiltonian Generative Network
-    hgn = HGN(encoder=encoder,
-              transformer=transformer,
-              hnn=hnn,
-              decoder=decoder,
-              integrator=integrator,
-              loss=loss,
-              optimizer=optimizer,
-              device=device,
-              seq_len=params["rollout"]["seq_length"],
-              channels=params["rollout"]["n_channels"])
-    return hgn
+from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 
 
 def train(params, test=True):
@@ -88,61 +20,40 @@ def train(params, test=True):
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
     """
-    # Set device
+    # Set device and dtype TODO(oleguer): Make choosing cpu an option
     device = "cuda:" + str(
         params["gpu_id"]) if torch.cuda.is_available() else "cpu"
-
-    # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
     dtype = torch.__getattribute__(params["networks"]["dtype"])
-
-    # Pick environment
-    env = EnvFactory.get_environment(**params["environment"])
 
     # Load hgn from parameters to deice
     hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Either generate data on-the-fly or load the data from disk
-    data_loader = None
-    if params["dataset"]["on_the_fly_data"]:
-        dataset_len = params["dataset"]["on_the_fly_rollouts"]
-        trainDS = EnvironmentSampler(
-            environment=env,
-            dataset_len=dataset_len,
-            number_of_frames=params["rollout"]["seq_length"],
-            delta_time=params["rollout"]["delta_time"],
-            number_of_rollouts=params["optimization"]["batch_size"],
-            img_size=params["dataset"]["img_size"],
-            color=params["rollout"]["n_channels"] == 3,
-            noise_std=params["dataset"]["noise_std"],
-            radius_bound=params["dataset"]["radius_bound"],
-            world_size=params["dataset"]["world_size"],
-            seed=None)
-
-        data_loader = torch.utils.data.DataLoader(trainDS,
-                                                  shuffle=False,
-                                                  batch_size=None)
+    train_data_loader, test_data_loader = None, None
+    if params.has_key("environment"):
+        print("Training with ONLINE data...")
+        train_data_loader, test_data_loader = get_online_dataloaders(params)
     else:
-        trainDS = EnvironmentLoader(params["dataset"]["train_data"])
-
-        # Dataloader instance test, batch_mode enabled
-        data_loader = torch.utils.data.DataLoader(
-            trainDS,
-            shuffle=True,
-            batch_size=params["optimization"]["batch_size"])
+        print("Training with OFFLINE data...")
+        train_data_loader, test_data_loader = get_offline_dataloaders(params)
 
     # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+
+    # Initialize training logger
     training_logger = TrainingLogger(hyper_params=params,
                                      loss_freq=100,
-                                     rollout_freq=1000,
-                                     model_freq=1000)
+                                     rollout_freq=100,
+                                     model_freq=10000)
 
     # Initialize tensorboard writer
     model_save_file = os.path.join(params["model_save_dir"],
                                    params["experiment_id"])
+
+    # TRAIN
     for ep in range(params["optimization"]["epochs"]):
         print("Epoch %s / %s" %
               (str(ep), str(params["optimization"]["epochs"])))
-        pbar = tqdm.tqdm(data_loader)
+        pbar = tqdm.tqdm(train_data_loader)
         for _, rollout_batch in enumerate(pbar):
             # Move to device and change dtype
             rollout_batch = rollout_batch.to(device).type(dtype)
@@ -166,27 +77,20 @@ def train(params, test=True):
         # Save model
         hgn.save(model_save_file)
 
-    # Test result
-    if test:
-        loss = torch.nn.MSELoss()
-        test_DS = EnvironmentLoader(params["dataset"]["test_data"])
-        data_loader = torch.utils.data.DataLoader(
-            test_DS,
-            shuffle=True,
-            batch_size=params["optimization"]["batch_size"])
-
-        print("Testing...")
-        pbar = tqdm.tqdm(data_loader)
-        test_error = 0
-        for _, rollout_batch in enumerate(pbar):
-            rollout_batch = rollout_batch.to(device).type(dtype)
-            prediction = hgn.forward(
-                rollout_batch=rollout_batch,
-                variational=params["networks"]["variational"])
-            error = loss(input=prediction.input,
-                         target=prediction.reconstructed_rollout)
-            test_error += error / len(data_loader)
-        training_logger.log_test_error(test_error)
+    # TEST
+    print("Testing...")
+    test_error = 0
+    pbar = tqdm.tqdm(test_data_loader)
+    for _, rollout_batch in enumerate(pbar):
+        rollout_batch = rollout_batch.to(device).type(dtype)
+        prediction = hgn.forward(rollout_batch=rollout_batch,
+                                 variational=params["networks"]["variational"])
+        error = torch.nn.MSELoss(
+            input=prediction.input,
+            target=prediction.reconstructed_rollout).detach().cpu().numpy()
+        test_error += error / len(test_data_loader)
+    training_logger.log_test_error(test_error)
+    return hgn
 
 
 if __name__ == "__main__":
@@ -198,4 +102,3 @@ if __name__ == "__main__":
 
     # Train HGN network
     hgn = train(params, test=True)
-    # test(hgn, params)
