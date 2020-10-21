@@ -25,7 +25,6 @@ class HGN:
                  decoder,
                  integrator,
                  optimizer,
-                 loss,
                  seq_len,
                  channels=3):
         """Instantiate a Hamiltonian Generative Network.
@@ -54,7 +53,21 @@ class HGN:
 
         # Optimization
         self.optimizer = optimizer
-        self.loss = loss
+    
+
+    def reconstruction_loss(self, target, prediction):
+        """Computes the MSE loss between the target and the predictions.
+            
+        Args:
+            target (Tensor): The target batch
+            prediction (Tensor) The prediction of the model
+
+        Returns:
+            (Tensor): MSE loss
+        """
+        # Compute sum across each datapoint in the batch and then average
+        return torch.mean(torch.sum(torch.pow(prediction - target, 2), 1))
+
 
     def forward(self, rollout_batch, n_steps=None, variational=True):
         """Get the prediction of the HGN for a given rollout_batch of n_steps.
@@ -125,7 +138,7 @@ class HGN:
         prediction = self.forward(rollout_batch=rollouts, variational=variational)
         
         # Compute frame reconstruction error
-        reconstruction_error = self.loss(input=prediction.input,
+        reconstruction_error = self.reconstruction_loss(input=prediction.input,
                                          target=prediction.reconstructed_rollout)
 
         total_loss = reconstruction_error
@@ -135,7 +148,7 @@ class HGN:
             mu = prediction.z_mean
             logvar = prediction.z_logvar
             # TODO(Oleguer) Sum or mean?
-            kl_div = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+            kl_div = self.kld_loss()
             # Compute loss
             beta = 0.01  # TODO(Stathi) Compute beta value
             total_loss += beta * kl_div
