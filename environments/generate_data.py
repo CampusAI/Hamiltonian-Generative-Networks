@@ -14,8 +14,8 @@ from pendulum import Pendulum
 from spring import Spring
 
 
-def generate_and_save(root_path, environment, n_samples, n_frames,
-                      delta_time, img_size, radius_bound, noise_level, color, train=True):
+def generate_and_save(root_path, environment, n_samples, n_frames, delta_time, img_size,
+                      radius_bound, noise_level, color, start_seed, train=True):
     path = os.path.join(root_path, 'train' if train else 'test')
     if not os.path.exists(path):
         os.makedirs(path)
@@ -28,7 +28,7 @@ def generate_and_save(root_path, environment, n_samples, n_frames,
             noise_level=noise_level,
             radius_bound=radius_bound,
             color=color,
-            seed=i
+            seed=i + start_seed
         )[0]
         filename = "{0:05d}".format(i)
         np.savez(os.path.join(path, filename), rolls)
@@ -78,12 +78,18 @@ if __name__ == '__main__':
     parameter_file = args.params[0] if args.params is not None else DEFAULT_PARAMS_FILE
     online_params = _read_params(parameter_file)
 
+    # Overwrite dictionary with command line args
+    if args.name is not None:
+        online_params['experiment_id'] = args.name[0]
+    if args.ntrain is not None:
+        online_params['dataset']['num_train_samples'] = args.ntrain[0]
+    if args.ntest is not None:
+        online_params['dataset']['num_test_samples'] = args.ntest[0]
+
     try:
-        EXP_NAME = online_params['experiment_id'] if args.name is None else args.name[0]
-        N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples'] if args.ntrain is None \
-            else args.ntrain[0]
-        N_TEST_SAMPLES = online_params['dataset']['num_test_samples'] if args.ntest is None else \
-            args.ntest[0]
+        EXP_NAME = online_params['experiment_id']
+        N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples']
+        N_TEST_SAMPLES = online_params['dataset']['num_test_samples']
         IMG_SIZE = online_params['dataset']['img_size']
         RADIUS_BOUND = online_params['dataset']['radius_bound']
         NOISE_LEVEL = online_params['dataset']['rollout']['noise_level']
@@ -102,7 +108,8 @@ if __name__ == '__main__':
     train_path = generate_and_save(
         root_path=DATASETS_ROOT, environment=environment,
         n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME, img_size=IMG_SIZE,
-        radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL, color=N_CHANNELS == 3, train=True
+        radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL, color=N_CHANNELS == 3,
+        start_seed=0, train=True
     )
 
     # Generate test samples
@@ -112,7 +119,7 @@ if __name__ == '__main__':
             root_path=DATASETS_ROOT, environment=environment,
             n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
             img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
-            color=N_CHANNELS == 3, train=False
+            color=N_CHANNELS == 3, start_seed=N_TRAIN_SAMPLES, train=False
         )
 
     offline_params = _online_params_to_offline_params(online_params, train_path, test_path)
