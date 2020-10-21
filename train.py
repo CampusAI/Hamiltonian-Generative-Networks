@@ -183,8 +183,10 @@ def train(params, test=True):
             prediction = hgn.forward(
                 rollout_batch=rollout_batch,
                 variational=params["networks"]["variational"])
-            error = loss(input=prediction.input,
-                         target=prediction.reconstructed_rollout)
+            error = loss(
+                input=prediction.input,
+                target=prediction.reconstructed_rollout
+            ).detach().cpu().numpy()
             test_error += error / len(data_loader)
         training_logger.log_test_error(test_error)
 
