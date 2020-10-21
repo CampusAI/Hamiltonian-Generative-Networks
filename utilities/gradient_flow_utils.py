@@ -75,7 +75,7 @@ def register_hooks(hgn):
     hgn.decoder.out_conv.register_backward_hook(backward_hook)
 
 
-def plot_grads(hgn, batch_size, dtype):
+def get_grads(hgn, batch_size, dtype):
     """Plot the gradients of each input-output layer of the hamiltonian generative network model.
 
     Args:
@@ -88,17 +88,14 @@ def plot_grads(hgn, batch_size, dtype):
     rand_in = torch.rand((batch_size, hgn.seq_len, hgn.channels, 32, 32)).type(dtype)
     hgn.fit(rand_in)
 
-    for k, v in GRADIENTS.items():
-        print(k + ' backward called ' + str(v[0]) + ' times')
-    print('------------------------------------------------')
-
     names = GRADIENTS.keys()
     max_grads = [np.abs((GRADIENTS[k][1] / GRADIENTS[k][0])).max() for k in names]
     mean_grads = [np.abs((GRADIENTS[k][1] / GRADIENTS[k][0])).mean() for k in names]
 
-    for name, max_grad, mean_grad in zip(names, max_grads, mean_grads):
-        print(name + ' max_grad: ' + str(max_grad) + ' mean_grad: ' + str(mean_grad))
+    return names, max_grads, mean_grads
 
+
+def plot_grads(names, max_grads, mean_grads):
     plt.bar(np.arange(len(max_grads)), max_grads, alpha=0.3, lw=1, color="c")
     plt.bar(np.arange(len(max_grads)), mean_grads, alpha=0.3, lw=1, color="b")
     plt.hlines(0, 0, len(mean_grads) + 1, lw=2, color="k")
@@ -124,4 +121,13 @@ if __name__ == '__main__':
 
     hgn = train.load_hgn(params, device=device, dtype=torch.float)
 
-    plot_grads(hgn, batch_size=params['optimization']['batch_size'], dtype=torch.float)
+    names, max_grads, mean_grads = get_grads(
+        hgn, batch_size=params['optimization']['batch_size'], dtype=torch.float)
+
+    print('-------------------BACKWARD CALL COUNTS------------------------------------------------')
+    for k, v in GRADIENTS.items():
+        print(f'{k:20} backward called {v[0]:10} times')
+    print('-------------------------GRADIENTS-----------------------------------------------------')
+    for name, max_grad, mean_grad in zip(names, max_grads, mean_grads):
+        print(f'{name:20}  max_grad: {max_grad:25}        mean_grad: {mean_grad:25}')
+    print('---------------------------------------------------------------------------------------')
