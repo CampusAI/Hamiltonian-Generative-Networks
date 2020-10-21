@@ -29,7 +29,6 @@ class HgnResult():
         self.z_sample = None
         self.q_s = []
         self.p_s = []
-        # TODO: Bugfix
         self.reconstructed_rollout = torch.empty(batch_shape).to(device)
         self.reconstruction_ptr = 0
 

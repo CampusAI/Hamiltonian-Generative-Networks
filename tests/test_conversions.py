@@ -14,8 +14,7 @@ def test_to_channels_last():
             for h in range(height):
                 for w in range(width):
                     for c in range(channels):
-                        assert tensor[b, s, c, h, w] == converted[b, s, h, w,
-                                                                  c]
+                        assert tensor[b, s, c, h, w] == converted[b, s, h, w, c]
 
 
 def test_to_channels_first():
@@ -28,8 +27,7 @@ def test_to_channels_first():
             for h in range(height):
                 for w in range(width):
                     for c in range(channels):
-                        assert tensor[b, s, h, w, c] == converted[b, s, c, h,
-                                                                  w]
+                        assert tensor[b, s, h, w, c] == converted[b, s, c, h, w]
 
 
 def test_concat_rgb():
