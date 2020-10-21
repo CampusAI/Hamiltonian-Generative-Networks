@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from environment import Environment
 from pendulum import Pendulum
 from spring import Spring
+from gravity import NObjectGravity
 
 
 class EnvFactory():
