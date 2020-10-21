@@ -12,6 +12,8 @@ class Pendulum(Environment):
 
     """
 
+    WORLD_SIZE = 2.
+
     def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
@@ -20,7 +22,8 @@ class Pendulum(Environment):
             length (float): Pendulum length (m)
             g (float): Gravity of the environment (m/s^2)
             q ([float], optional): Generalized position in 1-D space: Phase (rad). Defaults to None
-            p ([float], optional): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s). Defaults to None
+            p ([float], optional): Generalized momentum in 1-D space: Angular momentum (kg*m^2/s).
+                Defaults to None
         """
         self.mass = mass
         self.length = length
@@ -58,13 +61,12 @@ class Pendulum(Environment):
         return [(states[1] / (self.mass * self.length * self.length)),
                 -self.g * self.mass * self.length * np.sin(states[0])]
 
-    def _draw(self, res=32, color=True, world_size=2.):
+    def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
         Args:
             res (int): Image resolution (images are square).
             color (bool): True if RGB, false if grayscale.
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
@@ -76,7 +78,7 @@ class Pendulum(Environment):
             vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
+        grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:

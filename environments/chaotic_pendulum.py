@@ -12,6 +12,9 @@ class ChaoticPendulum(Environment):
             + mgL*(3 - 2*cos q_1 - cos q_2)
 
     """
+
+    WORLD_SIZE = 2.5
+
     def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
@@ -90,13 +93,12 @@ class ChaoticPendulum(Environment):
 
         return dyn.reshape(-1)
 
-    def _draw(self, res=32, color=True, world_size=2.5):
+    def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
         Args:
             res (int): Image resolution (images are square).
             color (bool): True if RGB, false if grayscale.
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
@@ -108,7 +110,7 @@ class ChaoticPendulum(Environment):
             vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
+        grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             col_1 = np.exp(-(((I - self.length * np.sin(q[0, t]))**2 +

@@ -1,5 +1,5 @@
 # Experiment ID
-experiment_id: "var_kl"
+experiment_id: "pendulum_default_online"
 model_save_dir: "saved_models"
 
 gpu_id: 0  # Will use this gpu if available
@@ -15,26 +15,23 @@ environment:
 dataset:
   img_size: 32
   noise_std: 0
-  radius_bound: [0.5, 2.0]
-  world_size: 1.5
-  random: True
-  data_root: "/local_storage/carlesbr/pendulum_data/train"  # Should be of 50k samples
-
-# Define rollout
-rollout:
-  seq_length: 30
-  delta_time: 0.125
-  n_channels: 1
+  radius_bound: [1.3, 2.3]
+  num_train_samples: 50000  # Total number of rollouts used when training on-line.
+  num_test_samples: 100  # Number of test samples.
+  rollout:
+    seq_length: 30
+    delta_time: 0.125
+    n_channels: 3
 
 # Define networks architectures
 networks:
   variational: True
   dtype : "float"
   encoder:
-    hidden_conv_layers: 4
-    n_filters: [32, 64, 64, 64, 64]  # first + hidden
-    kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
-    strides: [1, 1, 1, 1, 1, 1, 1]  # first + hidden + last
+    hidden_conv_layers: 6
+    n_filters: [32, 64, 64, 64, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1, 1, 1]  # first + hidden + last
     out_channels: 48
   transformer:
     hidden_conv_layers: 1
@@ -55,14 +52,14 @@ networks:
 
 # Define HGN Integrator
 integrator:
-  method: "RK4"
+  method: "Leapfrog"
 
 # Define optimization
 optimization:
-  epochs: 6
+  epochs: 1  #  DO NOT CHANGE! Use dataset.num_samples
   batch_size: 16
   # Learning rates
-  encoder_lr: 2e-4
-  transformer_lr: 2e-4
-  hnn_lr: 2e-4
-  decoder_lr: 2e-4
+  encoder_lr: 1.5e-4
+  transformer_lr: 1.5e-4
+  hnn_lr: 1.5e-4
+  decoder_lr: 1.5e-4

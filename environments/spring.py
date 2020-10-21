@@ -12,6 +12,8 @@ class Spring(Environment):
 
     """
 
+    WORLD_SIZE = 2.
+
     def __init__(self, mass, elastic_cst, q=None, p=None):
         """Constructor for spring system
 
@@ -55,13 +57,12 @@ class Spring(Environment):
         """
         return [states[1] / self.mass, -self.elastic_cst * states[0]]
 
-    def _draw(self, res=32, color=True, world_size=2.):
+    def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
         Args:
             res (int): Image resolution (images are square).
             color (bool): True if RGB, false if grayscale.
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
@@ -73,7 +74,7 @@ class Spring(Environment):
             vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
+        grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:

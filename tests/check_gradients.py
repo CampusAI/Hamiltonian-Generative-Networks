@@ -45,6 +45,8 @@ if __name__ == "__main__":
               integrator=hgn_integrator,
               loss=loss,
               optimizer=optimizer,
+              device="cpu",
+              dtype=torch.double,
               seq_len=rollouts.shape[1],
               channels=1)
 
