@@ -8,7 +8,8 @@ import numpy as np
 import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from networks import inference_net
+from networks import encoder_net
+from networks import transformer_net
 import train
 
 
@@ -28,7 +29,7 @@ def backward_hook(module, grad_input, grad_output):
         grad_output (tuple): 1-tuple (dL/do) i.e. the gradient of the loss w.r.t. the layer output.
     """
     if module.name == 'Transformer_out':
-        q, p = inference_net.TransformerNet.to_phase_space(grad_output[0])
+        q, p = transformer_net.TransformerNet.to_phase_space(grad_output[0])
         set_gradient('Transformer_out_q', q.detach().numpy())
         set_gradient('Transformer_out_p', p.detach().numpy())
     else:

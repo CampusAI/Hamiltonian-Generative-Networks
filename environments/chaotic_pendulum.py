@@ -13,6 +13,8 @@ class ChaoticPendulum(Environment):
 
     """
 
+    WORLD_SIZE = 2.5
+
     def __init__(self, mass, length, g, q=None, p=None):
         """Constructor for pendulum system
 
@@ -42,9 +44,19 @@ class ChaoticPendulum(Environment):
             return
         if len(q) != 2 or len(p) != 2:
             raise ValueError(
-                "q and p must be 2 objects in 1-D space: Angular momentum and Phase.")
+                "q and p must be 2 objects in 1-D space: Angular momentum and Phase."
+            )
         self.q = q
         self.p = p
+
+    def get_world_size(self):
+        """Return world size for correctly render the environment.
+        """
+        return self.WORLD_SIZE
+
+    def get_max_noise_std(self):
+        """Return maximum noise std that keeps the environment stable."""
+        return 0.05
 
     def _dynamics(self, t, states):
         """Defines system dynamics
@@ -68,8 +80,9 @@ class ChaoticPendulum(Environment):
             np.cos(states_resh[0, 0] - states_resh[0, 1])
         dyn[0, :] /= quot
         #dp_1 and dp_2
-        dyn[1, :] -= 2*self.mass*self.g*self.length*np.sin(states_resh[0, :])
-        cst = 1/(2*self.mass*(self.length**2))
+        dyn[1, :] -= 2 * self.mass * self.g * self.length * np.sin(
+            states_resh[0, :])
+        cst = 1 / (2 * self.mass * (self.length**2))
         term1 = states_resh[1, 0]**2 + states_resh[1, 1]**2 + \
             2*states_resh[1, 0]*states_resh[1, 1] * \
             np.cos(states_resh[0, 0] - states_resh[0, 1])
@@ -79,21 +92,22 @@ class ChaoticPendulum(Environment):
             np.sin(states_resh[0, 0] - states_resh[0, 1])
         dterm1_dq_2 = -dterm1_dq_1
 
-        dterm2_dq_1 = 2*np.cos(states_resh[0, 0] - states_resh[0, 1])
+        dterm2_dq_1 = 2 * np.cos(states_resh[0, 0] - states_resh[0, 1])
         dterm2_dq_2 = -dterm2_dq_1
 
-        dyn[1, 0] -= cst*(dterm1_dq_1*term2 - term1*dterm2_dq_1)/(term2**2)
-        dyn[1, 1] -= cst*(dterm1_dq_2*term2 - term1*dterm2_dq_2)/(term2**2)
+        dyn[1, 0] -= cst * (dterm1_dq_1 * term2 - term1 * dterm2_dq_1) / (term2
+                                                                          **2)
+        dyn[1, 1] -= cst * (dterm1_dq_2 * term2 - term1 * dterm2_dq_2) / (term2
+                                                                          **2)
 
         return dyn.reshape(-1)
 
-    def _draw(self, res=32, color=True, world_size=1.5):
+    def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
         Args:
             res (int): Image resolution (images are square).
             color (bool): True if RGB, false if grayscale.
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
@@ -102,17 +116,20 @@ class ChaoticPendulum(Environment):
         length = q.shape[-1]
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
+            vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
+        grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
-            col_1 = np.exp(-(((I - self.length*np.sin(q[0, t]))**2 +
-                              (J - self.length*np.cos(q[0, t]))**2) /
-                             ((self.length/3.)**2))**4)
-            col_2 = np.exp(-(((I - self.length*np.sin(q[0, t]) - self.length*np.sin(q[1, t]))**2 +
-                              (J - self.length*np.cos(q[0, t]) - self.length*np.cos(q[1, t]))**2) /
-                             ((self.length/3.)**2))**4)
+            col_1 = np.exp(-(((I - self.length * np.sin(q[0, t]))**2 +
+                              (J - self.length * np.cos(q[0, t]))**2) /
+                             ((self.length / 3.)**2))**4)
+            col_2 = np.exp(-(((I - self.length * np.sin(q[0, t]) -
+                               self.length * np.sin(q[1, t]))**2 +
+                              (J - self.length * np.cos(q[0, t]) -
+                               self.length * np.cos(q[1, t]))**2) /
+                             ((self.length / 3.)**2))**4)
             if color:
                 vid[t, :, :, 0] += col_1
                 vid[t, :, :, 1] += col_1
@@ -142,12 +159,11 @@ if __name__ == "__main__":
 
     pd = ChaoticPendulum(mass=1., length=1, g=3)
     rolls = pd.sample_random_rollouts(number_of_frames=1000,
-                                      delta_time=1./30,
+                                      delta_time=.125,
                                       number_of_rollouts=1,
                                       img_size=64,
-                                      noise_std=0.,
+                                      noise_level=0.,
                                       radius_bound=(0.5, 1.3),
-                                      world_size=2.5,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

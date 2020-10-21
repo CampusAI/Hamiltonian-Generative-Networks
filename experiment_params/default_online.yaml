@@ -1,0 +1,69 @@
+# Experiment ID
+experiment_id: "pendulum_default_online"
+model_save_dir: "saved_models"
+
+gpu_id: 0  # Will use this gpu if available
+
+# Define environment
+environment:
+  name: "Pendulum"
+
+  # The following parameters must correspond in name and type
+  # to the environment __init__() arguments
+  mass: 0.5
+  length: 1
+  g: 3
+
+# Define data characteristics
+dataset:
+  img_size: 32
+  radius_bound: [1.3, 2.3]
+  num_train_samples: 50000  # Total number of rollouts used when training on-line.
+  num_test_samples: 100  # Number of test samples.
+  rollout:
+    seq_length: 30
+    delta_time: 0.125
+    n_channels: 3
+    noise_level: 0  # Level of environment noise. 0 means no noise, 1 means max noise.
+                    # Maximum values are defined in each environment.
+
+# Define networks architectures
+networks:
+  variational: True
+  dtype : "float"
+  encoder:
+    hidden_conv_layers: 6
+    n_filters: [32, 64, 64, 64, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1, 1, 1]  # first + hidden + last
+    out_channels: 48
+  transformer:
+    hidden_conv_layers: 1
+    n_filters: [64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3]  # first + hidden + last
+    strides: [2, 2, 2]  # first + hidden + last
+    out_channels: 16  # Channels of q, and p splitted
+  hamiltonian:
+    hidden_conv_layers: 4
+    in_shape: [16, 4, 4]  # Should be coherent with transformer output
+    n_filters: [32, 64, 64, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides: [1, 1, 1, 1, 1, 1]  # first + hidden + last
+  decoder:
+    n_residual_blocks: 3
+    n_filters: [64, 64, 64]
+    kernel_sizes: [3, 3, 3, 3]
+
+# Define HGN Integrator
+integrator:
+  method: "Leapfrog"
+
+# Define optimization
+optimization:
+  epochs: 1  #  DO NOT CHANGE! Use dataset.num_samples
+  batch_size: 16
+  # Learning rates
+  encoder_lr: 1.5e-4
+  transformer_lr: 1.5e-4
+  hnn_lr: 1.5e-4
+  decoder_lr: 1.5e-4

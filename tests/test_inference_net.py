@@ -3,13 +3,18 @@
 Run by command line:
     pytest tests/networks.py
 """
+import os
+import sys
 
 import torch
 import pytest
 
-from networks import inference_net
-from networks import hamiltonian_net
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from networks import decoder_net
+from networks import encoder_net
+from networks import hamiltonian_net
+from networks import transformer_net
+from utilities import conversions
 
 
 def test_to_phase_space():
@@ -17,7 +22,7 @@ def test_to_phase_space():
     channels = 48
     img_size = 32
     batch = torch.randn((batch_size, channels, img_size, img_size))
-    q, p = inference_net.TransformerNet.to_phase_space(batch)
+    q, p = transformer_net.TransformerNet.to_phase_space(batch)
 
     for k in range(batch_size):
         for i in range(int(channels / 2)):
@@ -37,20 +42,20 @@ def test_encoder_out_shape():
     n_filters = [32, 48, 64, 80, 96]  # Must be hidden_conv_layers + 1
     kernel_sizes = [3, 5, 7, 7, 5, 3]  # Must be hidden_conv_layers + 2
     strides = [1, 2, 1, 2, 1, 1]  # Must be hidden_conv_layers + 2
-    encoder = inference_net.EncoderNet(seq_len=seq_len,
-                                       in_channels=in_channels,
-                                       out_channels=out_channels,
-                                       hidden_conv_layers=hidden_conv_layers,
-                                       n_filters=n_filters,
-                                       kernel_sizes=kernel_sizes,
-                                       strides=strides)
+    encoder = encoder_net.EncoderNet(seq_len=seq_len,
+                                     in_channels=in_channels,
+                                     out_channels=out_channels,
+                                     hidden_conv_layers=hidden_conv_layers,
+                                     n_filters=n_filters,
+                                     kernel_sizes=kernel_sizes,
+                                     strides=strides)
 
     expected_out_size = torch.Size(
         [128, 48, int(img_size / 4),
          int(img_size / 4)])
 
     inputs = torch.randn((128, seq_len, in_channels, img_size, img_size))
-    inputs = inference_net.concat_rgb(inputs)
+    inputs = conversions.concat_rgb(inputs)
     z, mu, var = encoder(inputs)
 
     assert z.size() == expected_out_size
@@ -69,7 +74,7 @@ def test_encoder_raises_exception():
     kernel_sizes = [3, 5, 7, 7, 5, 3]  # Must be hidden_conv_layers + 2
     strides = [1, 2, 1, 2, 1, 1]  # Must be hidden_conv_layers + 2
     with pytest.raises(AssertionError):
-        encoder = inference_net.EncoderNet(
+        encoder = encoder_net.EncoderNet(
             seq_len=seq_len,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -78,7 +83,7 @@ def test_encoder_raises_exception():
             kernel_sizes=kernel_sizes,
             strides=strides)
     with pytest.raises(AssertionError):
-        encoder = inference_net.EncoderNet(
+        encoder = encoder_net.EncoderNet(
             seq_len=seq_len,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -88,7 +93,7 @@ def test_encoder_raises_exception():
             kernel_sizes[:-1],  # kernel_sizes is shorter than it should be
             strides=strides)
     with pytest.raises(AssertionError):
-        encoder = inference_net.EncoderNet(
+        encoder = encoder_net.EncoderNet(
             seq_len=seq_len,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -98,7 +103,7 @@ def test_encoder_raises_exception():
             strides=strides[:-1]  # strides is shorter than it should be
         )
     with pytest.raises(AssertionError):
-        encoder = inference_net.EncoderNet(
+        encoder = encoder_net.EncoderNet(
             seq_len=seq_len,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -108,7 +113,7 @@ def test_encoder_raises_exception():
             kernel_sizes=kernel_sizes,
             strides=strides)
     with pytest.raises(AssertionError):
-        encoder = inference_net.EncoderNet(
+        encoder = encoder_net.EncoderNet(
             seq_len=seq_len,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -118,7 +123,7 @@ def test_encoder_raises_exception():
             [5],  # kernel_sizes is longer than it should be
             strides=strides)
     with pytest.raises(AssertionError):
-        encoder = inference_net.EncoderNet(
+        encoder = encoder_net.EncoderNet(
             seq_len=seq_len,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -129,7 +134,7 @@ def test_encoder_raises_exception():
         )
     # Test not all arguments are given
     with pytest.raises(ValueError):
-        encoder = inference_net.EncoderNet(
+        encoder = encoder_net.EncoderNet(
             seq_len=seq_len,
             in_channels=in_channels,
             out_channels=out_channels,
@@ -139,9 +144,9 @@ def test_encoder_raises_exception():
             # Missing strides
         )
     # Test that correctly works if no args are given
-    encoder = inference_net.EncoderNet(seq_len=seq_len,
-                                       in_channels=in_channels,
-                                       out_channels=out_channels)
+    encoder = encoder_net.EncoderNet(seq_len=seq_len,
+                                     in_channels=in_channels,
+                                     out_channels=out_channels)
 
 
 def test_transformer_shape():
@@ -152,7 +157,7 @@ def test_transformer_shape():
     n_filters = [32, 48, 64, 80, 96]  # Must be hidden_conv_layers + 1
     kernel_sizes = [3, 5, 7, 7, 5, 3]  # Must be hidden_conv_layers + 2
     strides = [1, 1, 1, 1, 1, 1]  # Must be hidden_conv_layers + 2
-    transformer = inference_net.TransformerNet(
+    transformer = transformer_net.TransformerNet(
         in_channels=in_channels,
         out_channels=out_channels,
         hidden_conv_layers=hidden_conv_layers,
@@ -181,7 +186,7 @@ def test_transformer_raises_exception():
     kernel_sizes = [3, 5, 7, 7, 5, 3]  # Must be hidden_conv_layers + 2
     strides = [1, 2, 1, 2, 1, 1]  # Must be hidden_conv_layers + 2
     with pytest.raises(AssertionError):
-        transformer = inference_net.TransformerNet(
+        transformer = transformer_net.TransformerNet(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_conv_layers=hidden_conv_layers,
@@ -189,7 +194,7 @@ def test_transformer_raises_exception():
             kernel_sizes=kernel_sizes,
             strides=strides)
     with pytest.raises(AssertionError):
-        transformer = inference_net.TransformerNet(
+        transformer = transformer_net.TransformerNet(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_conv_layers=hidden_conv_layers,
@@ -198,7 +203,7 @@ def test_transformer_raises_exception():
             kernel_sizes[:-1],  # kernel_sizes is shorter than it should be
             strides=strides)
     with pytest.raises(AssertionError):
-        transformer = inference_net.TransformerNet(
+        transformer = transformer_net.TransformerNet(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_conv_layers=hidden_conv_layers,
@@ -207,7 +212,7 @@ def test_transformer_raises_exception():
             strides=strides[:-1]  # strides is shorter than it should be
         )
     with pytest.raises(AssertionError):
-        transformer = inference_net.TransformerNet(
+        transformer = transformer_net.TransformerNet(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_conv_layers=hidden_conv_layers,
@@ -216,7 +221,7 @@ def test_transformer_raises_exception():
             kernel_sizes=kernel_sizes,
             strides=strides)
     with pytest.raises(AssertionError):
-        transformer = inference_net.TransformerNet(
+        transformer = transformer_net.TransformerNet(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_conv_layers=hidden_conv_layers,
@@ -225,7 +230,7 @@ def test_transformer_raises_exception():
             [5],  # kernel_sizes is longer than it should be
             strides=strides)
     with pytest.raises(AssertionError):
-        transformer = inference_net.TransformerNet(
+        transformer = transformer_net.TransformerNet(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_conv_layers=hidden_conv_layers,
@@ -235,7 +240,7 @@ def test_transformer_raises_exception():
         )
     # Test not all arguments are given
     with pytest.raises(ValueError):
-        transformer = inference_net.TransformerNet(
+        transformer = transformer_net.TransformerNet(
             in_channels=in_channels,
             out_channels=out_channels,
             hidden_conv_layers=hidden_conv_layers,
@@ -244,5 +249,5 @@ def test_transformer_raises_exception():
             # Missing strides
         )
     # Test that correctly works if no args are given
-    transformer = inference_net.TransformerNet(in_channels=in_channels,
-                                               out_channels=out_channels)
+    transformer = transformer_net.TransformerNet(in_channels=in_channels,
+                                                 out_channels=out_channels)
