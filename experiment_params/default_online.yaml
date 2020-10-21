@@ -10,7 +10,6 @@ environment:
   mass: 0.5
   length: 1
   g: 3
-  world_size: 1.5
 
 # Define data characteristics
 dataset:
