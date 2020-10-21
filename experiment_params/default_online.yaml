@@ -16,8 +16,8 @@ dataset:
   img_size: 32
   noise_std: 0
   radius_bound: [1.3, 2.3]
-  world_size: 1.5
-  num_samples: 50000  # Total number of rollouts used when training on-the-fly
+  num_train_samples: 50000  # Total number of rollouts used when training on-line.
+  num_test_samples: 100  # Number of test samples.
   rollout:
     seq_length: 30
     delta_time: 0.1
