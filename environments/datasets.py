@@ -24,7 +24,7 @@ class EnvironmentSampler(Dataset):
                  number_of_rollouts,
                  img_size,
                  color,
-                 noise_std,
+                 noise_level,
                  radius_bound,
                  seed,
                  dtype=torch.float):
@@ -38,8 +38,8 @@ class EnvironmentSampler(Dataset):
             number_of_rollouts (int): Number of rollouts to generate.
             img_size (int): Size of the frames (in pixels).
             color (bool): Whether to have colored or grayscale frames.
-            noise_std (float): Standard deviation of the gaussian noise source, no noise for
-                noise_std=0.
+            noise_level (float): Value in [0, 1] to tune the noise added to the environment
+                trajectory.
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius
                 r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
@@ -53,7 +53,7 @@ class EnvironmentSampler(Dataset):
         self.number_of_rollouts = number_of_rollouts
         self.img_size = img_size
         self.color = color
-        self.noise_std = noise_std
+        self.noise_level = noise_level
         self.radius_bound = radius_bound
         self.seed = seed
         self.dtype = dtype
@@ -82,7 +82,7 @@ class EnvironmentSampler(Dataset):
             number_of_rollouts=self.number_of_rollouts,
             img_size=self.img_size,
             color=self.color,
-            noise_std=self.noise_std,
+            noise_level=self.noise_level,
             radius_bound=self.radius_bound,
             seed=self.seed)
         rolls = torch.from_numpy(rolls).type(self.dtype)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
                                  delta_time=.1,
                                  number_of_rollouts=4,
                                  img_size=64,
-                                 noise_std=0.,
+                                 noise_level=0.,
                                  radius_bound=(1.3, 2.3),
                                  seed=23)
     # Dataloader instance test, batch_mode disabled

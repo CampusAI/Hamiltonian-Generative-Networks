@@ -102,8 +102,8 @@ def get_online_dataloaders(params):
         number_of_rollouts=params["optimization"]["batch_size"],
         img_size=params["dataset"]["img_size"],
         color=params["dataset"]["rollout"]["n_channels"] == 3,
-        noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
+        noise_level=params["dataset"]["rollout"]["noise_level"],
         seed=None)
     train_data_loader = torch.utils.data.DataLoader(trainDS,
                                                     shuffle=False,
@@ -117,8 +117,8 @@ def get_online_dataloaders(params):
         number_of_rollouts=params["optimization"]["batch_size"],
         img_size=params["dataset"]["img_size"],
         color=params["dataset"]["rollout"]["n_channels"] == 3,
-        noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
+        noise_level=params["dataset"]["rollout"]["noise_level"],
         seed=None)
     test_data_loader = torch.utils.data.DataLoader(testDS,
                                                    shuffle=False,

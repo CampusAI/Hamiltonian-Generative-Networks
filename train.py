@@ -1,5 +1,6 @@
 """Script to train the Hamiltonian Generative Network
 """
+import argparse
 import os
 import yaml
 
@@ -8,7 +9,6 @@ import time
 import torch
 import tqdm
 
-from utilities import debug_utils
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
@@ -20,7 +20,7 @@ def train(params):
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
     """
-    # Set device and dtype TODO(oleguer): Make choosing cpu an option
+    # Set device and dtype
     device = "cuda:" + str(
         params["gpu_id"]) if torch.cuda.is_available() else "cpu"
     dtype = torch.__getattribute__(params["networks"]["dtype"])
@@ -93,6 +93,7 @@ def train(params):
 
 
 if __name__ == "__main__":
+
     params_file = "experiment_params/default_online.yaml"
 
     # Read parameters

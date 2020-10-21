@@ -46,12 +46,12 @@ if __name__ == "__main__":
     from matplotlib import pyplot as plt, animation
     import numpy as np
     rolls = env.sample_random_rollouts(number_of_frames=100,
-                                        delta_time=0.1,
-                                        number_of_rollouts=16,
-                                        img_size=32,
-                                        color=False,
-                                        noise_std=0.,
-                                        seed=23)
+                                       delta_time=0.1,
+                                       number_of_rollouts=16,
+                                       img_size=32,
+                                       color=False,
+                                       noise_level=0.,
+                                       seed=23)
     fig = plt.figure()
     img = []
     idx = np.random.randint(rolls.shape[0])

@@ -13,7 +13,7 @@ from spring import Spring
 
 
 def generate_and_save(datasets_root, dataset_name, environment, n_samples, n_frames,
-                      delta_time, img_size, radius_bound, noise_std, color, train=True):
+                      delta_time, img_size, radius_bound, noise_level, color, train=True):
     train_path = os.path.join(datasets_root, dataset_name, 'train' if train else 'test')
     if not os.path.exists(train_path):
         os.makedirs(train_path)
@@ -23,7 +23,7 @@ def generate_and_save(datasets_root, dataset_name, environment, n_samples, n_fra
             delta_time=delta_time,
             number_of_rollouts=1,
             img_size=img_size,
-            noise_std=noise_std,
+            noise_level=noise_level,
             radius_bound=radius_bound,
             color=color,
             seed=i
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples']
     N_TEST_SAMPLES = online_params['dataset']['num_test_samples']
     IMG_SIZE = online_params['dataset']['img_size']
-    NOISE_STD = online_params['dataset']['noise_std']
+    NOISE_LEVEL = online_params['dataset']['noise_level']
     RADIUS_BOUND = online_params['dataset']['radius_bound']
     N_FRAMES = online_params['dataset']['rollout']['seq_length']
     DELTA_TIME = online_params['dataset']['rollout']['delta_time']
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     # Generate train samples
     generate_and_save(datasets_root=DATASETS_ROOT, dataset_name=EXP_NAME, environment=environment,
                       n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
-                      img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_std=NOISE_STD,
+                      img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
                       color=N_CHANNELS == 3, train=True)
 
     # Generate test samples
@@ -74,5 +74,5 @@ if __name__ == '__main__':
         generate_and_save(datasets_root=DATASETS_ROOT, dataset_name=EXP_NAME,
                           environment=environment,
                           n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
-                          img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_std=NOISE_STD,
+                          img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
                           color=N_CHANNELS == 3, train=False)

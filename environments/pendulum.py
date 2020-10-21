@@ -48,6 +48,15 @@ class Pendulum(Environment):
         self.q = q
         self.p = p
 
+    def get_world_size(self):
+        """Return world size for correctly render the environment.
+        """
+        return self.WORLD_SIZE
+
+    def get_max_noise_std(self):
+        """Return maximum noise std that keeps the environment stable."""
+        return 0.1
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -117,7 +126,7 @@ if __name__ == "__main__":
                                       delta_time=0.1,
                                       number_of_rollouts=16,
                                       img_size=32,
-                                      noise_std=0.,
+                                      noise_level=0.,
                                       radius_bound=(0., 0.001),
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])

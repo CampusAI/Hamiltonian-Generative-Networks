@@ -58,6 +58,20 @@ class NObjectGravity(Environment):
         self.q = q.copy()
         self.p = p.copy()
 
+    def get_world_size(self):
+        """Return world size for correctly render the environment.
+        """
+        return self.WORLD_SIZE
+
+    def get_max_noise_std(self):
+        """Return maximum noise std that keeps the environment stable."""
+        if self.n_objects == 2:
+            return 0.05
+        elif self.n_objects == 3:
+            return 0.005
+        else:
+            return 0.
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -209,7 +223,7 @@ if __name__ == "__main__":
                                       delta_time=0.1,
                                       number_of_rollouts=1,
                                       img_size=32,
-                                      noise_std=0.,
+                                      noise_level=0.,
                                       radius_bound=(2., 3.2),
                                       seed=33)
     idx = np.random.randint(rolls.shape[0])
