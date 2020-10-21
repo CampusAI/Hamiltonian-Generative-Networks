@@ -54,7 +54,6 @@ class HGN:
         # Optimization
         self.optimizer = optimizer
     
-
     def reconstruction_loss(self, target, prediction):
         """Computes the MSE loss between the target and the predictions.
             
@@ -68,6 +67,19 @@ class HGN:
         # Compute sum across each datapoint in the batch and then average
         return torch.mean(torch.sum(torch.pow(prediction - target, 2), 1))
 
+    def kld_loss(self, mu, logvar):
+        """ First it computes the KLD over each datapoint in the batch as a sum over all latent dims. 
+            It returns the mean KLD over the batch size.
+            The KLD is computed in comparison to a multivariate Gaussian with zero mean and identity covariance.
+
+        Args:
+            mu (torch.Tensor): the part of the latent vector that corresponds to the mean
+            logvar (torch.Tensor): the log of the variance (sigma squared)
+
+        Returns:
+            (torch.Tensor): KL divergence.
+        """
+        return torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), 1))
 
     def forward(self, rollout_batch, n_steps=None, variational=True):
         """Get the prediction of the HGN for a given rollout_batch of n_steps.
