@@ -20,7 +20,7 @@ dataset:
   num_test_samples: 100  # Number of test samples.
   rollout:
     seq_length: 30
-    delta_time: 0.1
+    delta_time: 0.125
     n_channels: 3
 
 # Define networks architectures
