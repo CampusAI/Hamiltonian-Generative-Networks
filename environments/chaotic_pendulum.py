@@ -90,7 +90,7 @@ class ChaoticPendulum(Environment):
 
         return dyn.reshape(-1)
 
-    def _draw(self, res=32, color=True, world_size=1.5):
+    def _draw(self, res=32, color=True, world_size=2.5):
         """Returns array of the environment evolution
 
         Args:
@@ -153,7 +153,6 @@ if __name__ == "__main__":
                                       img_size=64,
                                       noise_std=0.,
                                       radius_bound=(0.5, 1.3),
-                                      world_size=2.5,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

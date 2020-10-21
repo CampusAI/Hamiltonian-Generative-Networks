@@ -103,7 +103,6 @@ class Environment(ABC):
                                color=True,
                                noise_std=0.1,
                                radius_bound=(1.3, 2.3),
-                               world_size=1.5,
                                seed=None):
         """Samples random rollouts for a given environment
 
@@ -137,7 +136,7 @@ class Environment(ABC):
             if noise_std > 0.:
                 self._rollout += np.random.randn(
                     *self._rollout.shape) * noise_std
-            batch_sample.append(self._draw(img_size, color, world_size))
+            batch_sample.append(self._draw(img_size, color))
 
         return np.array(batch_sample)
 

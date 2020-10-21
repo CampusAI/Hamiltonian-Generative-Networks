@@ -55,7 +55,7 @@ class Spring(Environment):
         """
         return [states[1] / self.mass, -self.elastic_cst * states[0]]
 
-    def _draw(self, res=32, color=True, world_size=1.5):
+    def _draw(self, res=32, color=True, world_size=2.):
         """Returns array of the environment evolution
 
         Args:
@@ -111,7 +111,6 @@ if __name__ == "__main__":
                                       img_size=32,
                                       noise_std=0.,
                                       radius_bound=(.1, 1.),
-                                      world_size=2.,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

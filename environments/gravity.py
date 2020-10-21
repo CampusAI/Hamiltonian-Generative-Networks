@@ -93,7 +93,7 @@ class NObjectGravity(Environment):
                 dyn[1, i, d] += mom_term*self.mass[i]
         return dyn.reshape(-1)
 
-    def _draw(self, res=32, color=True, world_size=1.5):
+    def _draw(self, res=32, color=True, world_size=6.):
         """Returns array of the environment evolution
 
         Args:
@@ -210,7 +210,6 @@ if __name__ == "__main__":
                                       img_size=32,
                                       noise_std=0.,
                                       radius_bound=(2., 3.2),
-                                      world_size=6,
                                       seed=33)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
