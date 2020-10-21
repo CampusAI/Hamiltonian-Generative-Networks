@@ -26,25 +26,31 @@ class HGN:
                  integrator,
                  optimizer,
                  loss,
+                 device,
+                 dtype,
                  seq_len,
                  channels=3):
         """Instantiate a Hamiltonian Generative Network.
 
         Args:
-            encoder (networks.inference_net.EncoderNet): Encoder neural network.
-            transformer (networks.inference_net.TransformerNet): Transformer neural network.
+            encoder (networks.encoder_net.EncoderNet): Encoder neural network.
+            transformer (networks.transformer_net.TransformerNet): Transformer neural network.
             hnn (networks.hamiltonian_net.HamiltonianNet): Hamiltonian neural network.
             decoder (networks.decoder_net.DecoderNet): Decoder neural network.
             integrator (Integrator): HGN integrator.
             optimizer (torch.optim.Optimizer): PyTorch Network optimizer.
             loss (torch.nn.modules.loss): PyTorch Loss.
+            device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
+            dtype (torch.dtype): Data type used for the networks.
             seq_len (int): Number of frames in each rollout.
             channels (int, optional): Number of channels of the images. Defaults to 3.
         """
         # Parameters
         self.seq_len = seq_len
         self.channels = channels
-
+        self.device = device
+        self.dtype = dtype
+        
         # Modules
         self.encoder = encoder
         self.transformer = transformer
@@ -75,7 +81,7 @@ class HGN:
         # Instantiate prediction object
         prediction_shape = list(rollout_batch.shape)
         prediction_shape[1] = n_steps
-        prediction = HgnResult(batch_shape=torch.Size(prediction_shape))
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape), device=self.device)
         prediction.set_input(rollout_batch)
 
         # Concat along channel dimension
@@ -143,8 +149,8 @@ class HGN:
         # Optimization step
         total_loss.backward()
         self.optimizer.step()
-        reconstruction_error_np = reconstruction_error.detach().numpy()
-        kl_div_np = kl_div.detach().numpy() if kl_div is not None else None
+        reconstruction_error_np = reconstruction_error.detach().cpu().numpy()
+        kl_div_np = kl_div.detach().cpu().numpy() if kl_div is not None else None
         return reconstruction_error_np, kl_div_np, prediction
 
     def load(self, directory):

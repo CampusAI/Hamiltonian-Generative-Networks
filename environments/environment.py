@@ -46,17 +46,27 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _draw(self, img_size, color, world_size):
+    def _draw(self, img_size, color):
         """Returns array of the environment evolution.
 
         Args:
             img_size (int): Size of the frames (in pixels).
             color (bool): Whether to have colored or grayscale frames.
-            world_size (float): Spatial extent of the window where the rendering is taking place
-                (in meters).
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_world_size(self):
+        """Returns the world size for the environment.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_max_noise_std(self):
+        """Returns the maximum noise standard deviation that maintains a stable environment.
         """
         raise NotImplementedError
 
@@ -101,9 +111,8 @@ class Environment(ABC):
                                number_of_rollouts=16,
                                img_size=32,
                                color=True,
-                               noise_std=0.1,
+                               noise_level=0.1,
                                radius_bound=(1.3, 2.3),
-                               world_size=1.5,
                                seed=None):
         """Samples random rollouts for a given environment
 
@@ -113,11 +122,11 @@ class Environment(ABC):
             number_of_rollouts (int): Number of rollouts to generate.
             img_size (int): Size of the frames (in pixels).
             color (bool): Whether to have colored or grayscale frames.
-            noise_std (float): Standard deviation of the gaussian noise source, no noise for noise_std=0.
+            noise_level (float): Level of noise, in [0, 1]. 0 means no noise, 1 means max noise.
+                Maximum noise is defined in each environment.
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius
                 r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
             seed (int): Seed for reproducibility.
         Raises:
             AssertError: If radius_bound[0] > radius_bound[1]
@@ -134,10 +143,10 @@ class Environment(ABC):
         for i in range(number_of_rollouts):
             self._sample_init_conditions(radius_bound)
             self._evolution(total_time, delta_time)
-            if noise_std > 0.:
+            if noise_level > 0.:
                 self._rollout += np.random.randn(
-                    *self._rollout.shape) * noise_std
-            batch_sample.append(self._draw(img_size, color, world_size))
+                    *self._rollout.shape) * noise_level * self.get_max_noise_std()
+            batch_sample.append(self._draw(img_size, color))
 
         return np.array(batch_sample)
 

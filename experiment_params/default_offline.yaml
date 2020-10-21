@@ -1,29 +1,19 @@
 # Experiment ID
-experiment_id: "pendulum_test"
+experiment_id: "default_offline"
 model_save_dir: "saved_models"
 
 gpu_id: 0  # Will use this gpu if available
 
-# Define environment
-environment:
-  name: "Pendulum"
-  mass: 0.5
-  length: 1
-  g: 3
-
-# Define data characteristics
+# Define data paths
 dataset:
-  img_size: 32
-  noise_std: 0
-  radius_bound: [1.3, 2.3]
-  world_size: 1.5
-  random: True
-
-# Define rollout
-rollout:
-  seq_length: 30
-  delta_time: 0.1
-  n_channels: 3
+  train_data: "pendulum_data/train"  # Should be of 50k samples
+  test_data: "pendulum_data/test"  # Should be of 50k samples
+  rollout:
+    seq_length: 30
+    delta_time: 0.125
+    n_channels: 3
+    noise_level: 0  # Level of environment noise. 0 means no noise, 1 means max noise.
+                    # Maximum values are defined in each environment.
 
 # Define networks architectures
 networks:
@@ -60,7 +50,7 @@ integrator:
 # Define optimization
 optimization:
   epochs: 5
-  batch_size: 1
+  batch_size: 16
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4

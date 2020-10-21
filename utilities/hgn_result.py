@@ -1,3 +1,5 @@
+from utilities import conversions
+from environments.environment import visualize_rollout
 import os
 import sys
 
@@ -6,20 +8,20 @@ import numpy as np
 import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from environments.environment import visualize_rollout
-from utilities import conversions
 
 
 class HgnResult():
     """Class to bundle HGN guessed output information
     """
-    def __init__(self, batch_shape):
+
+    def __init__(self, batch_shape, device):
         """Instantiate the HgnResult that will contain all the information of the forward pass
         over a single batch of rollouts.
 
         Args:
             batch_shape (torch.Size): Shape of a batch of reconstructed rollouts, returned by
                 batch.shape.
+            device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
         """
         self.input = None
         self.z_mean = None
@@ -27,7 +29,7 @@ class HgnResult():
         self.z_sample = None
         self.q_s = []
         self.p_s = []
-        self.reconstructed_rollout = torch.empty(batch_shape)
+        self.reconstructed_rollout = torch.empty(batch_shape).to(device)
         self.reconstruction_ptr = 0
 
     def set_input(self, rollout):
@@ -77,6 +79,7 @@ class HgnResult():
     def visualize(self):
         """Visualize the predicted rollout.
         """
-        rollout_batch = conversions.to_channels_last(self.reconstructed_rollout).detach().numpy()
+        rollout_batch = conversions.to_channels_last(
+            self.reconstructed_rollout).detach().numpy()
         sequence = conversions.batch_to_sequence(rollout_batch)
         visualize_rollout(sequence)
