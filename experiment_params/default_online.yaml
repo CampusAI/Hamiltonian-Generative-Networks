@@ -17,9 +17,8 @@ dataset:
   img_size: 32
   noise_std: 0
   radius_bound: [1.3, 2.3]
-  on_the_fly_data: False  # If false will load the data from train_data
-  on_the_fly_rollouts: 50000  # Total number of rollouts used when training on-the-fly. In this
-                              # case the parameter 'epochs' of optimization will not be used.
+  world_size: 1.5
+  num_samples: 50000  # Total number of rollouts used when training on-the-fly
   rollout:
     seq_length: 30
     delta_time: 0.1
@@ -58,7 +57,7 @@ integrator:
 
 # Define optimization
 optimization:
-  epochs: 5  # Note that in on-the-fly training this should be set to 1
+  epochs: 1  #  DO NOT CHANGE! Use dataset.num_samples
   batch_size: 16
   # Learning rates
   encoder_lr: 1.5e-4
