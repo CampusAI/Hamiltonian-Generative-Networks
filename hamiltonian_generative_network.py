@@ -27,6 +27,7 @@ class HGN:
                  optimizer,
                  loss,
                  device,
+                 dtype,
                  seq_len,
                  channels=3):
         """Instantiate a Hamiltonian Generative Network.
@@ -40,6 +41,7 @@ class HGN:
             optimizer (torch.optim.Optimizer): PyTorch Network optimizer.
             loss (torch.nn.modules.loss): PyTorch Loss.
             device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
+            dtype (torch.dtype): Data type used for the networks.
             seq_len (int): Number of frames in each rollout.
             channels (int, optional): Number of channels of the images. Defaults to 3.
         """
@@ -47,7 +49,8 @@ class HGN:
         self.seq_len = seq_len
         self.channels = channels
         self.device = device
-
+        self.dtype = dtype
+        
         # Modules
         self.encoder = encoder
         self.transformer = transformer
