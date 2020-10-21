@@ -64,14 +64,12 @@ def load_hgn(params, device, dtype):
         },
     ]
     optimizer = torch.optim.Adam(optim_params)
-    loss = torch.nn.MSELoss()
     # Instantiate Hamiltonian Generative Network
     hgn = HGN(encoder=encoder,
               transformer=transformer,
               hnn=hnn,
               decoder=decoder,
               integrator=integrator,
-              loss=loss,
               optimizer=optimizer,
               seq_len=params["rollout"]["seq_length"],
               channels=params["rollout"]["n_channels"])
