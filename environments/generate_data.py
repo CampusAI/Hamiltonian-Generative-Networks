@@ -40,26 +40,32 @@ def _read_params(params_file):
 
 if __name__ == '__main__':
     DATASETS_ROOT = os.path.join(os.path.dirname(__file__), '..', 'datasets')
-    DEFAULT_OFFLINE_PARAMS = os.path.join(
+    DEFAULT_PARAMS_FILE = os.path.join(
         os.path.dirname(__file__), '..', 'experiment_params/default_online.yaml')
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-params', action='store', nargs=1, type=str, required=False,
+        '--params', action='store', nargs=1, type=str, required=False,
         help='YAML file from which to read the dataset parameters. If not specified,'
              'experiment_params/default_online.yaml will be used.')
+    args = parser.parse_args()
 
-    online_params = _read_params(DEFAULT_OFFLINE_PARAMS)
+    parameter_file = args.params[0] if args.params is not None else DEFAULT_PARAMS_FILE
+    online_params = _read_params(parameter_file)
 
-    EXP_NAME = online_params['experiment_id']
-    N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples']
-    N_TEST_SAMPLES = online_params['dataset']['num_test_samples']
-    IMG_SIZE = online_params['dataset']['img_size']
-    RADIUS_BOUND = online_params['dataset']['radius_bound']
-    NOISE_LEVEL = online_params['dataset']['rollout']['noise_level']
-    N_FRAMES = online_params['dataset']['rollout']['seq_length']
-    DELTA_TIME = online_params['dataset']['rollout']['delta_time']
-    N_CHANNELS = online_params['dataset']['rollout']['n_channels']
+    try:
+        EXP_NAME = online_params['experiment_id']
+        N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples']
+        N_TEST_SAMPLES = online_params['dataset']['num_test_samples']
+        IMG_SIZE = online_params['dataset']['img_size']
+        RADIUS_BOUND = online_params['dataset']['radius_bound']
+        NOISE_LEVEL = online_params['dataset']['rollout']['noise_level']
+        N_FRAMES = online_params['dataset']['rollout']['seq_length']
+        DELTA_TIME = online_params['dataset']['rollout']['delta_time']
+        N_CHANNELS = online_params['dataset']['rollout']['n_channels']
+    except KeyError:
+        raise KeyError(f'The given parameter file {parameter_file} does not fully specify the ' +
+                       'required parameters.')
 
     environment = EnvFactory.get_environment(**online_params['environment'])
 
