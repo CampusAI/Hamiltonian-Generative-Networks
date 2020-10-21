@@ -14,7 +14,7 @@ from utilities.training_logger import TrainingLogger
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 
 
-def train(params, test=True):
+def train(params):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
@@ -30,7 +30,7 @@ def train(params, test=True):
 
     # Either generate data on-the-fly or load the data from disk
     train_data_loader, test_data_loader = None, None
-    if params.has_key("environment"):
+    if "environment" in params:
         print("Training with ONLINE data...")
         train_data_loader, test_data_loader = get_online_dataloaders(params)
     else:
@@ -52,7 +52,7 @@ def train(params, test=True):
     # TRAIN
     for ep in range(params["optimization"]["epochs"]):
         print("Epoch %s / %s" %
-              (str(ep), str(params["optimization"]["epochs"])))
+              (str(ep + 1), str(params["optimization"]["epochs"])))
         pbar = tqdm.tqdm(train_data_loader)
         for _, rollout_batch in enumerate(pbar):
             # Move to device and change dtype
@@ -85,7 +85,7 @@ def train(params, test=True):
         rollout_batch = rollout_batch.to(device).type(dtype)
         prediction = hgn.forward(rollout_batch=rollout_batch,
                                  variational=params["networks"]["variational"])
-        error = torch.nn.MSELoss(
+        error = torch.nn.MSELoss()(
             input=prediction.input,
             target=prediction.reconstructed_rollout).detach().cpu().numpy()
         test_error += error / len(test_data_loader)
@@ -94,11 +94,11 @@ def train(params, test=True):
 
 
 if __name__ == "__main__":
-    params_file = "experiment_params/default.yaml"
+    params_file = "experiment_params/default_online.yaml"
 
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
 
     # Train HGN network
-    hgn = train(params, test=True)
+    hgn = train(params)

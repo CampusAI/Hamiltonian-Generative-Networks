@@ -24,8 +24,8 @@ def load_hgn(params, device, dtype):
         dtype (torch.dtype): Data type to be used by the networks.
     """
     # Define networks
-    encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
-                         in_channels=params["rollout"]["n_channels"],
+    encoder = EncoderNet(seq_len=params["dataset"]["rollout"]["seq_length"],
+                         in_channels=params["dataset"]["rollout"]["n_channels"],
                          **params["networks"]["encoder"],
                          dtype=dtype).to(device)
     transformer = TransformerNet(
@@ -36,12 +36,12 @@ def load_hgn(params, device, dtype):
                          dtype=dtype).to(device)
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
-        out_channels=params["rollout"]["n_channels"],
+        out_channels=params["dataset"]["rollout"]["n_channels"],
         **params["networks"]["decoder"],
         dtype=dtype).to(device)
 
     # Define HGN integrator
-    integrator = Integrator(delta_t=params["rollout"]["delta_time"],
+    integrator = Integrator(delta_t=params["dataset"]["rollout"]["delta_time"],
                             method=params["integrator"]["method"])
     
     # Define optimization modules
@@ -76,8 +76,8 @@ def load_hgn(params, device, dtype):
               optimizer=optimizer,
               device=device,
               dtype=dtype,
-              seq_len=params["rollout"]["seq_length"],
-              channels=params["rollout"]["n_channels"])
+              seq_len=params["dataset"]["rollout"]["seq_length"],
+              channels=params["dataset"]["rollout"]["n_channels"])
     return hgn
 
 
@@ -97,14 +97,14 @@ def get_online_dataloaders(params):
     trainDS = EnvironmentSampler(
         environment=env,
         dataset_len=params["dataset"]["num_train_samples"],
-        number_of_frames=params["rollout"]["seq_length"],
-        delta_time=params["rollout"]["delta_time"],
+        number_of_frames=params["dataset"]["rollout"]["seq_length"],
+        delta_time=params["dataset"]["rollout"]["delta_time"],
         number_of_rollouts=params["optimization"]["batch_size"],
         img_size=params["dataset"]["img_size"],
-        color=params["rollout"]["n_channels"] == 3,
+        color=params["dataset"]["rollout"]["n_channels"] == 3,
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
-        world_size=params["dataset"]["world_size"],
+        world_size=1.5,  # TODO remove this
         seed=None)
     train_data_loader = torch.utils.data.DataLoader(trainDS,
                                                     shuffle=False,
@@ -113,14 +113,14 @@ def get_online_dataloaders(params):
     testDS = EnvironmentSampler(
         environment=env,
         dataset_len=params["dataset"]["num_test_samples"],
-        number_of_frames=params["rollout"]["seq_length"],
-        delta_time=params["rollout"]["delta_time"],
+        number_of_frames=params["dataset"]["rollout"]["seq_length"],
+        delta_time=params["dataset"]["rollout"]["delta_time"],
         number_of_rollouts=params["optimization"]["batch_size"],
         img_size=params["dataset"]["img_size"],
-        color=params["rollout"]["n_channels"] == 3,
+        color=params["dataset"]["rollout"]["n_channels"] == 3,
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
-        world_size=params["dataset"]["world_size"],
+        world_size=1.5,  # TODO remove this
         seed=None)
     test_data_loader = torch.utils.data.DataLoader(testDS,
                                                    shuffle=False,
