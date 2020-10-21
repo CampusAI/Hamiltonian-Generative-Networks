@@ -71,6 +71,7 @@ class Spring(Environment):
         length = len(q)
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
+            vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
         grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
