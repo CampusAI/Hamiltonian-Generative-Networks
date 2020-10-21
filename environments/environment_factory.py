@@ -9,6 +9,7 @@ from environment import Environment
 from pendulum import Pendulum
 from spring import Spring
 from gravity import NObjectGravity
+from chaotic_pendulum import ChaoticPendulum
 
 
 class EnvFactory():
@@ -37,6 +38,7 @@ class EnvFactory():
             msg = "%s is not a supported type by Environment." % (name)
             msg += "Available types are: " + "".join("%s " % eef for eef in EnvFactory._name_to_env.keys())
             raise NameError(msg)
+
 
 if __name__ == "__main__":
     # EnvFactory test
