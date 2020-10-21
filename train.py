@@ -29,7 +29,6 @@ def train(params):
     hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Either generate data on-the-fly or load the data from disk
-    train_data_loader, test_data_loader = None, None
     if "environment" in params:
         print("Training with ONLINE data...")
         train_data_loader, test_data_loader = get_online_dataloaders(params)

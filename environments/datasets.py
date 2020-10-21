@@ -26,7 +26,6 @@ class EnvironmentSampler(Dataset):
                  color,
                  noise_std,
                  radius_bound,
-                 world_size,
                  seed,
                  dtype=torch.float):
         """Instantiate the EnvironmentSampler.
@@ -44,7 +43,6 @@ class EnvironmentSampler(Dataset):
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius
                 r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
             seed (int): Seed for reproducibility.
             dtype (torch.type): Type of the sampled tensors.
         """
@@ -57,7 +55,6 @@ class EnvironmentSampler(Dataset):
         self.color = color
         self.noise_std = noise_std
         self.radius_bound = radius_bound
-        self.world_size = world_size
         self.seed = seed
         self.dtype = dtype
 
@@ -87,7 +84,6 @@ class EnvironmentSampler(Dataset):
             color=self.color,
             noise_std=self.noise_std,
             radius_bound=self.radius_bound,
-            world_size=self.world_size,
             seed=self.seed)
         rolls = torch.from_numpy(rolls).type(self.dtype)
         return conversions.to_channels_first(rolls)
@@ -121,7 +117,6 @@ if __name__ == "__main__":
                                  img_size=64,
                                  noise_std=0.,
                                  radius_bound=(1.3, 2.3),
-                                 world_size=1.5,
                                  seed=23)
     # Dataloader instance test, batch_mode disabled
     train = torch.utils.data.DataLoader(trainDS,

@@ -46,14 +46,12 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _draw(self, img_size, color, world_size):
+    def _draw(self, img_size, color):
         """Returns array of the environment evolution.
 
         Args:
             img_size (int): Size of the frames (in pixels).
             color (bool): Whether to have colored or grayscale frames.
-            world_size (float): Spatial extent of the window where the rendering is taking place
-                (in meters).
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
@@ -103,7 +101,6 @@ class Environment(ABC):
                                color=True,
                                noise_std=0.1,
                                radius_bound=(1.3, 2.3),
-                               world_size=1.5,
                                seed=None):
         """Samples random rollouts for a given environment
 
@@ -117,7 +114,6 @@ class Environment(ABC):
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius
                 r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
             seed (int): Seed for reproducibility.
         Raises:
             AssertError: If radius_bound[0] > radius_bound[1]
@@ -137,7 +133,7 @@ class Environment(ABC):
             if noise_std > 0.:
                 self._rollout += np.random.randn(
                     *self._rollout.shape) * noise_std
-            batch_sample.append(self._draw(img_size, color, world_size))
+            batch_sample.append(self._draw(img_size, color))
 
         return np.array(batch_sample)
 

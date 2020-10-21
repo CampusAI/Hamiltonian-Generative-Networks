@@ -104,7 +104,6 @@ def get_online_dataloaders(params):
         color=params["dataset"]["rollout"]["n_channels"] == 3,
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
-        world_size=1.5,  # TODO remove this
         seed=None)
     train_data_loader = torch.utils.data.DataLoader(trainDS,
                                                     shuffle=False,
@@ -120,7 +119,6 @@ def get_online_dataloaders(params):
         color=params["dataset"]["rollout"]["n_channels"] == 3,
         noise_std=params["dataset"]["noise_std"],
         radius_bound=params["dataset"]["radius_bound"],
-        world_size=1.5,  # TODO remove this
         seed=None)
     test_data_loader = torch.utils.data.DataLoader(testDS,
                                                    shuffle=False,
