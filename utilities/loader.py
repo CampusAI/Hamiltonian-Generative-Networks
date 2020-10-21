@@ -136,12 +136,12 @@ def get_offline_dataloaders(params):
         tuple(torch.utils.data.DataLoader, torch.utils.data.DataLoader): Train and test dataloader
     """
     # Train
-    trainDS = EnvironmentLoader(params["dataset"]["train_data"])
+    trainDS = EnvironmentLoader(os.path.join('datasets', params["dataset"]["train_data"]))
     train_data_loader = torch.utils.data.DataLoader(
         trainDS, shuffle=True, batch_size=params["optimization"]["batch_size"])
 
     # Test
-    test_DS = EnvironmentLoader(params["dataset"]["test_data"])
+    test_DS = EnvironmentLoader(os.path.join('datasets', params["dataset"]["test_data"]))
     test_data_loader = torch.utils.data.DataLoader(
         test_DS, shuffle=True, batch_size=params["optimization"]["batch_size"])
 
