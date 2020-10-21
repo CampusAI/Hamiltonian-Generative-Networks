@@ -6,11 +6,10 @@ gpu_id: 0  # Will use this gpu if available
 
 # Define environment
 environment:
-  name: "Pendulum"
+  name: "Spring"
   mass: 0.5
-  length: 1
-  g: 3
-
+  elastic_cst: 1
+  
 # Define data characteristics
 dataset:
   img_size: 32
