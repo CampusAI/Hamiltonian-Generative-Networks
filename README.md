@@ -48,13 +48,15 @@ example.
 A dataset can be generated starting from a `yaml` parameter file that specifies all its parameters
 in the `environment` and `dataset` sections. To create a dataset, run
 ```cmd
-python environments/generate_data.py [--params parameter_file] [--name name]
+python environments/generate_data.py [--params parameter_file] [--name name] [--ntrain n] [--ntest n]
 ```
 where the optional argument `--params` can be used to specify a parameter file from which to
 generate the dataset. If not specified,
 [experiment_params/default_online.yaml](experiment_params/default_online.yaml) is used.
 The `--name` argument can be used to assign the given name to the dataset instead of using
-the `experiment_id` of the yaml.
+the `experiment_id` of the yaml. The `-ntrain` and `--ntest` args can be used to specify the
+ number of training and test samples to generate.
 
 **Important:** The given parameter file for dataset generation must fully specify the `dataset` and
- `environment` sections. 
+ `environment` sections. The parameter file will be then saved into the created dataset folder, 
+ converted to the offline parameters.

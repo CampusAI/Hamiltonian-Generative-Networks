@@ -1,4 +1,6 @@
 import argparse
+import copy
+import shutil
 import sys
 import os
 import yaml
@@ -12,11 +14,11 @@ from pendulum import Pendulum
 from spring import Spring
 
 
-def generate_and_save(datasets_root, dataset_name, environment, n_samples, n_frames,
+def generate_and_save(root_path, environment, n_samples, n_frames,
                       delta_time, img_size, radius_bound, noise_level, color, train=True):
-    train_path = os.path.join(datasets_root, dataset_name, 'train' if train else 'test')
-    if not os.path.exists(train_path):
-        os.makedirs(train_path)
+    path = os.path.join(root_path, 'train' if train else 'test')
+    if not os.path.exists(path):
+        os.makedirs(path)
     for i in tqdm(range(n_samples)):
         rolls = environment.sample_random_rollouts(
             number_of_frames=n_frames,
@@ -29,13 +31,25 @@ def generate_and_save(datasets_root, dataset_name, environment, n_samples, n_fra
             seed=i
         )[0]
         filename = "{0:05d}".format(i)
-        np.savez(os.path.join(train_path, filename), rolls)
+        np.savez(os.path.join(path, filename), rolls)
+    return path
 
 
 def _read_params(params_file):
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
     return params
+
+
+def _online_params_to_offline_params(params, train_path, test_path):
+    offline_params = copy.deepcopy(params)
+    offline_params.pop('img_size', None)
+    offline_params.pop('radius_bound', None)
+    offline_params.pop('num_train_samples', None)
+    offline_params.pop('num_test_samples', None)
+    offline_params['train_data'] = train_path
+    offline_params['test_data'] = test_path
+    return offline_params
 
 
 if __name__ == '__main__':
@@ -51,6 +65,14 @@ if __name__ == '__main__':
     parser.add_argument('--name', action='store', nargs=1, required=False,
                         help='Use this name for the dataset instead of experiment_name in the '
                              'yaml file.')
+    parser.add_argument(
+        '--ntrain', action='store', nargs=1, required=False, type=int,
+        help='Number of training sample to generate.'
+    )
+    parser.add_argument(
+        '--ntest', action='store', nargs=1, required=False, type=int,
+        help='Number of test samples to generate.'
+    )
     args = parser.parse_args()
 
     parameter_file = args.params[0] if args.params is not None else DEFAULT_PARAMS_FILE
@@ -58,8 +80,10 @@ if __name__ == '__main__':
 
     try:
         EXP_NAME = online_params['experiment_id'] if args.name is None else args.name[0]
-        N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples']
-        N_TEST_SAMPLES = online_params['dataset']['num_test_samples']
+        N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples'] if args.ntrain is None \
+            else args.ntrain[0]
+        N_TEST_SAMPLES = online_params['dataset']['num_test_samples'] if args.ntest is None else \
+            args.ntest[0]
         IMG_SIZE = online_params['dataset']['img_size']
         RADIUS_BOUND = online_params['dataset']['radius_bound']
         NOISE_LEVEL = online_params['dataset']['rollout']['noise_level']
@@ -70,18 +94,29 @@ if __name__ == '__main__':
         raise KeyError(f'The given parameter file {parameter_file} does not fully specify the ' +
                        'required parameters.')
 
+    DATASETS_ROOT = os.path.join(DATASETS_ROOT, EXP_NAME)
+
     environment = EnvFactory.get_environment(**online_params['environment'])
 
     # Generate train samples
-    generate_and_save(datasets_root=DATASETS_ROOT, dataset_name=EXP_NAME, environment=environment,
-                      n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
-                      img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
-                      color=N_CHANNELS == 3, train=True)
+    train_path = generate_and_save(
+        root_path=DATASETS_ROOT, environment=environment,
+        n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME, img_size=IMG_SIZE,
+        radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL, color=N_CHANNELS == 3, train=True
+    )
 
     # Generate test samples
+    test_path = None
     if N_TEST_SAMPLES > 0:
-        generate_and_save(datasets_root=DATASETS_ROOT, dataset_name=EXP_NAME,
-                          environment=environment,
-                          n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
-                          img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
-                          color=N_CHANNELS == 3, train=False)
+        test_path = generate_and_save(
+            root_path=DATASETS_ROOT, environment=environment,
+            n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
+            img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
+            color=N_CHANNELS == 3, train=False
+        )
+
+    offline_params = _online_params_to_offline_params(online_params, train_path, test_path)
+    yaml_content = yaml.dump(offline_params, default_flow_style=True)
+    with open(os.path.join(DATASETS_ROOT, 'parameters.yaml'), 'x') as f:
+        f.write(yaml_content)
+        f.close()
