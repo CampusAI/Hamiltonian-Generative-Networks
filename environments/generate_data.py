@@ -117,7 +117,7 @@ if __name__ == '__main__':
     if N_TEST_SAMPLES > 0:
         test_path = generate_and_save(
             root_path=DATASETS_ROOT, environment=environment,
-            n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
+            n_samples=N_TEST_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
             img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
             color=N_CHANNELS == 3, start_seed=N_TRAIN_SAMPLES, train=False
         )
