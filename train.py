@@ -14,15 +14,18 @@ from utilities.training_logger import TrainingLogger
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 
 
-def train(params):
+def train(params, cpu=False):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
     """
     # Set device and dtype
-    device = "cuda:" + str(
-        params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+    if cpu:
+        device = 'cpu'
+    else:
+        device = "cuda:" + str(
+            params["gpu_id"]) if torch.cuda.is_available() else "cpu"
     dtype = torch.__getattribute__(params["networks"]["dtype"])
 
     # Load hgn from parameters to deice
@@ -94,11 +97,22 @@ def train(params):
 
 if __name__ == "__main__":
 
-    params_file = "experiment_params/default_online.yaml"
+    DEFAULT_PARAM_FILE = "experiment_params/default_online.yaml"
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--params', action='store', nargs=1, required=False,
+        help='Path to the yaml file with the training configuration. If not specified,'
+             'experiment_params/default_online.yaml will be used')
+    parser.add_argument('--cpu', action='store_true', required=False, default=False,
+                        help='If specified, the training will be run on cpu. Otherwise, it will'
+                             'be run on GPU, unless GPU is not available.')
+    args = parser.parse_args()
+
+    params_file = args.params[0] if args.params is not None else DEFAULT_PARAM_FILE
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
 
     # Train HGN network
-    hgn = train(params)
+    hgn = train(params, cpu=args.cpu)
