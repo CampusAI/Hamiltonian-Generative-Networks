@@ -1,5 +1,5 @@
 # Experiment ID
-experiment_id: "default_online"
+experiment_id: "pendulum_default_online"
 model_save_dir: "saved_models"
 
 gpu_id: 0  # Will use this gpu if available

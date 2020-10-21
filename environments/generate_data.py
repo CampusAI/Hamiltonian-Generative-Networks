@@ -1,56 +1,78 @@
+import argparse
+import sys
 import os
+import yaml
 
 import numpy as np
 from tqdm import tqdm
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from environment_factory import EnvFactory
 from pendulum import Pendulum
 from spring import Spring
 
-# PARAMETERS
 
-dataset_root = '../datasets'
-dataset_name = "pendulum_data"
-num_train_samples = 1000
-num_test_samples = 100
-number_of_frames = 20
-delta_time = 0.125
-img_size = 32
-noise_std = 0.
-radius_bound = (.5, 1.5)
-color = False
-world_size = 1.5
-environment = Pendulum(mass=.5, length=1, g=3)
+def generate_and_save(datasets_root, dataset_name, environment, n_samples, n_frames,
+                      delta_time, img_size, radius_bound, noise_std, color, train=True):
+    train_path = os.path.join(datasets_root, dataset_name, 'train' if train else 'test')
+    if not os.path.exists(train_path):
+        os.makedirs(train_path)
+    for i in tqdm(range(n_samples)):
+        rolls = environment.sample_random_rollouts(
+            number_of_frames=n_frames,
+            delta_time=delta_time,
+            number_of_rollouts=1,
+            img_size=img_size,
+            noise_std=noise_std,
+            radius_bound=radius_bound,
+            color=color,
+            seed=i
+        )[0]
+        filename = "{0:05d}".format(i)
+        np.savez(os.path.join(train_path, filename), rolls)
 
-############
 
-dataset_path_train = os.path.join(dataset_root, dataset_name, 'train')
-os.makedirs(dataset_path_train, exist_ok=True)
-print("Generating train dataset...")
-for i in tqdm(range(num_train_samples)):
-    rolls = environment.sample_random_rollouts(number_of_frames=number_of_frames,
-                                               delta_time=delta_time,
-                                               number_of_rollouts=1,
-                                               img_size=img_size,
-                                               noise_std=noise_std,
-                                               radius_bound=radius_bound,
-                                               world_size=world_size,
-                                               color=color,
-                                               seed=i)[0]
-    filename = "{0:05d}".format(i)
-    np.savez(os.path.join(dataset_path_train, filename), rolls)
+def _read_params(params_file):
+    with open(params_file, 'r') as f:
+        params = yaml.load(f, Loader=yaml.FullLoader)
+    return params
 
-dataset_path_test = os.path.join(dataset_root, dataset_name, 'test')
-os.makedirs(dataset_path_test, exist_ok=True)
-print("Generating test dataset...")
-for i in tqdm(range(num_test_samples)):
-    rolls = environment.sample_random_rollouts(number_of_frames=number_of_frames,
-                                               delta_time=delta_time,
-                                               number_of_rollouts=1,
-                                               img_size=img_size,
-                                               noise_std=noise_std,
-                                               radius_bound=radius_bound,
-                                               world_size=world_size,
-                                               color=color,
-                                               seed=num_test_samples + i)[0]
-    filename = "{0:05d}".format(i)
-    np.savez(os.path.join(dataset_path_test, filename), rolls)
+
+if __name__ == '__main__':
+    DATASETS_ROOT = os.path.join(os.path.dirname(__file__), '..', 'datasets')
+    DEFAULT_OFFLINE_PARAMS = os.path.join(
+        os.path.dirname(__file__), '..', 'experiment_params/default_online.yaml')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-params', action='store', nargs=1, type=str, required=False,
+        help='YAML file from which to read the dataset parameters. If not specified,'
+             'experiment_params/default_online.yaml will be used.')
+
+    online_params = _read_params(DEFAULT_OFFLINE_PARAMS)
+
+    EXP_NAME = online_params['experiment_id']
+    N_TRAIN_SAMPLES = online_params['dataset']['num_train_samples']
+    N_TEST_SAMPLES = online_params['dataset']['num_test_samples']
+    IMG_SIZE = online_params['dataset']['img_size']
+    NOISE_STD = online_params['dataset']['noise_std']
+    RADIUS_BOUND = online_params['dataset']['radius_bound']
+    N_FRAMES = online_params['dataset']['rollout']['seq_length']
+    DELTA_TIME = online_params['dataset']['rollout']['delta_time']
+    N_CHANNELS = online_params['dataset']['rollout']['n_channels']
+
+    environment = EnvFactory.get_environment(**online_params['environment'])
+
+    # Generate train samples
+    generate_and_save(datasets_root=DATASETS_ROOT, dataset_name=EXP_NAME, environment=environment,
+                      n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
+                      img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_std=NOISE_STD,
+                      color=N_CHANNELS == 3, train=True)
+
+    # Generate test samples
+    if N_TEST_SAMPLES > 0:
+        generate_and_save(datasets_root=DATASETS_ROOT, dataset_name=EXP_NAME,
+                          environment=environment,
+                          n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
+                          img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_std=NOISE_STD,
+                          color=N_CHANNELS == 3, train=False)
