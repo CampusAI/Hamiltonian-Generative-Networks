@@ -29,3 +29,8 @@ def kld_loss(mu, logvar):
         (torch.Tensor): KL divergence.
     """
     return torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), 1))
+
+def geco_constraint(target, prediction, tol):
+    """Computes the constraint for the geco algorithm
+    """
+    return reconstruction_loss(prediction, target) - tol**2
