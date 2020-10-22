@@ -103,7 +103,8 @@ if __name__ == '__main__':
         '--env-spec', action='store', nargs='+', required=False,
         help='Parameters of the environment in the form param_name:param_value, '
              'e.g. --env-spec g:1.0 mass:0.5. If this argument is specified, the given '
-             'parameters will be used instead of those in the yaml file.'
+             'parameters will be used instead of those in the yaml file. IMPORTANT: lists must be '
+             'enclosed in double quotes, i.e. mass:"[0.5, 0.5]".'
     )
     args = parser.parse_args()
 
