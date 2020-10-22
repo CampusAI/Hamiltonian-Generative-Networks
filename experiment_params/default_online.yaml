@@ -69,5 +69,5 @@ optimization:
 
 geco:
   alpha: 0.99
-  tol: 1.0e-3 # per pixel error tolerance
+  tol: 0.03 # per pixel error tolerance
   langrange_multiplier_param: 1.0e-5
