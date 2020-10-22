@@ -47,6 +47,7 @@ def _online_params_to_offline_params(params, train_path, test_path):
     offline_params.pop('radius_bound', None)
     offline_params.pop('num_train_samples', None)
     offline_params.pop('num_test_samples', None)
+    offline_params.pop('environment', None)
     offline_params['train_data'] = train_path
     offline_params['test_data'] = test_path
     return offline_params
