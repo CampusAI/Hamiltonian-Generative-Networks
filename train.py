@@ -14,7 +14,6 @@ from utilities.training_logger import TrainingLogger
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 
 
-
 def _avoid_overwriting(experiment_id):
     # This function throws an error if the given experiment data already exists in runs/
     logdir = os.path.join('runs', experiment_id)
@@ -29,14 +28,13 @@ def train(params, cpu=False, resume=False):
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
     """
-    if not resume:
-        _avoid_overwriting(params['experiment_id'])  # Avoid overwriting tensorboard data
-    # Set device and dtype
-    if cpu:
-        device = 'cpu'
-    else:
-        device = "cuda:" + str(
-            params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+
+    # Set device
+    device = 'cpu'
+    # "cuda:" + str(
+        # params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+
+    # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
     dtype = torch.__getattribute__(params["networks"]["dtype"])
 
     # Load hgn from parameters to deice
@@ -53,8 +51,8 @@ def train(params, cpu=False, resume=False):
 
     # Initialize training logger
     training_logger = TrainingLogger(hyper_params=params,
-                                     loss_freq=100,
-                                     rollout_freq=100,
+                                     loss_freq=1,
+                                     rollout_freq=10,
                                      model_freq=10000)
 
     # Initialize tensorboard writer
