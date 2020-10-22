@@ -75,7 +75,10 @@ Optional arguments:
                         mass:0.5. If this argument is specified, the given
                         parameters will be used instead of those in the yaml
                         file.
-
+  --datasets-root DATASETS_ROOT
+                        Root of the datasets folder in which the dataset will
+                        be stored. If not specified, datasets/ will be used as
+                        default.
 ```
 
 **Important:** The given parameter file for dataset generation must fully specify the `dataset` and
