@@ -106,6 +106,11 @@ if __name__ == '__main__':
              'parameters will be used instead of those in the yaml file. IMPORTANT: lists must be '
              'enclosed in double quotes, i.e. mass:"[0.5, 0.5]".'
     )
+    parser.add_argument(
+        '--datasets-root', action='store', nargs=1, required=False, type=str,
+        help='Root of the datasets folder in which the dataset will be stored. If not specified, '
+             'datasets/ will be used as default.'
+    )
     args = parser.parse_args()
 
     # Read yaml file with parameters definition
@@ -127,7 +132,8 @@ if __name__ == '__main__':
     N_CHANNELS = dataset_params['dataset']['rollout']['n_channels']
 
     # Get dataset output path
-    DATASETS_ROOT = os.path.join(DATASETS_ROOT, EXP_NAME)
+    dataset_root = DATASETS_ROOT if args.datasets_root is None else args.datasets_root[0]
+    dataset_root = os.path.join(dataset_root, EXP_NAME)
 
     # Get the environment object from dictionary parameters
     environment = environment_factory.EnvFactory.get_environment(**dataset_params['environment'])
@@ -137,6 +143,7 @@ if __name__ == '__main__':
     print(f'experiment_id: {EXP_NAME}')
     print(f'dataset: {dataset_params["dataset"]}')
     print(f'environment: {dataset_params["environment"]}')
+    print(f'path: {dataset_root}')
     print('\nProceed? (y/n):')
     if input() != 'y':
         print('Aborting')
@@ -144,7 +151,7 @@ if __name__ == '__main__':
 
     # Generate train samples
     train_path = generate_and_save(
-        root_path=DATASETS_ROOT, environment=environment,
+        root_path=dataset_root, environment=environment,
         n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME, img_size=IMG_SIZE,
         radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL, color=N_CHANNELS == 3,
         start_seed=0, train=True
@@ -154,7 +161,7 @@ if __name__ == '__main__':
     test_path = None
     if N_TEST_SAMPLES > 0:
         test_path = generate_and_save(
-            root_path=DATASETS_ROOT, environment=environment,
+            root_path=dataset_root, environment=environment,
             n_samples=N_TEST_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
             img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
             color=N_CHANNELS == 3, start_seed=N_TRAIN_SAMPLES, train=False
