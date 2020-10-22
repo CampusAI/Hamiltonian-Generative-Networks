@@ -49,6 +49,8 @@ A dataset can be generated starting from a `yaml` parameter file that specifies 
 in the `environment` and `dataset` sections. To create a dataset, run
 ```commandline
 python environments/generate_data.py
+
+Creates a train and test dataset and prints a .yaml file ready to be run for offline training.
 ```
 
 ```commandline
