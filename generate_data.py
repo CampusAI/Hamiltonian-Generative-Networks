@@ -33,44 +33,50 @@ def generate_and_save(root_path, environment, n_samples, n_frames, delta_time, i
     return path
 
 
-def _read_params(params_file):
-    with open(params_file, 'r') as f:
-        params = yaml.load(f, Loader=yaml.FullLoader)
-    return params
+def _read_config(config_file):
+    with open(config_file, 'r') as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+    return config
 
 
-def _prepare_out_params(params, train_path, test_path):
-    offline_params = copy.deepcopy(params)
-    offline_params.pop('img_size', None)
-    offline_params.pop('radius_bound', None)
-    offline_params.pop('num_train_samples', None)
-    offline_params.pop('num_test_samples', None)
-    offline_params['train_data'] = train_path
-    offline_params['test_data'] = test_path
-    return offline_params
+def _prepare_out_config(config, train_path, test_path):
+    out_config = copy.deepcopy(config)
+    out_config.pop('img_size', None)
+    out_config.pop('radius_bound', None)
+    out_config.pop('num_train_samples', None)
+    out_config.pop('num_test_samples', None)
+    out_config['train_data'] = train_path
+    out_config['test_data'] = test_path
+    return out_config
 
 
-def _overwrite_params_with_cmd_arguments(params, args):
+def _overwrite_config_with_cmd_arguments(config, args):
     # This function overwrites parameters in the given dictionary
     # with the correspondent command line arguments.
     if args.name is not None:
-        params['experiment_id'] = args.name[0]
+        config['experiment_id'] = args.name[0]
     if args.ntrain is not None:
-        params['dataset']['num_train_samples'] = args.ntrain[0]
+        config['dataset']['num_train_samples'] = args.ntrain[0]
     if args.ntest is not None:
-        params['dataset']['num_test_samples'] = args.ntest[0]
+        config['dataset']['num_test_samples'] = args.ntest[0]
     if args.env is not None:
-        env_params = _read_params(DEFAULT_ENVIRONMENTS_PATH + args.env[0] + '.yaml')
-        params['environment'] = env_params['environment']
-    if args.env_spec is not None:
-        for spec in args.env_spec:
-            key, value = spec.split(':')
-            params['environment'][key] = ast.literal_eval(value)
+        env_params = _read_config(DEFAULT_ENVIRONMENTS_PATH + args.env[0] + '.yaml')
+        config['environment'] = env_params['environment']
+    if args.params is not None:
+        for p in args.params:
+            key, value = p.split('=')
+            ptr = config
+            keys = key.split('.')
+            for i, k in enumerate(keys):
+                if i == len(keys) - 1:
+                    ptr[k] = value
+                else:
+                    ptr = ptr[k]
 
 
 if __name__ == '__main__':
     DATASETS_ROOT = os.path.join(os.path.dirname(__file__), 'datasets')
-    DEFAULT_PARAMS_FILE = os.path.join(
+    DEFAULT_CONFIG_FILE = os.path.join(
         os.path.dirname(__file__), 'experiment_params/default_online.yaml')
     DEFAULT_ENVIRONMENTS_PATH = os.path.join(
         os.path.dirname(__file__), 'experiment_params/', 'default_environments/'
@@ -78,7 +84,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--params', action='store', nargs=1, type=str, required=False,
+        '--config-file', action='store', nargs=1, type=str, required=False,
         help='YAML file from which to read the dataset parameters. If not specified,'
              'experiment_params/default_online.yaml will be used.')
     parser.add_argument('--name', action='store', nargs=1, required=False,
@@ -100,49 +106,49 @@ if __name__ == '__main__':
              'file in experiment_params/default_environments/'
     )
     parser.add_argument(
-        '--env-spec', action='store', nargs='+', required=False,
-        help='Parameters of the environment in the form param_name:param_value, '
-             'e.g. --env-spec g:1.0 mass:0.5. If this argument is specified, the given '
-             'parameters will be used instead of those in the yaml file. IMPORTANT: lists must be '
-             'enclosed in double quotes, i.e. mass:"[0.5, 0.5]".'
-    )
-    parser.add_argument(
         '--datasets-root', action='store', nargs=1, required=False, type=str,
         help='Root of the datasets folder in which the dataset will be stored. If not specified, '
              'datasets/ will be used as default.'
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        '--params', action='store', nargs='+', required=False,
+        help='Set a parameter with the given value. The format of an argument is '
+             'param_name=param_value. Nested parameters are accessible by using a dot, '
+             'i.e. --param dataset.img_size=32. IMPORTANT: lists must be enclosed in double '
+             'quotes, i.e. --param mass:"[0.5, 0.5]".'
+    )
+    _args = parser.parse_args()
 
     # Read yaml file with parameters definition
-    parameter_file = args.params[0] if args.params is not None else DEFAULT_PARAMS_FILE
-    dataset_params = _read_params(parameter_file)
+    _config_file = _args.config_file[0] if _args.config_file is not None else DEFAULT_CONFIG_FILE
+    _dataset_config = _read_config(_config_file)
 
     # Overwrite dictionary from command line args to ensure they will be used
-    _overwrite_params_with_cmd_arguments(dataset_params, args)
+    _overwrite_config_with_cmd_arguments(_dataset_config, _args)
 
     # Extract environment parameters
-    EXP_NAME = dataset_params['experiment_id']
-    N_TRAIN_SAMPLES = dataset_params['dataset']['num_train_samples']
-    N_TEST_SAMPLES = dataset_params['dataset']['num_test_samples']
-    IMG_SIZE = dataset_params['dataset']['img_size']
-    RADIUS_BOUND = dataset_params['dataset']['radius_bound']
-    NOISE_LEVEL = dataset_params['dataset']['rollout']['noise_level']
-    N_FRAMES = dataset_params['dataset']['rollout']['seq_length']
-    DELTA_TIME = dataset_params['dataset']['rollout']['delta_time']
-    N_CHANNELS = dataset_params['dataset']['rollout']['n_channels']
+    EXP_NAME = _dataset_config['experiment_id']
+    N_TRAIN_SAMPLES = _dataset_config['dataset']['num_train_samples']
+    N_TEST_SAMPLES = _dataset_config['dataset']['num_test_samples']
+    IMG_SIZE = _dataset_config['dataset']['img_size']
+    RADIUS_BOUND = _dataset_config['dataset']['radius_bound']
+    NOISE_LEVEL = _dataset_config['dataset']['rollout']['noise_level']
+    N_FRAMES = _dataset_config['dataset']['rollout']['seq_length']
+    DELTA_TIME = _dataset_config['dataset']['rollout']['delta_time']
+    N_CHANNELS = _dataset_config['dataset']['rollout']['n_channels']
 
     # Get dataset output path
-    dataset_root = DATASETS_ROOT if args.datasets_root is None else args.datasets_root[0]
+    dataset_root = DATASETS_ROOT if _args.datasets_root is None else _args.datasets_root[0]
     dataset_root = os.path.join(dataset_root, EXP_NAME)
 
     # Get the environment object from dictionary parameters
-    environment = environment_factory.EnvFactory.get_environment(**dataset_params['environment'])
+    environment = environment_factory.EnvFactory.get_environment(**_dataset_config['environment'])
 
     # Ask user confirmation
-    print(f'The dataset will be generated with the following parameters:')
+    print(f'The dataset will be generated with the following configuration:')
     print(f'experiment_id: {EXP_NAME}')
-    print(f'dataset: {dataset_params["dataset"]}')
-    print(f'environment: {dataset_params["environment"]}')
+    print(f'dataset: {_dataset_config["dataset"]}')
+    print(f'environment: {_dataset_config["environment"]}')
     print(f'path: {dataset_root}')
     print('\nProceed? (y/n):')
     if input() != 'y':
@@ -168,11 +174,11 @@ if __name__ == '__main__':
         )
 
     # Convert parameters to offline train parameters and write them in the dataset
-    out_params = _prepare_out_params(dataset_params, train_path, test_path)
-    yaml_content = yaml.dump(out_params, default_flow_style=True)
-    param_out_path = os.path.join(DATASETS_ROOT, 'parameters.yaml')
-    with open(param_out_path, 'x') as f:
+    _out_config = _prepare_out_config(_dataset_config, train_path, test_path)
+    yaml_content = yaml.dump(_out_config, default_flow_style=True)
+    config_out_path = os.path.join(DATASETS_ROOT, 'parameters.yaml')
+    with open(config_out_path, 'x') as f:
         f.write(yaml_content)
         f.close()
 
-    print(f'A parameter file ready to be trained on was generated at {param_out_path}')
+    print(f'A parameter file ready to be trained on was generated at {config_out_path}')
