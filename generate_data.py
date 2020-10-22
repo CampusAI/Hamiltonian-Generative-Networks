@@ -69,7 +69,7 @@ def _overwrite_config_with_cmd_arguments(config, args):
             keys = key.split('.')
             for i, k in enumerate(keys):
                 if i == len(keys) - 1:
-                    ptr[k] = value
+                    ptr[k] = ast.literal_eval(value)
                 else:
                     ptr = ptr[k]
 
