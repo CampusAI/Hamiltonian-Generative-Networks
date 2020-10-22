@@ -70,11 +70,19 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def get_default_radius_bounds(self):
+        """Returns a tuple (min, max) with the default radius bounds for the environment.
+        """
+        raise NotImplementedError
+
     def _sample_init_conditions(self, radius_bound):
         """Samples random initial conditions for the environment
 
         Args:
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
 
         Raises:
             NotImplementedError: Class instantiation has no implementation
@@ -127,6 +135,8 @@ class Environment(ABC):
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius
                 r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
             seed (int): Seed for reproducibility.
         Raises:
             AssertError: If radius_bound[0] > radius_bound[1]
@@ -134,6 +144,8 @@ class Environment(ABC):
             (ndarray): Array of shape (Batch, Nframes, Height, Width, Channels).
                 Contains sampled rollouts
         """
+        if radius_bound == 'auto':
+            radius_bound = self.get_default_radius_bounds()
         radius_lb, radius_ub = radius_bound
         assert radius_lb <= radius_ub
         if seed is not None:

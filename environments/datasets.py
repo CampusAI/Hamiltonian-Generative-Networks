@@ -42,7 +42,9 @@ class EnvironmentSampler(Dataset):
                 trajectory.
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
                 Init phase states will be sampled from a circle (q, p) of radius
-                r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec. 4)
+                r ~ U(radius_bound[0], radius_bound[1]) https://arxiv.org/pdf/1909.13789.pdf (Sec 4)
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                environment.get_default_radius_bounds() will be returned.
             seed (int): Seed for reproducibility.
             dtype (torch.type): Type of the sampled tensors.
         """
