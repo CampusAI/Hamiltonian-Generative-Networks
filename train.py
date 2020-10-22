@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-    params['potential_learning'] = args.potential_learning
+    params['networks']['hamiltonian']['potential_learning'] = args.potential_learning
 
     if args.name is not None:
         params['experiment_id'] = args.name[0]
