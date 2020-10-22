@@ -42,7 +42,7 @@ class TrainingLogger:
         if self.iteration % self.loss_freq == 0:
             for loss_name, loss_value in losses.items():
                 if loss_value is not None:
-                    self.writer.add_scalar(f'loss/{loss_name}', loss_value, self.iteration)
+                    self.writer.add_scalar(f'{loss_name}', loss_value, self.iteration)
 
         if self.iteration % self.rollout_freq == 0:
             self.writer.add_video('data/input',
