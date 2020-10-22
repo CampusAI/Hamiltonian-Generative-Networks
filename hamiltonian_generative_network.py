@@ -24,7 +24,6 @@ class HGN:
                  hnn,
                  decoder,
                  integrator,
-                 optimizer,
                  loss,
                  device,
                  dtype,
@@ -57,37 +56,7 @@ class HGN:
         self.hnn = hnn
         self.decoder = decoder
         self.integrator = integrator
-
-        # Optimization
-        self.optimizer = optimizer
     
-    def reconstruction_loss(self, target, prediction):
-        """Computes the MSE loss between the target and the predictions.
-            
-        Args:
-            target (Tensor): The target batch
-            prediction (Tensor) The prediction of the model
-
-        Returns:
-            (Tensor): MSE loss
-        """
-        # Compute sum across each datapoint in the batch and then average
-        return torch.mean(torch.sum(torch.pow(prediction - target, 2), 1))
-
-    def kld_loss(self, mu, logvar):
-        """ First it computes the KLD over each datapoint in the batch as a sum over all latent dims. 
-            It returns the mean KLD over the batch size.
-            The KLD is computed in comparison to a multivariate Gaussian with zero mean and identity covariance.
-
-        Args:
-            mu (torch.Tensor): the part of the latent vector that corresponds to the mean
-            logvar (torch.Tensor): the log of the variance (sigma squared)
-
-        Returns:
-            (torch.Tensor): KL divergence.
-        """
-        return torch.mean(-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), 1))
-
     def forward(self, rollout_batch, n_steps=None, variational=True):
         """Get the prediction of the HGN for a given rollout_batch of n_steps.
 
@@ -136,48 +105,6 @@ class HGN:
             prediction.append_reconstruction(x_reconstructed)
         return prediction
 
-    def fit(self, rollouts, variational=True):
-        """Perform a training step with the given rollouts batch.
-
-        TODO: Move the whole fit() code inside forward if adding hooks to the training, as direct
-            calls to self.forward() do not trigger them.
-
-        Args:
-            rollouts (torch.Tensor): Tensor of shape (batch_size, seq_len, channels, height, width)
-                corresponding to a batch of sampled rollouts.
-            variational (bool): Whether to sample from the encoder and compute the KL loss,
-                or train in fully deterministic mode.
-
-        Returns:
-            A tuple (reconstruction_error, kl_error, result) where reconstruction_error and
-            kl_error are floats and result is the HgnResult object with data of the forward pass.
-        """
-        # Re-set gradients and forward new batch
-        self.optimizer.zero_grad()
-        prediction = self.forward(rollout_batch=rollouts, variational=variational)
-        
-        # Compute frame reconstruction error
-        reconstruction_error = self.reconstruction_loss(input=prediction.input,
-                                         target=prediction.reconstructed_rollout)
-
-        total_loss = reconstruction_error
-        kl_div = None
-        if variational:
-            # Compute KL divergence
-            mu = prediction.z_mean
-            logvar = prediction.z_logvar
-            # TODO(Oleguer) Sum or mean?
-            kl_div = self.kld_loss()
-            # Compute loss
-            beta = 0.01  # TODO(Stathi) Compute beta value
-            total_loss += beta * kl_div
-        
-        # Optimization step
-        total_loss.backward()
-        self.optimizer.step()
-        reconstruction_error_np = reconstruction_error.detach().cpu().numpy()
-        kl_div_np = kl_div.detach().cpu().numpy() if kl_div is not None else None
-        return reconstruction_error_np, kl_div_np, prediction
 
     def load(self, directory):
         """Load networks' parameters
