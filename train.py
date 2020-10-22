@@ -43,13 +43,14 @@ def train(params, cpu=False, resume=False):
     hgn = load_hgn(params=params, device=device, dtype=dtype)
 
     # Either generate data on-the-fly or load the data from disk
-    if "environment" in params:
-        print("Training with ONLINE data...")
-        train_data_loader, test_data_loader = get_online_dataloaders(params)
-    else:
+    if "train_data" in params["dataset"]:
         print("Training with OFFLINE data...")
         train_data_loader, test_data_loader = get_offline_dataloaders(params)
-
+    else:
+        assert "environment" in params, "Nor environment nor train_data are specified in the " \
+                                        "given configuration."
+        print("Training with ONLINE data...")
+        train_data_loader, test_data_loader = get_online_dataloaders(params)
 
     # Initialize training logger
     training_logger = TrainingLogger(hyper_params=params,
