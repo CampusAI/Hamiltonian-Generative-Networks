@@ -15,12 +15,12 @@ class NObjectGravity(Environment):
 
     WORLD_SIZE = 6.
 
-    def __init__(self, mass, gravity_cst, orbit_noise=.01, q=None, p=None):
+    def __init__(self, mass, g, orbit_noise=.01, q=None, p=None):
         """Contructor for spring system
 
         Args:
             mass (list): List of floats corresponding to object masses (kg).
-            gravity_cst (float): Constant for the intensity of gravitational field (m^3/kg*s^2)
+            g (float): Constant for the intensity of gravitational field (m^3/kg*s^2)
             orbit_noise (float, optional): Noise for object orbits when sampling initial conditions
             q (ndarray, optional): Object generalized positions in 2-D space: Positions (m). Defaults to None
             p (ndarray, optional): Object generalized momentums in 2-D space : Linear momentums (kg*m/s). Defaults to None
@@ -30,7 +30,7 @@ class NObjectGravity(Environment):
         self.mass = mass
         self.colors = ['y', 'r', 'g', 'b', 'c', 'p', 'w']
         self.n_objects = len(mass)
-        self.gravity_cst = gravity_cst
+        self.g = g
         self.orbit_noise = orbit_noise
         if self.n_objects > 7:
             raise NotImplementedError(
@@ -97,7 +97,7 @@ class NObjectGravity(Environment):
                 object_distance[i, j] = np.linalg.norm(
                     states_q[i] - states_q[j])
                 object_distance[j, i] = object_distance[i, j]
-        object_distance = np.power(object_distance, 3)/self.gravity_cst
+        object_distance = np.power(object_distance, 3)/self.g
 
         for d in range(2):
             for i in range(self.n_objects):
@@ -218,7 +218,7 @@ class NObjectGravity(Environment):
 if __name__ == "__main__":
 
     og = NObjectGravity(mass=[1., 1., 1.],
-                        gravity_cst=1., orbit_noise=0.1)
+                        g=1., orbit_noise=0.1)
     rolls = og.sample_random_rollouts(number_of_frames=1000,
                                       delta_time=0.1,
                                       number_of_rollouts=1,
