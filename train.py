@@ -136,18 +136,24 @@ if __name__ == "__main__":
         help='Enable potential learning, where the hamiltonian network only learns the potential'
              ' energy. Requires Leapfrog integrator.'
     )
+    parser.add_argument(
+        '--epochs', action='store', nargs=1, required=False, type=int,
+        help='Number of training epochs.'
+    )
     args = parser.parse_args()
-
-    if args.resume is not None:
-        raise NotImplementedError('Resume training from command line is not implemented yet')
 
     params_file = args.params[0] if args.params is not None else DEFAULT_PARAM_FILE
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-    params['networks']['hamiltonian']['potential_learning'] = args.potential_learning
 
     if args.name is not None:
         params['experiment_id'] = args.name[0]
+    if args.epochs is not None:
+        params['optimization']['epochs'] = args.epochs[0]
+    params['networks']['hamiltonian']['potential_learning'] = args.potential_learning
+    if args.resume is not None:
+        raise NotImplementedError('Resume training from command line is not implemented yet')
+
     # Train HGN network
     hgn = train(params, cpu=args.cpu)
