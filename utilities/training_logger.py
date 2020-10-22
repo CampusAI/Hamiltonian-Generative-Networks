@@ -40,11 +40,9 @@ class TrainingLogger:
                 the models forward pass on the rollout_batch.
         """
         if self.iteration % self.loss_freq == 0:
-            self.writer.add_scalar('data/reconstruction_loss', losses[0],
-                                   self.iteration)
-            if losses[1] is not None:
-                self.writer.add_scalar('data/kld_loss', losses[1],
-                                       self.iteration)
+            for loss_name, loss_value in losses.items():
+                if loss_value is not None:
+                    self.writer.add_scalar(f'loss/{loss_name}', loss_value, self.iteration)
 
         if self.iteration % self.rollout_freq == 0:
             self.writer.add_video('data/input',
