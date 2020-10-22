@@ -138,7 +138,8 @@ if __name__ == '__main__':
     print(f'dataset: {dataset_params["dataset"]}')
     print(f'environment: {dataset_params["environment"]}')
     print('\nProceed? (y/n):')
-    if input() == 'n':
+    if input() != 'y':
+        print('Aborting')
         exit()
 
     # Generate train samples
