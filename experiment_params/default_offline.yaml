@@ -18,7 +18,6 @@ dataset:
 # Define networks architectures
 networks:
   variational: True
-  potential_learning: False
   dtype : "float"
   encoder:
     hidden_conv_layers: 6
