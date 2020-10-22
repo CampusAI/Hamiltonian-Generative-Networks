@@ -55,3 +55,8 @@ optimization:
   transformer_lr: 1.5e-4
   hnn_lr: 1.5e-4
   decoder_lr: 1.5e-4
+
+geco:
+  alpha: 0.99
+  tol: 1e-3
+  langrange_multiplier_param: 1e-5
