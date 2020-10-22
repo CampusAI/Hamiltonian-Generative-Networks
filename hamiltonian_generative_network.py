@@ -24,7 +24,6 @@ class HGN:
                  hnn,
                  decoder,
                  integrator,
-                 loss,
                  device,
                  dtype,
                  seq_len,
@@ -37,8 +36,6 @@ class HGN:
             hnn (networks.hamiltonian_net.HamiltonianNet): Hamiltonian neural network.
             decoder (networks.decoder_net.DecoderNet): Decoder neural network.
             integrator (Integrator): HGN integrator.
-            optimizer (torch.optim.Optimizer): PyTorch Network optimizer.
-            loss (torch.nn.modules.loss): PyTorch Loss.
             device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
             dtype (torch.dtype): Data type used for the networks.
             seq_len (int): Number of frames in each rollout.
