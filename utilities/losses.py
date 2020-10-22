@@ -33,4 +33,5 @@ def kld_loss(mu, logvar):
 def geco_constraint(target, prediction, tol):
     """Computes the constraint for the geco algorithm
     """
-    return reconstruction_loss(prediction, target) - tol**2
+    rec_loss = reconstruction_loss(prediction, target)
+    return rec_loss - tol**2, rec_loss
