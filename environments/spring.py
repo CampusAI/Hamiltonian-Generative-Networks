@@ -56,7 +56,7 @@ class Spring(Environment):
 
     def get_default_radius_bounds(self):
         """Returns:
-        radius_bounds (tuple): (min, max) radius bounds for the environment.
+            radius_bounds (tuple): (min, max) radius bounds for the environment.
         """
         return (0.1, 1.0)
 
@@ -109,6 +109,8 @@ class Spring(Environment):
 
         Args:
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
         """
         radius_lb, radius_ub = radius_bound
         radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb

@@ -60,7 +60,7 @@ class ChaoticPendulum(Environment):
 
     def get_default_radius_bounds(self):
         """Returns:
-        radius_bounds (tuple): (min, max) radius bounds for the environment.
+            radius_bounds (tuple): (min, max) radius bounds for the environment.
         """
         return (1.3, 2.3)
 
