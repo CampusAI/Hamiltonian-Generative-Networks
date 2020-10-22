@@ -47,15 +47,36 @@ example.
 ## Generating and saving datasets
 A dataset can be generated starting from a `yaml` parameter file that specifies all its parameters
 in the `environment` and `dataset` sections. To create a dataset, run
-```cmd
-python environments/generate_data.py [--params parameter_file] [--name name] [--ntrain n] [--ntest n]
+```commandline
+python environments/generate_data.py
+
+Creates a train and test dataset and prints a .yaml file ready to be run for offline training.
 ```
-where the optional argument `--params` can be used to specify a parameter file from which to
-generate the dataset. If not specified,
-[experiment_params/default_online.yaml](experiment_params/default_online.yaml) is used.
-The `--name` argument can be used to assign the given name to the dataset instead of using
-the `experiment_id` of the yaml. The `-ntrain` and `--ntest` args can be used to specify the
- number of training and test samples to generate.
+
+```commandline
+Optional arguments:
+  -h, --help            show this help message and exit
+  --params PARAMS       YAML file from which to read the dataset parameters.
+                        If not specified,experiment_params/default_online.yaml
+                        will be used.
+  --name NAME           Use this name for the dataset instead of
+                        experiment_name in the yaml file.
+  --ntrain NTRAIN       Number of training sample to generate.
+  --ntest NTEST         Number of test samples to generate.
+  --env ENV             The default environment specifications to use. Can be
+                        'pendulum', 'spring', 'two_bodies', 'three_bodies',
+                        'chaotic_pendulum'. If this argument is specified, a
+                        default environment section will be loaded from the
+                        correspondent yaml file in
+                        experiment_params/default_environments/
+  --env-spec ENV_SPEC [ENV_SPEC ...]
+                        Parameters of the environment in the form
+                        param_name:param_value, e.g. --env-spec g:1.0
+                        mass:0.5. If this argument is specified, the given
+                        parameters will be used instead of those in the yaml
+                        file.
+
+```
 
 **Important:** The given parameter file for dataset generation must fully specify the `dataset` and
  `environment` sections. The parameter file will be then saved into the created dataset folder, 

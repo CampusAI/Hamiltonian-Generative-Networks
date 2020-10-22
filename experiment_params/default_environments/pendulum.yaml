@@ -1,0 +1,5 @@
+environment:
+  name: "Pendulum"
+  mass: 0.5
+  length: 1
+  g: 3
