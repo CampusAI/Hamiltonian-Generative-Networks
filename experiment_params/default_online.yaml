@@ -49,7 +49,7 @@ networks:
     n_filters: [32, 64, 64, 64, 64, 64]  # first + hidden
     kernel_sizes: [3, 3, 3, 3, 3, 3]  # first + hidden + last
     strides: [1, 1, 1, 1, 1, 1]  # first + hidden + last
-    potential_learning: True
+    potential_learning: False
   decoder:
     n_residual_blocks: 3
     n_filters: [64, 64, 64]
