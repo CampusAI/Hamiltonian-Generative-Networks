@@ -12,7 +12,7 @@ import tqdm
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
-from utilities.losses import reconstruction_loss, kld_loss
+from utilities.losses import reconstruction_loss, kld_loss, geco_constraint
 
 def _avoid_overwriting(experiment_id):
     # This function throws an error if the given experiment data already exists in runs/
@@ -96,45 +96,65 @@ class hgn_trainer:
                 or train in fully deterministic mode.
 
         Returns:
-            A tuple (reconstruction_loss, kl_error, result) where reconstruction_loss and
-            kl_error are floats and result is the HGNResult object with data of the forward pass.
+            A dictionary of losses and the model's prediction of the rollout. The reconstruction loss and
+            KL divergence are floats and prediction is the HGNResult object with data of the forward pass.
         """
-        # Re-set gradients and forward new batch
-        prediction = self.hgn.forward(rollout_batch=rollouts)
-        
-        # Compute frame reconstruction error
-        rec_loss = reconstruction_loss(target=prediction.input,
-                                        prediction=prediction.reconstructed_rollout)
-        train_loss = rec_loss
 
-        kld = None
-        langrange_multiplier = None
-        if self.params["networks"]["variational"]:
+        hgn_output = self.hgn.forward(rollout_batch=rollouts)
+        target = hgn_output.input
+        prediction = hgn_output.reconstructed_rollout
+        
+        if self.params["networks"]["variational"]:    
+            C, rec_loss = geco_constraint(target, prediction, self.params["geco"]["tol"])
+            C_curr = C.item()
             # Compute KL divergence
-            mu = prediction.z_mean
-            logvar = prediction.z_logvar
+            mu = hgn_output.z_mean
+            logvar = hgn_output.z_logvar
             kld = kld_loss(mu, logvar)
-            # Compute loss
-            langrange_multiplier =  1 # TODO(Stathi) Compute beta value
-            train_loss += langrange_multiplier * kld
-
+    
+            # Compute moving average of constraint C
             if self.C_ma is None:
-                pass
+                self.C_ma = C
             else:
-                pass
-        
-        losses = { 'train_loss': train_loss,
-                   'reconstruction_loss': rec_loss,
-                   'kld': kld,
-                   'langrange_multiplier': langrange_multiplier
-                   }
-        return losses, prediction
+                # not exactly sure if i should detach here on in the expression below 
+                self.C_ma = self.params["geco"]["alpha"] * self.C_ma.detach() + \
+                            (1 - self.params["geco"]["alpha"]) * C
+
+            C = C + (self.C_ma - C)
+            
+            # Compute losses
+            train_loss = kld + self.langrange_multiplier * C
+
+            losses = {'loss/train': train_loss,
+                      'loss/kld': kld,
+                      'loss/C_cur': C_curr,
+                      'loss/C_ma': self.C_ma,
+                      'loss/rec': rec_loss,
+                      'other/langrange_mult': self.langrange_multiplier
+                     }
+
+            # clamping the langrange multiplier to avoid inf values
+            self.langrange_multiplier = torch.clamp(self.langrange_multiplier * 
+                                                    np.exp(self.params["geco"]["langrange_multiplier_param"]
+                                                    * self.C_ma.detach()), 1e-10, 1e10)
+        else: # not variational
+            # Compute frame reconstruction error
+            rec_loss = reconstruction_loss(target=prediction.input, 
+                                       prediction=prediction.reconstructed_rollout)
+            losses = {'loss/train' : rec_loss}
+
+        return losses, hgn_output
 
     def fit(self):
         """
         The trainer fits an HGN.
         """
-        self.C_ma = None
+
+        # Initial values for geco algorithm
+        if params["networks"]["variational"]:
+            self.langrange_multiplier = 1
+            self.C_ma = None
+        
         # TRAIN
         for ep in range(params["optimization"]["epochs"]):
             print("Epoch %s / %s" %
@@ -147,7 +167,7 @@ class hgn_trainer:
                 # Do an optimization step
                 self.optimizer.zero_grad()
                 losses, prediction = self.training_step(rollouts=rollout_batch)
-                losses['train_loss'].backward()
+                losses['loss/train'].backward()
                 self.optimizer.step()
 
                 # Log progress
