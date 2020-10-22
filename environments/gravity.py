@@ -72,6 +72,17 @@ class NObjectGravity(Environment):
         else:
             return 0.
 
+    def get_default_radius_bounds(self):
+        """Returns:
+        radius_bounds (tuple): (min, max) radius bounds for the environment.
+        """
+        if self.n_objects == 2:
+            return (0.5, 1.5)
+        elif self.n_objects == 3:
+            return (0.9, 1.2)
+        else:
+            return (1., 1.)  # TODO: Should we raise an error?
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 

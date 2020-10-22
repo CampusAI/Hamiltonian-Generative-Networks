@@ -58,6 +58,12 @@ class ChaoticPendulum(Environment):
         """Return maximum noise std that keeps the environment stable."""
         return 0.05
 
+    def get_default_radius_bounds(self):
+        """Returns:
+        radius_bounds (tuple): (min, max) radius bounds for the environment.
+        """
+        return (1.3, 2.3)
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 

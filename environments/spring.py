@@ -54,6 +54,12 @@ class Spring(Environment):
         """Return maximum noise std that keeps the environment stable."""
         return 0.1
 
+    def get_default_radius_bounds(self):
+        """Returns:
+        radius_bounds (tuple): (min, max) radius bounds for the environment.
+        """
+        return (0.1, 1.0)
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 

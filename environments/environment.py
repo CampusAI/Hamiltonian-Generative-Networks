@@ -70,6 +70,12 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def get_default_radius_bounds(self):
+        """Returns a tuple (min, max) with the default radius bounds for the environment.
+        """
+        raise NotImplementedError
+
     def _sample_init_conditions(self, radius_bound):
         """Samples random initial conditions for the environment
 
@@ -134,6 +140,8 @@ class Environment(ABC):
             (ndarray): Array of shape (Batch, Nframes, Height, Width, Channels).
                 Contains sampled rollouts
         """
+        if radius_bound == 'auto':
+            radius_bound = self.get_default_radius_bounds()
         radius_lb, radius_ub = radius_bound
         assert radius_lb <= radius_ub
         if seed is not None:
