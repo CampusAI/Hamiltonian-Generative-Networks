@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # Convert parameters to offline train parameters and write them in the dataset
     _out_config = _prepare_out_config(_dataset_config, train_path, test_path)
     yaml_content = yaml.dump(_out_config, default_flow_style=True)
-    config_out_path = os.path.join(DATASETS_ROOT, 'parameters.yaml')
+    config_out_path = os.path.join(dataset_root, 'parameters.yaml')
     with open(config_out_path, 'x') as f:
         f.write(yaml_content)
         f.close()
