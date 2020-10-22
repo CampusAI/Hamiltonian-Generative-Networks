@@ -45,8 +45,8 @@ def _prepare_out_config(config, train_path, test_path):
     out_config.pop('radius_bound', None)
     out_config.pop('num_train_samples', None)
     out_config.pop('num_test_samples', None)
-    out_config['train_data'] = train_path
-    out_config['test_data'] = test_path
+    out_config['dataset']['train_data'] = train_path
+    out_config['dataset']['test_data'] = test_path
     return out_config
 
 
@@ -156,7 +156,7 @@ if __name__ == '__main__':
         exit()
 
     # Generate train samples
-    train_path = generate_and_save(
+    _train_path = generate_and_save(
         root_path=dataset_root, environment=environment,
         n_samples=N_TRAIN_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME, img_size=IMG_SIZE,
         radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL, color=N_CHANNELS == 3,
@@ -164,9 +164,9 @@ if __name__ == '__main__':
     )
 
     # Generate test samples
-    test_path = None
+    _test_path = None
     if N_TEST_SAMPLES > 0:
-        test_path = generate_and_save(
+        _test_path = generate_and_save(
             root_path=dataset_root, environment=environment,
             n_samples=N_TEST_SAMPLES, n_frames=N_FRAMES, delta_time=DELTA_TIME,
             img_size=IMG_SIZE, radius_bound=RADIUS_BOUND, noise_level=NOISE_LEVEL,
@@ -174,7 +174,7 @@ if __name__ == '__main__':
         )
 
     # Convert parameters to offline train parameters and write them in the dataset
-    _out_config = _prepare_out_config(_dataset_config, train_path, test_path)
+    _out_config = _prepare_out_config(_dataset_config, _train_path, _test_path)
     yaml_content = yaml.dump(_out_config, default_flow_style=True)
     config_out_path = os.path.join(dataset_root, 'parameters.yaml')
     with open(config_out_path, 'x') as f:
