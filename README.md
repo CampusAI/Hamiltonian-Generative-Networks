@@ -50,13 +50,15 @@ in the `environment` and `dataset` sections. To create a dataset, run
 ```commandline
 python environments/generate_data.py
 
-Creates a train and test dataset and prints a .yaml file ready to be run for offline training.
+Creates a train and test dataset and prints a
+.yaml file ready to be run for offline training.
 ```
 
 ```commandline
-Optional arguments:
+optional arguments:
   -h, --help            show this help message and exit
-  --params PARAMS       YAML file from which to read the dataset parameters.
+  --config-file CONFIG_FILE
+                        YAML file from which to read the dataset parameters.
                         If not specified,experiment_params/default_online.yaml
                         will be used.
   --name NAME           Use this name for the dataset instead of
@@ -69,18 +71,15 @@ Optional arguments:
                         default environment section will be loaded from the
                         correspondent yaml file in
                         experiment_params/default_environments/
-  --env-spec ENV_SPEC [ENV_SPEC ...]
-                        Parameters of the environment in the form
-                        param_name:param_value, e.g. --env-spec g:1.0
-                        mass:0.5. If this argument is specified, the given
-                        parameters will be used instead of those in the yaml
-                        file.
   --datasets-root DATASETS_ROOT
                         Root of the datasets folder in which the dataset will
                         be stored. If not specified, datasets/ will be used as
                         default.
-```
+  --params PARAMS [PARAMS ...]
+                        Set a parameter with the given value. The format of an
+                        argument is param_name=param_value. Nested parameters
+                        are accessible by using a dot, i.e. --param
+                        dataset.img_size=32. IMPORTANT: lists must be enclosed
+                        in double quotes, i.e. --param mass:"[0.5, 0.5]".
 
-**Important:** The given parameter file for dataset generation must fully specify the `dataset` and
- `environment` sections. The parameter file will be then saved into the created dataset folder, 
- converted to the offline parameters.
+```
