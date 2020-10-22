@@ -11,11 +11,12 @@ from torch import nn
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from networks import decoder_net
-from networks import inference_net
+from networks import encoder_net
 from networks import hamiltonian_net
+from networks import transformer_net
 
 
-class EncoderNet(inference_net.EncoderNet):
+class EncoderNet(encoder_net.EncoderNet):
     """Network that encodes the input value into a two-dimensional latent encoding.
     """
     def __init__(self, phi=None, dtype=torch.float):
@@ -47,7 +48,7 @@ class EncoderNet(inference_net.EncoderNet):
         return encoding, torch.zeros_like(encoding), torch.ones_like(encoding)
 
 
-class TransformerNet(inference_net.TransformerNet):
+class TransformerNet(transformer_net.TransformerNet):
     """Transforms the given encoding into abstract phase space q and p.
     """
     def __init__(self, w=None, dtype=torch.float):

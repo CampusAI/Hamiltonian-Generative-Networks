@@ -1,5 +1,6 @@
 """Script to train the Hamiltonian Generative Network
 """
+import argparse
 import os
 import yaml
 
@@ -8,144 +9,138 @@ import time
 import torch
 import tqdm
 
-from environments.datasets import EnvironmentSampler
-from environments.environment import visualize_rollout
-from environments.environment_factory import EnvFactory
-from hamiltonian_generative_network import HGN
-from networks.inference_net import EncoderNet, TransformerNet
-from networks.hamiltonian_net import HamiltonianNet
-from networks.decoder_net import DecoderNet
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
+from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 
 
-def load_hgn(params, device, dtype):
-    """Return the Hamiltonian Generative Network created from the given parameters.
 
-    Args:
-        params (dict): Experiment parameters (see experiment_params folder).
-        device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
-    """
-    encoder = EncoderNet(seq_len=params["rollout"]["seq_length"],
-                         in_channels=params["rollout"]["n_channels"],
-                         **params["networks"]["encoder"],
-                         dtype=dtype).to(device)
-    transformer = TransformerNet(
-        in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"],
-        dtype=dtype).to(device)
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
-                         dtype=dtype).to(device)
-    decoder = DecoderNet(
-        in_channels=params["networks"]["transformer"]["out_channels"],
-        out_channels=params["rollout"]["n_channels"],
-        **params["networks"]["decoder"],
-        dtype=dtype).to(device)
-    # Define HGN integrator
-    integrator = Integrator(delta_t=params["rollout"]["delta_time"],
-                            method=params["integrator"]["method"])
-    # Define optimization modules
-    optim_params = [
-        {
-            'params': encoder.parameters(),
-            'lr': params["optimization"]["encoder_lr"]
-        },
-        {
-            'params': transformer.parameters(),
-            'lr': params["optimization"]["transformer_lr"]
-        },
-        {
-            'params': hnn.parameters(),
-            'lr': params["optimization"]["hnn_lr"]
-        },
-        {
-            'params': decoder.parameters(),
-            'lr': params["optimization"]["decoder_lr"]
-        },
-    ]
-    optimizer = torch.optim.Adam(optim_params)
-    # Instantiate Hamiltonian Generative Network
-    hgn = HGN(encoder=encoder,
-              transformer=transformer,
-              hnn=hnn,
-              decoder=decoder,
-              integrator=integrator,
-              optimizer=optimizer,
-              seq_len=params["rollout"]["seq_length"],
-              channels=params["rollout"]["n_channels"])
-    return hgn
+def _avoid_overwriting(experiment_id):
+    # This function throws an error if the given experiment data already exists in runs/
+    logdir = os.path.join('runs', experiment_id)
+    if os.path.exists(logdir):
+        assert len(os.listdir(logdir)) == 0,\
+            f'Experiment id {experiment_id} already exists in runs/. Remove it, change the name ' \
+            f'in the yaml file.'
 
-
-def train(params):
+def train(params, cpu=False, resume=False):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
         params (dict): Experiment parameters (see experiment_params folder).
     """
-    # Set device
-    device = "cuda:" + str(
-        params["gpu_id"]) if torch.cuda.is_available() else "cpu"
-
-    # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
+    if not resume:
+        _avoid_overwriting(params['experiment_id'])  # Avoid overwriting tensorboard data
+    # Set device and dtype
+    if cpu:
+        device = 'cpu'
+    else:
+        device = "cuda:" + str(
+            params["gpu_id"]) if torch.cuda.is_available() else "cpu"
     dtype = torch.__getattribute__(params["networks"]["dtype"])
-
-    # Pick environment
-    env = EnvFactory.get_environment(**params["environment"])
 
     # Load hgn from parameters to deice
     hgn = load_hgn(params=params, device=device, dtype=dtype)
 
-    # Dataloader
-    dataset_len = params["dataset"]["dataset_length"]
-    seed = None if params["dataset"]["random"] else 0
-    trainDS = EnvironmentSampler(
-        environment=env,
-        dataset_len=dataset_len,
-        number_of_frames=params["rollout"]["seq_length"],
-        delta_time=params["rollout"]["delta_time"],
-        number_of_rollouts=params["optimization"]["batch_size"],
-        img_size=params["dataset"]["img_size"],
-        color=params["rollout"]["n_channels"] == 3,
-        noise_std=params["dataset"]["noise_std"],
-        radius_bound=params["dataset"]["radius_bound"],
-        world_size=params["dataset"]["world_size"],
-        seed=seed,
-        dtype=dtype)
-    # Dataloader instance test, batch_mode disabled
-    data_loader = torch.utils.data.DataLoader(trainDS,
-                                              shuffle=False,
-                                              batch_size=None)
+    # Either generate data on-the-fly or load the data from disk
+    if "environment" in params:
+        print("Training with ONLINE data...")
+        train_data_loader, test_data_loader = get_online_dataloaders(params)
+    else:
+        print("Training with OFFLINE data...")
+        train_data_loader, test_data_loader = get_offline_dataloaders(params)
 
-    # hgn.load(os.path.join(params["model_save_dir"], params["experiment_id"]))
+
+    # Initialize training logger
     training_logger = TrainingLogger(hyper_params=params,
                                      loss_freq=100,
                                      rollout_freq=100,
-                                     model_freq=1000)
+                                     model_freq=10000)
 
     # Initialize tensorboard writer
-    pbar = tqdm.tqdm(data_loader)
+    model_save_file = os.path.join(params["model_save_dir"],
+                                   params["experiment_id"])
+
+    # TRAIN
+    for ep in range(params["optimization"]["epochs"]):
+        print("Epoch %s / %s" %
+              (str(ep + 1), str(params["optimization"]["epochs"])))
+        pbar = tqdm.tqdm(train_data_loader)
+        for _, rollout_batch in enumerate(pbar):
+            # Move to device and change dtype
+            rollout_batch = rollout_batch.to(device).type(dtype)
+
+            # Do an optimization step
+            error, kld, prediction = hgn.fit(
+                rollouts=rollout_batch,
+                variational=params["networks"]["variational"])
+
+            # Log progress
+            training_logger.step(losses=(error, kld),
+                                 rollout_batch=rollout_batch,
+                                 prediction=prediction,
+                                 model=hgn)
+
+            # Progress-bar msg
+            msg = "Loss: %s" % np.round(error, 5)
+            if kld is not None:
+                msg += ", KL: %s" % np.round(kld, 5)
+            pbar.set_description(msg)
+        # Save model
+        hgn.save(model_save_file)
+
+    # TEST
+    print("Testing...")
+    test_error = 0
+    pbar = tqdm.tqdm(test_data_loader)
     for _, rollout_batch in enumerate(pbar):
-        # rollout_batch has shape (batch_len, seq_len, channels, height, width)
-        rollout_batch = rollout_batch.to(device)
-        error, kld, prediction = hgn.fit(
-            rollout_batch, variational=params["networks"]["variational"])
-        training_logger.step(losses=(error, kld),
-                             rollout_batch=rollout_batch,
-                             prediction=prediction,
-                             model=hgn)
-        msg = "Loss: %s" % np.round(error, 5)
-        if kld is not None:
-            msg += ", , KL: %s" % np.round(kld, 5)
-        pbar.set_description(msg)
-    hgn.save(os.path.join(params["model_save_dir"], params["experiment_id"]))
+        rollout_batch = rollout_batch.to(device).type(dtype)
+        prediction = hgn.forward(rollout_batch=rollout_batch,
+                                 variational=params["networks"]["variational"])
+        error = torch.nn.MSELoss()(
+            input=prediction.input,
+            target=prediction.reconstructed_rollout).detach().cpu().numpy()
+        test_error += error / len(test_data_loader)
+    training_logger.log_test_error(test_error)
+    return hgn
 
 
 if __name__ == "__main__":
-    params_file = "experiment_params/default.yaml"
 
+    DEFAULT_PARAM_FILE = "experiment_params/default_online.yaml"
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--params', action='store', nargs=1, required=False,
+        help='Path to the yaml file with the training configuration. If not specified,'
+             'experiment_params/default_online.yaml will be used'
+    )
+    parser.add_argument(
+        '--name', action='store', nargs=1, required=False,
+        help='If specified, this name will be used instead of experiment_name of the yaml file.'
+    )
+    parser.add_argument(
+        '--cpu', action='store_true', required=False, default=False,
+        help='If specified, the training will be run on cpu. Otherwise, it will be run on GPU, '
+             'unless GPU is not available.'
+    )
+    parser.add_argument(
+        '--resume', action='store', required=False, nargs='?', default=None,
+        help='Resume the training from a saved model. If a path is provided, the training will '
+             'be resumed from the given checkpoint. Otherwise, the last checkpoint will be taken '
+             'from saved_models/<experiment_id>'
+    )
+    args = parser.parse_args()
+
+    if args.resume is not None:
+        raise NotImplementedError('Resume training from command line is not implemented yet')
+
+    params_file = args.params[0] if args.params is not None else DEFAULT_PARAM_FILE
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
 
+    if args.name is not None:
+        params['experiment_id'] = args.name[0]
     # Train HGN network
-    train(params)
+    hgn = train(params, cpu=args.cpu)
