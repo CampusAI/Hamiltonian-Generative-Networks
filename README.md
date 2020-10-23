@@ -24,7 +24,7 @@ Re-implementation of Hamiltonian Generative Networks [paper](https://arxiv.org/a
 The [train.py](train.py) script takes care of performing the training.
 To start a training, run 
 ```commandline
-python train.py --train-config path_to_train_config_file
+python train.py --train-config <path_to_train_config_file>
 ```
 
 ```cmd
