@@ -70,7 +70,6 @@ class HgnResult():
             reconstruction (torch.Tensor): Tensor of shape (seq_len, channels, height, width)
                 containing the reconstructed rollout.
         """
-        # TODO Fix this error. Workaround solution
         assert self.reconstruction_ptr < self.reconstructed_rollout.shape[1],\
             'Trying to add rollout number ' + str(self.reconstruction_ptr) + ' when batch has ' +\
             str(self.reconstructed_rollout.shape[0])

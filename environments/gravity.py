@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from environment import Environment, visualize_rollout
@@ -13,12 +15,14 @@ class NObjectGravity(Environment):
 
     """
 
-    def __init__(self, mass, gravity_cst, orbit_noise=.01, q=None, p=None):
+    WORLD_SIZE = 6.
+
+    def __init__(self, mass, g, orbit_noise=.01, q=None, p=None):
         """Contructor for spring system
 
         Args:
             mass (list): List of floats corresponding to object masses (kg).
-            gravity_cst (float): Constant for the intensity of gravitational field (m^3/kg*s^2)
+            g (float): Constant for the intensity of gravitational field (m^3/kg*s^2)
             orbit_noise (float, optional): Noise for object orbits when sampling initial conditions
             q (ndarray, optional): Object generalized positions in 2-D space: Positions (m). Defaults to None
             p (ndarray, optional): Object generalized momentums in 2-D space : Linear momentums (kg*m/s). Defaults to None
@@ -28,7 +32,7 @@ class NObjectGravity(Environment):
         self.mass = mass
         self.colors = ['y', 'r', 'g', 'b', 'c', 'p', 'w']
         self.n_objects = len(mass)
-        self.gravity_cst = gravity_cst
+        self.g = g
         self.orbit_noise = orbit_noise
         if self.n_objects > 7:
             raise NotImplementedError(
@@ -56,6 +60,32 @@ class NObjectGravity(Environment):
         self.q = q.copy()
         self.p = p.copy()
 
+    def get_world_size(self):
+        """Return world size for correctly render the environment.
+        """
+        return self.WORLD_SIZE
+
+    def get_max_noise_std(self):
+        """Return maximum noise std that keeps the environment stable."""
+        if self.n_objects == 2:
+            return 0.05
+        elif self.n_objects == 3:
+            return 0.005
+        else:
+            return 0.
+
+    def get_default_radius_bounds(self):
+        """Returns:
+            radius_bounds (tuple): (min, max) radius bounds for the environment.
+        """
+        if self.n_objects == 2:
+            return (0.5, 1.5)
+        elif self.n_objects == 3:
+            return (0.9, 1.2)
+        else:
+            warnings.warn('Gravity for n > 3 objects can have undefined behavior.')
+            return (0.3, 0.5)
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -81,7 +111,7 @@ class NObjectGravity(Environment):
                 object_distance[i, j] = np.linalg.norm(
                     states_q[i] - states_q[j])
                 object_distance[j, i] = object_distance[i, j]
-        object_distance = np.power(object_distance, 3)/self.gravity_cst
+        object_distance = np.power(object_distance, 3)/self.g
 
         for d in range(2):
             for i in range(self.n_objects):
@@ -93,13 +123,12 @@ class NObjectGravity(Environment):
                 dyn[1, i, d] += mom_term*self.mass[i]
         return dyn.reshape(-1)
 
-    def _draw(self, res=32, color=True, world_size=1.5):
+    def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
         Args:
             res (int): Image resolution (images are square).
             color (bool): True if RGB, false if grayscale.
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Numpy array of shape (seq_len, height, width, channels)
@@ -109,9 +138,10 @@ class NObjectGravity(Environment):
         length = q.shape[-1]
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
+            vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1./res)*2*world_size - world_size
+        grid = np.arange(0, 1, 1./res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
@@ -163,6 +193,8 @@ class NObjectGravity(Environment):
         """Samples random initial conditions for the environment
         Args:
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
         """
         radius_lb, radius_ub = radius_bound
         radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
@@ -201,15 +233,14 @@ class NObjectGravity(Environment):
 # Sample code for sampling rollouts
 if __name__ == "__main__":
 
-    og = NObjectGravity(mass=[1., 1., 1., 1., 1., 1., 1.],
-                        gravity_cst=1., orbit_noise=0.1)
+    og = NObjectGravity(mass=[1., 1., 1.],
+                        g=1., orbit_noise=0.1)
     rolls = og.sample_random_rollouts(number_of_frames=1000,
                                       delta_time=0.1,
                                       number_of_rollouts=1,
-                                      img_size=64,
-                                      noise_std=0.,
+                                      img_size=32,
+                                      noise_level=0.,
                                       radius_bound=(2., 3.2),
-                                      world_size=5,
                                       seed=33)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

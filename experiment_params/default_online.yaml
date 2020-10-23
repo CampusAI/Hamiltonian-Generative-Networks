@@ -1,11 +1,11 @@
 # Experiment ID
-experiment_id: "default_online"
+experiment_id: "pendulum_default_online"
 model_save_dir: "saved_models"
 
 gpu_id: 0  # Will use this gpu if available
 
-# Define environment
-environment:
+environment:  # Parameters must correspond to arguments
+              # of the environment __init__()
   name: "Pendulum"
   mass: 0.5
   length: 1
@@ -14,14 +14,16 @@ environment:
 # Define data characteristics
 dataset:
   img_size: 32
-  noise_std: 0
-  radius_bound: [1.3, 2.3]
   num_train_samples: 50000  # Total number of rollouts used when training on-line.
   num_test_samples: 100  # Number of test samples.
+  radius_bound: 'auto'  # A tuple (min, max) or 'auto', in which case
+                        # the environment default bounds will be used
   rollout:
     seq_length: 30
-    delta_time: 0.1
+    delta_time: 0.125
     n_channels: 3
+    noise_level: 0  # Level of environment noise. 0 means no noise, 1 means max noise.
+                    # Maximum values are defined in each environment.
 
 # Define networks architectures
 networks:

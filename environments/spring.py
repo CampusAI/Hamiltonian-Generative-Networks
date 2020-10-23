@@ -12,6 +12,8 @@ class Spring(Environment):
 
     """
 
+    WORLD_SIZE = 2.
+
     def __init__(self, mass, elastic_cst, q=None, p=None):
         """Constructor for spring system
 
@@ -43,6 +45,21 @@ class Spring(Environment):
         self.q = q
         self.p = p
 
+    def get_world_size(self):
+        """Return world size for correctly render the environment.
+        """
+        return self.WORLD_SIZE
+
+    def get_max_noise_std(self):
+        """Return maximum noise std that keeps the environment stable."""
+        return 0.1
+
+    def get_default_radius_bounds(self):
+        """Returns:
+            radius_bounds (tuple): (min, max) radius bounds for the environment.
+        """
+        return (0.1, 1.0)
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -55,13 +72,12 @@ class Spring(Environment):
         """
         return [states[1] / self.mass, -self.elastic_cst * states[0]]
 
-    def _draw(self, res=32, color=True, world_size=1.5):
+    def _draw(self, res=32, color=True):
         """Returns array of the environment evolution
 
         Args:
             res (int): Image resolution (images are square).
             color (bool): True if RGB, false if grayscale.
-            world_size (float) Spatial extent of the window where the rendering is taking place (in meters).
 
         Returns:
             vid (np.ndarray): Rendered rollout as a sequence of images
@@ -70,9 +86,10 @@ class Spring(Environment):
         length = len(q)
         if color:
             vid = np.zeros((length, res, res, 3), dtype='float')
+            vid += 80./255.
         else:
             vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * world_size - world_size
+        grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
         [I, J] = np.meshgrid(grid, grid)
         for t in range(length):
             if color:
@@ -92,6 +109,8 @@ class Spring(Environment):
 
         Args:
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
         """
         radius_lb, radius_ub = radius_bound
         radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
@@ -108,9 +127,8 @@ if __name__ == "__main__":
                                       delta_time=0.1,
                                       number_of_rollouts=16,
                                       img_size=32,
-                                      noise_std=0.,
+                                      noise_level=0.,
                                       radius_bound=(.1, 1.),
-                                      world_size=1.5,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
