@@ -19,16 +19,16 @@ class HGN:
     DECODER_FILENAME = "decoder.pt"
 
     def __init__(self,
-                 encoder,
-                 transformer,
-                 hnn,
-                 decoder,
                  integrator,
-                 optimizer,
-                 loss,
-                 device,
-                 dtype,
-                 seq_len,
+                 encoder=None,
+                 transformer=None,
+                 hnn=None,
+                 decoder=None,
+                 optimizer=None,
+                 loss=torch.nn.MSELoss(),
+                 device="cpu",
+                 dtype=torch.float,
+                 seq_len=30,
                  channels=3):
         """Instantiate a Hamiltonian Generative Network.
 
@@ -89,7 +89,7 @@ class HGN:
 
         # Latent distribution
         z, z_mean, z_logvar = self.encoder(rollout_batch, sample=variational)
-        prediction.set_z(z_mean=z_mean, z_logvar=z_logvar, z_sample=z)
+        prediction.set_z(z_sample=z, z_mean=z_mean, z_logvar=z_logvar)
 
         # Initial state
         q, p = self.transformer(z)
@@ -159,10 +159,11 @@ class HGN:
         Args:
             directory (string): Path to the saved models
         """
-        self.encoder = torch.load(os.path.join(directory, self.ENCODER_FILENAME))
-        self.transformer = torch.load(os.path.join(directory, self.TRANSFORMER_FILENAME))
-        self.hnn = torch.load(os.path.join(directory, self.HAMILTONIAN_FILENAME))
-        self.decoder = torch.load(os.path.join(directory, self.DECODER_FILENAME))
+        print(os.path.join(directory, self.ENCODER_FILENAME))
+        self.encoder = torch.load(os.path.join(directory, self.ENCODER_FILENAME), map_location=self.device)
+        self.transformer = torch.load(os.path.join(directory, self.TRANSFORMER_FILENAME), map_location=self.device)
+        self.hnn = torch.load(os.path.join(directory, self.HAMILTONIAN_FILENAME), map_location=self.device)
+        self.decoder = torch.load(os.path.join(directory, self.DECODER_FILENAME), map_location=self.device)
 
     def save(self, directory):
         """Save networks' parameters
@@ -182,3 +183,34 @@ class HGN:
         for module in [self.encoder, self.transformer, self.decoder, self.hnn]:
             for name, layer in module.named_parameters():
                 layer.retain_grad()
+
+    def get_random_sample(self, n_steps, img_shape=(32, 32)):
+        latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0], img_shape[1])
+        latent_representation = torch.randn_like(torch.empty(latent_shape))
+
+        # Instantiate prediction object
+        prediction_shape = (1, n_steps, self.channels, img_shape[0], img_shape[1])
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape), device=self.device)
+
+        prediction.set_z(z_sample=latent_representation)
+
+        # Initial state
+        q, p = self.transformer(latent_representation)
+        prediction.append_state(q=q, p=p)
+
+        # Initial state reconstruction
+        x_reconstructed = self.decoder(q)
+        print(x_reconstructed.shape)
+        prediction.append_reconstruction(x_reconstructed)
+
+        # Estimate predictions
+        for _ in range(n_steps - 1):
+            # Compute next state
+            q, p = self.integrator.step(q=q, p=p, hnn=self.hnn)
+            prediction.append_state(q=q, p=p)
+
+            # Compute state reconstruction
+            x_reconstructed = self.decoder(q)
+            prediction.append_reconstruction(x_reconstructed)
+        return prediction
+        
