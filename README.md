@@ -88,20 +88,20 @@ A dataset can be generated starting from a `yaml` parameter file that specifies 
 in the `environment` and `dataset` sections. To create a dataset, run
 ```commandline
 python environments/generate_data.py
-
-Creates a train and test dataset and prints a
-.yaml file ready to be run for offline training.
 ```
+which will create the dataset in a folder with the given name (see args below) and will
+write a `parameters.yaml` file within it, that can be directly used for off-line training
+on the created dataset.
 
 ```commandline
 optional arguments:
   -h, --help            show this help message and exit
-  --config-file CONFIG_FILE
+  --name NAME           The dataset name.
+  --dataset-config DATASET_CONFIG
                         YAML file from which to read the dataset parameters.
-                        If not specified,experiment_params/default_online.yaml
-                        will be used.
-  --name NAME           Use this name for the dataset instead of
-                        experiment_name in the yaml file.
+                        If not specified,
+                        experiment_params/dataset_online_default.yaml will be
+                        used.
   --ntrain NTRAIN       Number of training sample to generate.
   --ntest NTEST         Number of test samples to generate.
   --env ENV             The default environment specifications to use. Can be
@@ -115,10 +115,10 @@ optional arguments:
                         be stored. If not specified, datasets/ will be used as
                         default.
   --params PARAMS [PARAMS ...]
-                        Set a parameter with the given value. The format of an
-                        argument is param_name=param_value. Nested parameters
-                        are accessible by using a dot, i.e. --param
-                        dataset.img_size=32. IMPORTANT: lists must be enclosed
-                        in double quotes, i.e. --param mass:"[0.5, 0.5]".
-
+                        Override one or more parameters in the config. The
+                        format of an argument is param_name=param_value.
+                        Nested parameters are accessible by using a dot, i.e.
+                        --param dataset.img_size=32. IMPORTANT: lists must be
+                        enclosed in double quotes, i.e. --param
+                        environment.mass:"[0.5, 0.5]".
 ```
