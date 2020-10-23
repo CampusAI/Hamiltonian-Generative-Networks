@@ -67,7 +67,7 @@ optional arguments:
 The `experiment_params/` folder contains default dataset and training configuration files.
 Training can be done in on-line or off-line mode.
 
-- In on-line mode data is generated during training, eliminating the need for a
+- In **on-line mode** data is generated during training, eliminating the need for a
 heavy dataset. A dataset configuration file must be provided in the `--dataset-config`
 argument. This file must define the `environment:` and `dataset:` sections
 (see [experiment_params/dataset_online_default.yaml](experiment_params/dataset_online_default.yaml))
