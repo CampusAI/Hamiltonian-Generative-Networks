@@ -225,6 +225,7 @@ if __name__ == "__main__":
         _dataset_config = _read_config(_dataset_config_file)
         _config = _merge_configs(_train_config, _dataset_config)
     else:  # Will use the dataset given in the command line arguments
+        assert _args.dataset_config is None, 'Both --dataset-path and --dataset-config were given.'
         _config = _train_config
 
     # Overwrite configuration with command line arguments
