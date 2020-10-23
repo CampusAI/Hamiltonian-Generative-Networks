@@ -50,7 +50,7 @@ class HGN:
         self.channels = channels
         self.device = device
         self.dtype = dtype
-        
+
         # Modules
         self.encoder = encoder
         self.transformer = transformer
@@ -81,7 +81,8 @@ class HGN:
         # Instantiate prediction object
         prediction_shape = list(rollout_batch.shape)
         prediction_shape[1] = n_steps
-        prediction = HgnResult(batch_shape=torch.Size(prediction_shape), device=self.device)
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
+                               device=self.device)
         prediction.set_input(rollout_batch)
 
         # Concat along channel dimension
@@ -128,11 +129,12 @@ class HGN:
         """
         # Re-set gradients and forward new batch
         self.optimizer.zero_grad()
-        prediction = self.forward(rollout_batch=rollouts, variational=variational)
-        
+        prediction = self.forward(rollout_batch=rollouts,
+                                  variational=variational)
+
         # Compute frame reconstruction error
-        reconstruction_error = self.loss(input=prediction.input,
-                                         target=prediction.reconstructed_rollout)
+        reconstruction_error = self.loss(
+            input=prediction.input, target=prediction.reconstructed_rollout)
 
         total_loss = reconstruction_error
         kl_div = None
@@ -145,12 +147,13 @@ class HGN:
             # Compute loss
             beta = 0.01  # TODO(Stathi) Compute beta value
             total_loss += beta * kl_div
-        
+
         # Optimization step
         total_loss.backward()
         self.optimizer.step()
         reconstruction_error_np = reconstruction_error.detach().cpu().numpy()
-        kl_div_np = kl_div.detach().cpu().numpy() if kl_div is not None else None
+        kl_div_np = kl_div.detach().cpu().numpy(
+        ) if kl_div is not None else None
         return reconstruction_error_np, kl_div_np, prediction
 
     def load(self, directory):
@@ -159,11 +162,18 @@ class HGN:
         Args:
             directory (string): Path to the saved models
         """
-        print(os.path.join(directory, self.ENCODER_FILENAME))
-        self.encoder = torch.load(os.path.join(directory, self.ENCODER_FILENAME), map_location=self.device)
-        self.transformer = torch.load(os.path.join(directory, self.TRANSFORMER_FILENAME), map_location=self.device)
-        self.hnn = torch.load(os.path.join(directory, self.HAMILTONIAN_FILENAME), map_location=self.device)
-        self.decoder = torch.load(os.path.join(directory, self.DECODER_FILENAME), map_location=self.device)
+        self.encoder = torch.load(os.path.join(directory,
+                                               self.ENCODER_FILENAME),
+                                  map_location=self.device)
+        self.transformer = torch.load(os.path.join(directory,
+                                                   self.TRANSFORMER_FILENAME),
+                                      map_location=self.device)
+        self.hnn = torch.load(os.path.join(directory,
+                                           self.HAMILTONIAN_FILENAME),
+                              map_location=self.device)
+        self.decoder = torch.load(os.path.join(directory,
+                                               self.DECODER_FILENAME),
+                                  map_location=self.device)
 
     def save(self, directory):
         """Save networks' parameters
@@ -172,10 +182,14 @@ class HGN:
             directory (string): Path where to save the models, if does not exist it, is created
         """
         pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
-        torch.save(self.encoder, os.path.join(directory, self.ENCODER_FILENAME))
-        torch.save(self.transformer, os.path.join(directory, self.TRANSFORMER_FILENAME))
-        torch.save(self.hnn, os.path.join(directory, self.HAMILTONIAN_FILENAME))
-        torch.save(self.decoder, os.path.join(directory, self.DECODER_FILENAME))
+        torch.save(self.encoder, os.path.join(directory,
+                                              self.ENCODER_FILENAME))
+        torch.save(self.transformer,
+                   os.path.join(directory, self.TRANSFORMER_FILENAME))
+        torch.save(self.hnn, os.path.join(directory,
+                                          self.HAMILTONIAN_FILENAME))
+        torch.save(self.decoder, os.path.join(directory,
+                                              self.DECODER_FILENAME))
 
     def debug_mode(self):
         """Set the network to debug mode, i.e. allow intermediate gradients to be retrieved.
@@ -185,12 +199,26 @@ class HGN:
                 layer.retain_grad()
 
     def get_random_sample(self, n_steps, img_shape=(32, 32)):
-        latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0], img_shape[1])
+        """Sample a rollout from the HGN
+
+        Args:
+            n_steps (int): Length of the sampled rollout
+            img_shape (tuple(int, int), optional): Size of the images, should match the trained ones. Defaults to (32, 32).
+
+        Returns:
+            (utilities.HgnResult): An HgnResult object containing data of the forward pass over the
+                given minibatch.
+        """
+        # Sample from a normal distribution the latent representation of the rollout
+        latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0],
+                        img_shape[1])
         latent_representation = torch.randn_like(torch.empty(latent_shape))
 
         # Instantiate prediction object
-        prediction_shape = (1, n_steps, self.channels, img_shape[0], img_shape[1])
-        prediction = HgnResult(batch_shape=torch.Size(prediction_shape), device=self.device)
+        prediction_shape = (1, n_steps, self.channels, img_shape[0],
+                            img_shape[1])
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
+                               device=self.device)
 
         prediction.set_z(z_sample=latent_representation)
 
@@ -213,4 +241,3 @@ class HGN:
             x_reconstructed = self.decoder(q)
             prediction.append_reconstruction(x_reconstructed)
         return prediction
-        
