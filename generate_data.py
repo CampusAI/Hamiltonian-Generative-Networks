@@ -41,10 +41,6 @@ def _read_config(config_file):
 
 def _prepare_out_config(config, train_path, test_path):
     out_config = copy.deepcopy(config)
-    out_config.pop('img_size', None)
-    out_config.pop('radius_bound', None)
-    out_config.pop('num_train_samples', None)
-    out_config.pop('num_test_samples', None)
     out_config['dataset']['train_data'] = train_path
     out_config['dataset']['test_data'] = test_path
     return out_config
