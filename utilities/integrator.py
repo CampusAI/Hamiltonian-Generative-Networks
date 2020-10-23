@@ -34,7 +34,8 @@ class Integrator:
             hnn (HamiltonianNet): Hamiltonian Neural Network.
 
         Returns:
-            tuple(torch.Tensor, torch.Tensor): Position and momentum time derivatives: dq_dt, dp_dt.
+            tuple(torch.Tensor, torch.Tensor, torch.Tensor(1)): Position and momentum time
+                derivatives: dq_dt, dp_dt.
         """
         # Compute energy of the system
         energy = hnn(q=q, p=p)
@@ -64,7 +65,7 @@ class Integrator:
             hnn (HamiltonianNet): Hamiltonian Neural Network.
 
         Returns:
-            tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
+            tuple(torch.Tensor, torch.Tensor): Next time-step position, momentum and energy: q_next, p_next.
         """
         dq_dt, dp_dt = self._get_grads(q, p, hnn)
 
@@ -123,11 +124,11 @@ class Integrator:
         # get acceleration
         _, dp_dt = self._get_grads(q, p, hnn)
         # leapfrog step
-        p_next_half = p + dp_dt*(self.delta_t)/2
-        q_next = q + p_next_half*self.delta_t
+        p_next_half = p + dp_dt * (self.delta_t) / 2
+        q_next = q + p_next_half * self.delta_t
         # momentum synchronization
         _, dp_next_dt = self._get_grads(q_next, p_next_half, hnn)
-        p_next = p_next_half + dp_next_dt*(self.delta_t)/2
+        p_next = p_next_half + dp_next_dt * (self.delta_t) / 2
         return q_next, p_next
 
     def step(self, q, p, hnn):
