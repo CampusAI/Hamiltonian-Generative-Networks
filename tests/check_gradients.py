@@ -9,17 +9,16 @@ import torch
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from hamiltonian_generative_network import HGN
-import environments.test_env as test_env
 import networks.debug_networks as debug_networks
 import utilities.integrator as integrator
 
 epsilon = 1e-6
 
 if __name__ == "__main__":
-    rollouts = torch.tensor([[[43.23], [22.12], [3.], [4.]]], requires_grad=True).double()
+    rollouts = torch.randn((5, 10, 3, 32, 32))
 
     # Instantiate networks
-    encoder = debug_networks.EncoderNet(seq_len=rollouts.shape[1])
+    encoder = debug_networks.EncoderNet()
     transformer = debug_networks.TransformerNet()
     hnn = debug_networks.HamiltonianNet()
     decoder = debug_networks.DecoderNet()
