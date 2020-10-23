@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 
 from environment import Environment, visualize_rollout
@@ -8,7 +9,7 @@ class Spring(Environment):
 
     Equations of movement are:
 
-        x'' = -2*c*sqrt(k/m)*x' -(k/m)*x  
+        x'' = -2*c*sqrt(k/m)*x' -(k/m)*x
 
     """
 
@@ -92,25 +93,17 @@ class Spring(Environment):
         """
         q = self._rollout[0, :]
         length = len(q)
-        if color:
-            vid = np.zeros((length, res, res, 3), dtype='float')
-            vid += 80./255.
-        else:
-            vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * \
-            self.WORLD_SIZE - self.WORLD_SIZE
-        [I, J] = np.meshgrid(grid, grid)
+        vid = np.zeros((length, res, res, 3), dtype='float')
+        space_res = 2.*self.get_world_size()/res
         for t in range(length):
-            if color:
-                vid[t, :, :, 0] += np.exp(-(((I - 0)**2 + (J - q[t])**2) /
-                                            (self.mass**2))**4)
-                vid[t, :, :, 1] += np.exp(-(((I - 0)**2 + (J - q[t])**2) /
-                                            (self.mass**2))**4)
-            else:
-                vid[t, :, :, 0] += np.exp(-(((I - 0)**2 + (J - q[t])**2) /
-                                            (self.mass**2))**4)
-            vid[t][vid[t] > 1] = 1
-
+            vid[t] = cv2.circle(vid[t], self._world_to_pixels(0, q[t], res),
+                                int(self.mass/space_res), (1., 1., 0.), -1)
+            vid[t] = cv2.blur(vid[t], (3, 3))
+        if color:
+            vid += 80./255.
+            vid[vid > 1.] = 1.
+        else:
+            vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 
     def _sample_init_conditions(self, radius_bound):
@@ -138,6 +131,7 @@ if __name__ == "__main__":
                                       img_size=32,
                                       noise_level=0.,
                                       radius_bound=(.5, 1.4),
+                                      color=False,
                                       seed=None)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

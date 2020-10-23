@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 
 from environment import Environment, visualize_rollout
@@ -8,7 +9,8 @@ class ChaoticPendulum(Environment):
 
     Hamiltonian system is:
 
-        H = (1/2*m*L^2)* (p_1^2 + 2*p_2^2 - 2*p_1*p_2*cos(q_1 - q_2)) / (1 + sin^2(q_1 - q_2))
+        H = (1/2*m*L^2)* (p_1^2 + 2*p_2^2 - 2*p_1*p_2* \
+             cos(q_1 - q_2)) / (1 + sin^2(q_1 - q_2))
             + mgL*(3 - 2*cos q_1 - cos q_2)
 
     """
@@ -77,7 +79,7 @@ class ChaoticPendulum(Environment):
         states_resh = states.reshape(2, 2)
         dyn = np.zeros_like(states_resh)
 
-        #dq_1 and dq_2
+        # dq_1 and dq_2
         quot = self.mass*(self.length**2) * \
             (1 + (np.sin(states_resh[0, 0] - states_resh[0, 1])**2))
         dyn[0, 0] = states_resh[1, 0] - states_resh[1, 1] * \
@@ -85,7 +87,7 @@ class ChaoticPendulum(Environment):
         dyn[0, 1] = states_resh[1, 1] - states_resh[1, 0] * \
             np.cos(states_resh[0, 0] - states_resh[0, 1])
         dyn[0, :] /= quot
-        #dp_1 and dp_2
+        # dp_1 and dp_2
         dyn[1, :] -= 2 * self.mass * self.g * self.length * np.sin(
             states_resh[0, :])
         cst = 1 / (2 * self.mass * (self.length**2))
@@ -101,10 +103,10 @@ class ChaoticPendulum(Environment):
         dterm2_dq_1 = 2 * np.cos(states_resh[0, 0] - states_resh[0, 1])
         dterm2_dq_2 = -dterm2_dq_1
 
-        dyn[1, 0] -= cst * (dterm1_dq_1 * term2 - term1 * dterm2_dq_1) / (term2
-                                                                          **2)
-        dyn[1, 1] -= cst * (dterm1_dq_2 * term2 - term1 * dterm2_dq_2) / (term2
-                                                                          **2)
+        dyn[1, 0] -= cst * (dterm1_dq_1 * term2 - term1 *
+                            dterm2_dq_1) / (term2 ** 2)
+        dyn[1, 1] -= cst * (dterm1_dq_2 * term2 - term1 *
+                            dterm2_dq_2) / (term2 ** 2)
 
         return dyn.reshape(-1)
 
@@ -120,31 +122,25 @@ class ChaoticPendulum(Environment):
         """
         q = self._rollout.reshape(2, 2, -1)[0, :, :]
         length = q.shape[-1]
-        if color:
-            vid = np.zeros((length, res, res, 3), dtype='float')
-            vid += 80./255.
-        else:
-            vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
-        [I, J] = np.meshgrid(grid, grid)
+        vid = np.zeros((length, res, res, 3), dtype='float')
+        space_res = 2.*self.get_world_size()/res
         for t in range(length):
-            col_1 = np.exp(-(((I - self.length * np.sin(q[0, t]))**2 +
-                              (J - self.length * np.cos(q[0, t]))**2) /
-                             ((self.length / 3.)**2))**4)
-            col_2 = np.exp(-(((I - self.length * np.sin(q[0, t]) -
-                               self.length * np.sin(q[1, t]))**2 +
-                              (J - self.length * np.cos(q[0, t]) -
-                               self.length * np.cos(q[1, t]))**2) /
-                             ((self.length / 3.)**2))**4)
-            if color:
-                vid[t, :, :, 0] += col_1
-                vid[t, :, :, 1] += col_1
-                vid[t, :, :, 0] += col_2
-
-            else:
-                vid[t, :, :, 0] += col_1 + col_2
-            vid[t][vid[t] > 1] = 1
-
+            coords_1 = self._world_to_pixels(
+                self.length * np.sin(q[0, t]), self.length * np.cos(q[0, t]), res)
+            coords_2 = self._world_to_pixels(
+                self.length * np.sin(q[0, t]) + self.length * np.sin(q[1, t]),
+                self.length * np.cos(q[0, t]) + self.length * np.cos(q[1, t]),
+                res)
+            vid[t] = cv2.circle(vid[t], coords_1, int(
+                self.length/(space_res*3)), (1., 1., 0.), -1)
+            vid[t] = cv2.circle(vid[t], coords_2, int(
+                self.length/(space_res*3)), (1., 0., 0.), -1)
+            vid[t] = cv2.blur(vid[t], (3, 3))
+        if color:
+            vid += 80./255.
+            vid[vid > 1.] = 1.
+        else:
+            vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 
     def _sample_init_conditions(self, radius):
@@ -164,12 +160,12 @@ class ChaoticPendulum(Environment):
 if __name__ == "__main__":
 
     pd = ChaoticPendulum(mass=1., length=1, g=3)
-    rolls = pd.sample_random_rollouts(number_of_frames=1000,
+    rolls = pd.sample_random_rollouts(number_of_frames=300,
                                       delta_time=.125,
                                       number_of_rollouts=1,
                                       img_size=64,
                                       noise_level=0.,
                                       radius_bound=(0.5, 1.3),
-                                      seed=23)
+                                      seed=None)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
