@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from environment import Environment, visualize_rollout
@@ -81,7 +83,8 @@ class NObjectGravity(Environment):
         elif self.n_objects == 3:
             return (0.9, 1.2)
         else:
-            return (1., 1.)  # TODO: Should we raise an error?
+            warnings.warn('Gravity for n > 3 objects can have undefined behavior.')
+            return (0.3, 0.5)
 
     def _dynamics(self, t, states):
         """Defines system dynamics
