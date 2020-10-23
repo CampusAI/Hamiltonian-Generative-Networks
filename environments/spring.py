@@ -14,7 +14,7 @@ class Spring(Environment):
 
     WORLD_SIZE = 2.
 
-    def __init__(self, mass, elastic_cst, damping_ratio, q=None, p=None):
+    def __init__(self, mass, elastic_cst, damping_ratio=0., q=None, p=None):
         """Constructor for spring system
 
         Args:
