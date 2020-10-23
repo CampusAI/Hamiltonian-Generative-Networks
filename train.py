@@ -151,6 +151,12 @@ def _merge_configs(train_config, dataset_config):
     config = copy.deepcopy(train_config)
     for key, value in dataset_config.items():
         config[key] = value
+    # If the config specifies a dataset path, we take the rollout from the configuration file
+    # in the given dataset
+    if 'dataset' in config and 'train_data' in config['dataset']:
+        dataset_config = _read_config(  # Read parameters.yaml in root of given dataset
+            os.path.join(os.path.dirname(config['dataset']['train_data']), 'parameters.yaml'))
+        config['dataset']['rollout'] = dataset_config['dataset']['rollout']
     return config
 
 
