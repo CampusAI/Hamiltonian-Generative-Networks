@@ -15,7 +15,7 @@ class NObjectGravity(Environment):
 
     """
 
-    WORLD_SIZE = 6.
+    WORLD_SIZE = 3.
 
     def __init__(self, mass, g, orbit_noise=.01, q=None, p=None):
         """Contructor for spring system
@@ -30,11 +30,11 @@ class NObjectGravity(Environment):
             NotImplementedError: If more than 7 objects are considered
         """
         self.mass = mass
-        self.colors = ['y', 'r', 'g', 'b', 'c', 'p', 'w']
+        self.colors = ['r', 'y', 'g', 'b', 'c', 'p', 'w']
         self.n_objects = len(mass)
         self.g = g
         self.orbit_noise = orbit_noise
-        if self.n_objects > 7:
+        if self.n_objects > 3:
             raise NotImplementedError(
                 'Gravity interaction for ' + str(self.n_objects) + ' bodies is not implemented.')
         super().__init__(q=q, p=p)
@@ -83,7 +83,8 @@ class NObjectGravity(Environment):
         elif self.n_objects == 3:
             return (0.9, 1.2)
         else:
-            warnings.warn('Gravity for n > 3 objects can have undefined behavior.')
+            warnings.warn(
+                'Gravity for n > 3 objects can have undefined behavior.')
             return (0.3, 0.5)
 
     def _dynamics(self, t, states):
@@ -149,41 +150,21 @@ class NObjectGravity(Environment):
                     brush = self.colors[n]
                     color_term = np.exp(-(((I - q[n, 0, t])**2 +
                                            (J - q[n, 1, t])**2) /
-                                          (self.mass[n]**2))**4)
+                                          ((self.mass[n]/2.)**2))**4)
                     if brush == 'y':
                         vid[t, :, :, 0] += color_term
                         vid[t, :, :, 1] += color_term
-                        vid[t, :, :, 2] -= color_term
                     elif brush == 'r':
                         vid[t, :, :, 0] += color_term
-                        vid[t, :, :, 1] -= color_term
-                        vid[t, :, :, 2] -= color_term
                     elif brush == 'g':
-                        vid[t, :, :, 0] -= color_term
                         vid[t, :, :, 1] += color_term
-                        vid[t, :, :, 2] -= color_term
-                    elif brush == 'b':
-                        vid[t, :, :, 0] -= color_term
-                        vid[t, :, :, 1] -= color_term
-                        vid[t, :, :, 2] += color_term
-                    elif brush == 'c':
-                        vid[t, :, :, 0] -= color_term
-                        vid[t, :, :, 1] += color_term
-                        vid[t, :, :, 2] += color_term
-                    elif brush == 'p':
-                        vid[t, :, :, 0] += color_term
-                        vid[t, :, :, 1] -= color_term
-                        vid[t, :, :, 2] += color_term
-                    elif brush == 'w':
-                        vid[t, :, :, 0] += color_term
-                        vid[t, :, :, 1] += color_term
-                        vid[t, :, :, 2] += color_term
+
                     vid[t][vid[t] < 0] = 0
             else:
                 for i in range(self.n_objects):
                     vid[t, :, :, 0] += np.exp(-(((I - q[i, 0, t])**2 +
                                                  (J - q[i, 1, t])**2) /
-                                                (self.mass[i]**2))**4)
+                                                ((self.mass[i]/2.)**2))**4)
             vid[t][vid[t] > 1] = 1
             vid[t][vid[t] < 0] = 0
 
@@ -204,12 +185,17 @@ class NObjectGravity(Environment):
         pos = (pos/np.sqrt((pos**2).sum()))*radius
 
         # velocity that yields a circular orbit
+        vel = self.__rotate2d(pos, theta=np.pi/2)
+        if np.random.randn() < .5:
+            vel = -vel
         if self.n_objects == 2:
             factor = 2
+            vel /= (factor*radius**1.5)
+
         else:
             factor = np.sqrt(np.sin(np.pi/3)/(2*np.cos(np.pi/6)**2))
-        vel = np.flipud(pos)/(factor*radius**1.5)
-        vel[0] *= -1
+            vel *= factor/(radius**1.5)
+
         states[0, 0, :] = pos
         states[1, 0, :] = vel
 
@@ -233,14 +219,14 @@ class NObjectGravity(Environment):
 # Sample code for sampling rollouts
 if __name__ == "__main__":
 
-    og = NObjectGravity(mass=[1., 1., 1.],
-                        g=1., orbit_noise=0.1)
-    rolls = og.sample_random_rollouts(number_of_frames=1000,
-                                      delta_time=0.1,
+    og = NObjectGravity(mass=[1., 1.],
+                        g=1., orbit_noise=0.05)
+    rolls = og.sample_random_rollouts(number_of_frames=30,
+                                      delta_time=0.125,
                                       number_of_rollouts=1,
                                       img_size=32,
-                                      noise_level=0.,
-                                      radius_bound=(2., 3.2),
-                                      seed=33)
+                                      noise_level=0.05,
+                                      radius_bound=(.9, 1.2),
+                                      seed=None)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
