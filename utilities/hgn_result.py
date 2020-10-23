@@ -81,8 +81,7 @@ class HgnResult():
         """Append the guessed system energy to energy list.
 
         Args:
-            q (torch.Tensor): Tensor with the abstract position.
-            p (torch.Tensor): Tensor with the abstract momentum.
+            energy (torch.Tensor): Energy of each trajectory in the batch.
         """
         self.energies.append(energy)
 

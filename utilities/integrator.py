@@ -35,8 +35,7 @@ class Integrator:
             remember_energy (bool): Whether to store the computed energy in self.energy.
 
         Returns:
-            tuple(torch.Tensor, torch.Tensor, torch.Tensor(1)): Position and momentum time
-                derivatives: dq_dt, dp_dt.
+            tuple(torch.Tensor, torch.Tensor): Position and momentum time derivatives: dq_dt, dp_dt.
         """
         # Compute energy of the system
         energy = hnn(q=q, p=p)
@@ -54,7 +53,7 @@ class Integrator:
                                      create_graph=True,
                                      retain_graph=True,
                                      grad_outputs=torch.ones_like(energy))[0]
-        
+
         if remember_energy:
             self.energy = energy.detach().numpy()
 
