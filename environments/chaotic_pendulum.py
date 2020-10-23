@@ -62,7 +62,7 @@ class ChaoticPendulum(Environment):
         """Returns:
             radius_bounds (tuple): (min, max) radius bounds for the environment.
         """
-        return (1.3, 2.3)
+        return (0.5, 1.3)
 
     def _dynamics(self, t, states):
         """Defines system dynamics
