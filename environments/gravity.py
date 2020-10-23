@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from environment import Environment, visualize_rollout
@@ -71,6 +73,18 @@ class NObjectGravity(Environment):
             return 0.005
         else:
             return 0.
+
+    def get_default_radius_bounds(self):
+        """Returns:
+            radius_bounds (tuple): (min, max) radius bounds for the environment.
+        """
+        if self.n_objects == 2:
+            return (0.5, 1.5)
+        elif self.n_objects == 3:
+            return (0.9, 1.2)
+        else:
+            warnings.warn('Gravity for n > 3 objects can have undefined behavior.')
+            return (0.3, 0.5)
 
     def _dynamics(self, t, states):
         """Defines system dynamics
@@ -179,6 +193,8 @@ class NObjectGravity(Environment):
         """Samples random initial conditions for the environment
         Args:
             radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
         """
         radius_lb, radius_ub = radius_bound
         radius = np.random.rand()*(radius_ub - radius_lb) + radius_lb
