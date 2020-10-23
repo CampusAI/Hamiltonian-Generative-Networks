@@ -74,7 +74,7 @@ argument. This file must define the `environment:` and `dataset:` sections
 . The `--env` argument may be used to override the environment defined in the config file
 with one of the default environments in `experiment_params/default_environments/`.
 
-- In off-line mode the training is performed from a stored dataset (see the section below
+- In **off-line mode** the training is performed from a stored dataset (see the section below
 on how to generate datasets). A dataset config specifying the train and test dataset paths
 in the `train_data:` and `test_data:` sections can be given to `--dataset-config` (see
 [experiment_params/dataset_offline_default.yaml](experiment_params/dataset_offline_default.yaml))
