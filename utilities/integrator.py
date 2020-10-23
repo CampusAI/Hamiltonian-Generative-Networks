@@ -25,13 +25,14 @@ class Integrator:
         self.delta_t = delta_t
         self.method = method
 
-    def _get_grads(self, q, p, hnn):
+    def _get_grads(self, q, p, hnn, remember_energy=False):
         """Apply the Hamiltonian equations to the Hamiltonian network to get dq_dt, dp_dt.
 
         Args:
             q (torch.Tensor): Latent-space position tensor.
             p (torch.Tensor): Latent-space momentum tensor.
             hnn (HamiltonianNet): Hamiltonian Neural Network.
+            remember_energy (bool): Whether to store the computed energy in self.energy.
 
         Returns:
             tuple(torch.Tensor, torch.Tensor, torch.Tensor(1)): Position and momentum time
@@ -53,6 +54,9 @@ class Integrator:
                                      create_graph=True,
                                      retain_graph=True,
                                      grad_outputs=torch.ones_like(energy))[0]
+        
+        if remember_energy:
+            self.energy = energy.detach().numpy()
 
         return dq_dt, dp_dt
 
@@ -67,7 +71,7 @@ class Integrator:
         Returns:
             tuple(torch.Tensor, torch.Tensor): Next time-step position, momentum and energy: q_next, p_next.
         """
-        dq_dt, dp_dt = self._get_grads(q, p, hnn)
+        dq_dt, dp_dt = self._get_grads(q, p, hnn, remember_energy=True)
 
         # Euler integration
         q_next = q + self.delta_t * dq_dt
@@ -86,7 +90,7 @@ class Integrator:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
         # k1
-        k1_q, k1_p = self._get_grads(q, p, hnn)
+        k1_q, k1_p = self._get_grads(q, p, hnn, remember_energy=True)
 
         # k2
         q_2 = q + self.delta_t * k1_q / 2  # x = x_t + dt * k1 / 2
@@ -122,7 +126,7 @@ class Integrator:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
         # get acceleration
-        _, dp_dt = self._get_grads(q, p, hnn)
+        _, dp_dt = self._get_grads(q, p, hnn, remember_energy=True)
         # leapfrog step
         p_next_half = p + dp_dt * (self.delta_t) / 2
         q_next = q + p_next_half * self.delta_t
