@@ -22,7 +22,7 @@ def _avoid_overwriting(experiment_id):
             f'in the yaml file.'
 
 
-def train(params, cpu=False, resume=False):
+def train(params, resume=False):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
@@ -30,12 +30,12 @@ def train(params, cpu=False, resume=False):
     """
     if not resume:
         _avoid_overwriting(params['experiment_id'])  # Avoid overwriting tensorboard data
+
     # Set device and dtype
-    if cpu:
+    device = params["device"] 
+    if 'cuda' in device and not torch.cuda.is_available():
+        print("Warning! Set to train in GPU but cuda is not available. Device is set to CPU.")
         device = 'cpu'
-    else:
-        device = "cuda:" + str(
-            params["gpu_id"]) if torch.cuda.is_available() else "cpu"
     dtype = torch.__getattribute__(params["networks"]["dtype"])
 
     # Load hgn from parameters to deice
@@ -120,11 +120,6 @@ if __name__ == "__main__":
         help='If specified, this name will be used instead of experiment_name of the yaml file.'
     )
     parser.add_argument(
-        '--cpu', action='store_true', required=False, default=False,
-        help='If specified, the training will be run on cpu. Otherwise, it will be run on GPU, '
-             'unless GPU is not available.'
-    )
-    parser.add_argument(
         '--resume', action='store', required=False, nargs='?', default=None,
         help='Resume the training from a saved model. If a path is provided, the training will '
              'be resumed from the given checkpoint. Otherwise, the last checkpoint will be taken '
@@ -143,4 +138,4 @@ if __name__ == "__main__":
     if args.name is not None:
         params['experiment_id'] = args.name[0]
     # Train HGN network
-    hgn = train(params, cpu=args.cpu)
+    hgn = train(params)

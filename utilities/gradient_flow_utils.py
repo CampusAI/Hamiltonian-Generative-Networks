@@ -117,7 +117,7 @@ if __name__ == '__main__':
     params_file = "experiment_params/default.yaml"
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
-    device = "cuda:" + str(params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+    device = params["device"] if torch.cuda.is_available() else "cpu"
 
     hgn = train.load_hgn(params, device=device, dtype=torch.float)
 
