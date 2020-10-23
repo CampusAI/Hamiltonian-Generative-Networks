@@ -19,16 +19,16 @@ class HGN:
     DECODER_FILENAME = "decoder.pt"
 
     def __init__(self,
-                 encoder,
-                 transformer,
-                 hnn,
-                 decoder,
                  integrator,
-                 optimizer,
-                 loss,
-                 device,
-                 dtype,
-                 seq_len,
+                 encoder=None,
+                 transformer=None,
+                 hnn=None,
+                 decoder=None,
+                 optimizer=None,
+                 loss=torch.nn.MSELoss(),
+                 device="cpu",
+                 dtype=torch.float,
+                 seq_len=30,
                  channels=3):
         """Instantiate a Hamiltonian Generative Network.
 
@@ -50,7 +50,7 @@ class HGN:
         self.channels = channels
         self.device = device
         self.dtype = dtype
-        
+
         # Modules
         self.encoder = encoder
         self.transformer = transformer
@@ -81,7 +81,8 @@ class HGN:
         # Instantiate prediction object
         prediction_shape = list(rollout_batch.shape)
         prediction_shape[1] = n_steps
-        prediction = HgnResult(batch_shape=torch.Size(prediction_shape), device=self.device)
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
+                               device=self.device)
         prediction.set_input(rollout_batch)
 
         # Concat along channel dimension
@@ -89,7 +90,7 @@ class HGN:
 
         # Latent distribution
         z, z_mean, z_logvar = self.encoder(rollout_batch, sample=variational)
-        prediction.set_z(z_mean=z_mean, z_logvar=z_logvar, z_sample=z)
+        prediction.set_z(z_sample=z, z_mean=z_mean, z_logvar=z_logvar)
 
         # Initial state
         q, p = self.transformer(z)
@@ -133,11 +134,12 @@ class HGN:
         """
         # Re-set gradients and forward new batch
         self.optimizer.zero_grad()
-        prediction = self.forward(rollout_batch=rollouts, variational=variational)
-        
+        prediction = self.forward(rollout_batch=rollouts,
+                                  variational=variational)
+
         # Compute frame reconstruction error
-        reconstruction_error = self.loss(input=prediction.input,
-                                         target=prediction.reconstructed_rollout)
+        reconstruction_error = self.loss(
+            input=prediction.input, target=prediction.reconstructed_rollout)
 
         total_loss = reconstruction_error
         kl_div = None
@@ -150,12 +152,13 @@ class HGN:
             # Compute loss
             beta = 0.01  # TODO(Stathi) Compute beta value
             total_loss += beta * kl_div
-        
+
         # Optimization step
         total_loss.backward()
         self.optimizer.step()
         reconstruction_error_np = reconstruction_error.detach().cpu().numpy()
-        kl_div_np = kl_div.detach().cpu().numpy() if kl_div is not None else None
+        kl_div_np = kl_div.detach().cpu().numpy(
+        ) if kl_div is not None else None
         return reconstruction_error_np, kl_div_np, prediction
 
     def load(self, directory):
@@ -164,10 +167,18 @@ class HGN:
         Args:
             directory (string): Path to the saved models
         """
-        self.encoder = torch.load(os.path.join(directory, self.ENCODER_FILENAME))
-        self.transformer = torch.load(os.path.join(directory, self.TRANSFORMER_FILENAME))
-        self.hnn = torch.load(os.path.join(directory, self.HAMILTONIAN_FILENAME))
-        self.decoder = torch.load(os.path.join(directory, self.DECODER_FILENAME))
+        self.encoder = torch.load(os.path.join(directory,
+                                               self.ENCODER_FILENAME),
+                                  map_location=self.device)
+        self.transformer = torch.load(os.path.join(directory,
+                                                   self.TRANSFORMER_FILENAME),
+                                      map_location=self.device)
+        self.hnn = torch.load(os.path.join(directory,
+                                           self.HAMILTONIAN_FILENAME),
+                              map_location=self.device)
+        self.decoder = torch.load(os.path.join(directory,
+                                               self.DECODER_FILENAME),
+                                  map_location=self.device)
 
     def save(self, directory):
         """Save networks' parameters
@@ -176,10 +187,14 @@ class HGN:
             directory (string): Path where to save the models, if does not exist it, is created
         """
         pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
-        torch.save(self.encoder, os.path.join(directory, self.ENCODER_FILENAME))
-        torch.save(self.transformer, os.path.join(directory, self.TRANSFORMER_FILENAME))
-        torch.save(self.hnn, os.path.join(directory, self.HAMILTONIAN_FILENAME))
-        torch.save(self.decoder, os.path.join(directory, self.DECODER_FILENAME))
+        torch.save(self.encoder, os.path.join(directory,
+                                              self.ENCODER_FILENAME))
+        torch.save(self.transformer,
+                   os.path.join(directory, self.TRANSFORMER_FILENAME))
+        torch.save(self.hnn, os.path.join(directory,
+                                          self.HAMILTONIAN_FILENAME))
+        torch.save(self.decoder, os.path.join(directory,
+                                              self.DECODER_FILENAME))
 
     def debug_mode(self):
         """Set the network to debug mode, i.e. allow intermediate gradients to be retrieved.
@@ -187,3 +202,47 @@ class HGN:
         for module in [self.encoder, self.transformer, self.decoder, self.hnn]:
             for name, layer in module.named_parameters():
                 layer.retain_grad()
+
+    def get_random_sample(self, n_steps, img_shape=(32, 32)):
+        """Sample a rollout from the HGN
+
+        Args:
+            n_steps (int): Length of the sampled rollout
+            img_shape (tuple(int, int), optional): Size of the images, should match the trained ones. Defaults to (32, 32).
+
+        Returns:
+            (utilities.HgnResult): An HgnResult object containing data of the forward pass over the
+                given minibatch.
+        """
+        # Sample from a normal distribution the latent representation of the rollout
+        latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0],
+                        img_shape[1])
+        latent_representation = torch.randn(latent_shape)
+
+        # Instantiate prediction object
+        prediction_shape = (1, n_steps, self.channels, img_shape[0],
+                            img_shape[1])
+        prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
+                               device=self.device)
+
+        prediction.set_z(z_sample=latent_representation)
+
+        # Initial state
+        q, p = self.transformer(latent_representation)
+        prediction.append_state(q=q, p=p)
+
+        # Initial state reconstruction
+        x_reconstructed = self.decoder(q)
+        print(x_reconstructed.shape)
+        prediction.append_reconstruction(x_reconstructed)
+
+        # Estimate predictions
+        for _ in range(n_steps - 1):
+            # Compute next state
+            q, p = self.integrator.step(q=q, p=p, hnn=self.hnn)
+            prediction.append_state(q=q, p=p)
+
+            # Compute state reconstruction
+            x_reconstructed = self.decoder(q)
+            prediction.append_reconstruction(x_reconstructed)
+        return prediction
