@@ -1,0 +1,5 @@
+environment:
+  name: "ChaoticPendulum"
+  mass: 1.0
+  length: 1.0
+  g: 3.0

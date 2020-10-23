@@ -1,0 +1,5 @@
+environment:
+  name: "NObjectGravity"
+  mass: [1., 1., 1.]
+  g: 1.0
+  orbit_noise: 0.1
