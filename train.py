@@ -36,8 +36,7 @@ class hgn_trainer:
 
         # Set device
         self.device = 'cpu'
-        # "cuda:" + str(
-            # params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+        self.device = "cuda:" + str(params["gpu_id"]) if torch.cuda.is_available() else "cpu"
 
         # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
         self.dtype = torch.__getattribute__(params["networks"]["dtype"])
@@ -135,7 +134,7 @@ class hgn_trainer:
 
             # clamping the langrange multiplier to avoid inf values
             self.langrange_multiplier = torch.clamp(self.langrange_multiplier * 
-                                                    np.exp(self.params["geco"]["langrange_multiplier_param"]
+                                                    torch.exp(self.params["geco"]["langrange_multiplier_param"]
                                                     * self.C_ma.detach()), 1e-10, 1e10)
         else: # not variational
             # Compute frame reconstruction error
@@ -177,7 +176,7 @@ class hgn_trainer:
                                      model=self.hgn)
 
                 # Progress-bar msg
-                msg = ", ".join([f"{k}: {v:.5f}" for k,v in losses.items() if v is not None])
+                msg = ", ".join([f"{k}: {v:.2e}" for k,v in losses.items() if v is not None])
                 pbar.set_description(msg)
             # Save model
             self.hgn.save(model_save_file)
