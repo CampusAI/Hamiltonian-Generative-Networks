@@ -57,9 +57,6 @@ optional arguments:
                         --param dataset.img_size=32. IMPORTANT: lists must be
                         enclosed in double quotes, i.e. --param
                         environment.mass:"[0.5, 0.5]".
-  --cpu                 If specified, the training will be run on cpu.
-                        Otherwise, it will be run on GPU, unless GPU is not
-                        available.
   --resume [RESUME]     NOT IMPLEMENTED YET. Resume the training from a saved
                         model. If a path is provided, the training will be
                         resumed from the given checkpoint. Otherwise, the last
