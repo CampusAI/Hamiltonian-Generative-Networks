@@ -41,13 +41,13 @@ class HgnResult():
         """
         self.input = rollout
 
-    def set_z(self, z_mean, z_logvar, z_sample):
+    def set_z(self, z_sample, z_mean=None, z_logvar=None):
         """Store latent encodings and correspondent distribution parameters.
 
         Args:
-            z_mean (torch.Tensor): Batch of means of the latent distribution.
-            z_logvar (torch.Tensor): Batch of log variances of the latent distributions.
             z_sample (torch.Tensor): Batch of latent encodings.
+            z_mean (torch.Tensor, optional): Batch of means of the latent distribution.
+            z_logvar (torch.Tensor, optional): Batch of log variances of the latent distributions.
         """
         self.z_mean = z_mean
         self.z_logvar = z_logvar
