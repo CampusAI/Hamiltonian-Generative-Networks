@@ -185,8 +185,7 @@ class HgnTrainer:
         return self.hgn
 
     def test(self):
-        """
-        Test after the training is finished.
+        """Test after the training is finished.
         """
         print("Testing...")
         test_error = 0
