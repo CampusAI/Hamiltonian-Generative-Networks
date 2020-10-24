@@ -23,22 +23,22 @@ class Encoder(nn.Module):
         # Activation
         self.activation = nn.ReLU()
 
-    def forward(self, x):
+    def forward(self, q):
         # Compute mean
-        mu = self.activation(self.mu_fc1(x))
+        mu = self.activation(self.mu_fc1(q))
         mu = self.activation(self.mu_fc2(mu))
         mu = self.activation(self.mu_fc3(mu))
 
         # Compute log-variance
-        logvar = self.activation(self.logvar_fc1(x))
+        logvar = self.activation(self.logvar_fc1(q))
         logvar = self.activation(self.logvar_fc2(logvar))
         logvar = self.activation(self.logvar_fc3(logvar))
 
         # Reparametrization trick
         std = torch.exp(0.5 * log_var)
         epsilon = torch.randn_like(mu)
-        z = mu + std * epsilon
-        return z, mu, logvar
+        p = mu + std * epsilon
+        return p, mu, logvar
 
 
 class PartialEnergy(nn.Module):
