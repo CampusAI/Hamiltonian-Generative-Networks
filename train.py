@@ -3,6 +3,7 @@
 import ast
 import argparse
 import copy
+import pprint
 import os
 import warnings
 import yaml
@@ -56,7 +57,7 @@ class HgnTrainer:
                             dtype=self.dtype)
 
         # Either generate data on-the-fly or load the data from disk
-        if "environment" in self.params:
+        if "train_data" in self.params["dataset"]:
             print("Training with ONLINE data...")
             self.train_data_loader, self.test_data_loader = get_online_dataloaders(
                 self.params)
@@ -271,6 +272,18 @@ def _merge_configs(train_config, dataset_config):
     return config
 
 
+def _ask_confirmation(config):
+    printer = pprint.PrettyPrinter(indent=4)
+    print(f'The training will be run with the following configuration:')
+    printed_config = copy.deepcopy(_config)
+    printed_config.pop('networks')
+    printer.pprint(printed_config)
+    print('Proceed? (y/n):')
+    if input() != 'y':
+        print('Abort.')
+        exit()
+
+
 if __name__ == "__main__":
 
     DEFAULT_TRAIN_CONFIG_FILE = "experiment_params/train_config_default.yaml"
@@ -337,7 +350,9 @@ if __name__ == "__main__":
     # Overwrite configuration with command line arguments
     _overwrite_config_with_cmd_arguments(_config, _args)
 
-    # Train HGN network
+    # Show configuration and ask user for confirmation
+    _ask_confirmation(_config)
 
+    # Train HGN network
     trainer = HgnTrainer(_config)
     hgn = trainer.fit()
