@@ -120,7 +120,7 @@ class HgnTrainer:
         if self.params["networks"]["variational"]:
             tol = self.params["geco"]["tol"]
             alpha = self.params["geco"]["alpha"]
-            lagrange_mult_param = self.params["geco"]["langrange_multiplier_param"]
+            lagrange_mult_param = self.params["geco"]["lagrange_multiplier_param"]
 
             C, rec_loss = geco_constraint(target, prediction, tol)  # C has gradient
 
