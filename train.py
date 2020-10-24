@@ -148,7 +148,7 @@ class HgnTrainer:
             losses = {
                 'loss/train': train_loss.item(),
                 'loss/kld': kld.item(),
-                'loss/C_cur': C.item(),
+                'loss/C': C.item(),
                 'loss/C_ma': self.C_ma.item(),
                 'loss/rec': rec_loss.item(),
                 'other/langrange_mult': self.langrange_multiplier.item()
