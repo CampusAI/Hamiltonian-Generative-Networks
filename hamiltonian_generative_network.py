@@ -10,7 +10,7 @@ from utilities.hgn_result import HgnResult
 
 class HGN:
     """Hamiltonian Generative Network model.
-    
+
     This class models the HGN and implements its training and evaluation.
     """
     ENCODER_FILENAME = "encoder.pt"
@@ -93,7 +93,8 @@ class HGN:
         prediction.set_z(z_sample=z, z_mean=z_mean, z_logvar=z_logvar)
 
         # Initial state
-        q, p = self.transformer(z)
+        #q, p = self.transformer(z)
+        q, p = torch.split(z, z.size(1)//2, dim=1)
         prediction.append_state(q=q, p=p)
 
         # Initial state reconstruction
@@ -105,15 +106,17 @@ class HGN:
             # Compute next state
             q, p = self.integrator.step(q=q, p=p, hnn=self.hnn)
             prediction.append_state(q=q, p=p)
-            prediction.append_energy(self.integrator.energy)  # This is the energy of previous timestep
+            # This is the energy of previous timestep
+            prediction.append_energy(self.integrator.energy)
 
             # Compute state reconstruction
             x_reconstructed = self.decoder(q)
             prediction.append_reconstruction(x_reconstructed)
-        
+
         # We need to add the energy of the system at the last time-step
         last_energy = self.hnn(q=q, p=p).detach().cpu().numpy()
-        prediction.append_energy(last_energy)  # This is the energy of previous timestep
+        # This is the energy of previous timestep
+        prediction.append_energy(last_energy)
         return prediction
 
     def fit(self, rollouts, variational=True):
