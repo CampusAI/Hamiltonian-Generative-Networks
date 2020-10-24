@@ -85,7 +85,7 @@ class Environment(ABC):
             res (int): Image resolution in pixels (images are square).
 
         Returns:
-            (float, float): Tuple of coordinates in pixel space.
+            (int, int): Tuple of coordinates in pixel space.
         """
         pix_x = int(res*(x + self.get_world_size())/(2*self.get_world_size()))
         pix_y = int(res*(y + self.get_world_size())/(2*self.get_world_size()))
