@@ -121,7 +121,7 @@ if __name__ == '__main__':
     _overwrite_config_with_cmd_arguments(_dataset_config, _args)
 
     # Extract environment parameters
-    EXP_NAME = _dataset_config['experiment_id']
+    EXP_NAME = _args.name[0]
     N_TRAIN_SAMPLES = _dataset_config['dataset']['num_train_samples']
     N_TEST_SAMPLES = _dataset_config['dataset']['num_test_samples']
     IMG_SIZE = _dataset_config['dataset']['img_size']
@@ -140,10 +140,9 @@ if __name__ == '__main__':
 
     # Ask user confirmation
     print(f'The dataset will be generated with the following configuration:')
-    print(f'experiment_id: {EXP_NAME}')
+    print(f'PATH: {dataset_root}')
     print(f'dataset: {_dataset_config["dataset"]}')
     print(f'environment: {_dataset_config["environment"]}')
-    print(f'path: {dataset_root}')
     print('\nProceed? (y/n):')
     if input() != 'y':
         print('Aborting')
