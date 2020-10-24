@@ -1,7 +1,7 @@
 experiment_id: "default_offline"
 model_save_dir: "saved_models"
 
-gpu_id: 0  # Will use this gpu if available
+device: 'cuda:0'  # Will use this device if available, otherwise wil use cpu
 
 # Define networks architectures
 networks:

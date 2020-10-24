@@ -24,7 +24,7 @@ def _avoid_overwriting(experiment_id):
             f'in the yaml file.'
 
 
-def train(params, cpu=False, resume=False):
+def train(params, resume=False):
     """Instantiate and train the Hamiltonian Generative Network.
 
     Args:
@@ -32,12 +32,12 @@ def train(params, cpu=False, resume=False):
     """
     if not resume:
         _avoid_overwriting(params['experiment_id'])  # Avoid overwriting tensorboard data
+
     # Set device and dtype
-    if cpu:
+    device = params["device"] 
+    if 'cuda' in device and not torch.cuda.is_available():
+        print("Warning! Set to train in GPU but cuda is not available. Device is set to CPU.")
         device = 'cpu'
-    else:
-        device = "cuda:" + str(
-            params["gpu_id"]) if torch.cuda.is_available() else "cpu"
     dtype = torch.__getattribute__(params["networks"]["dtype"])
 
     # Load hgn from parameters to deice
@@ -226,4 +226,4 @@ if __name__ == "__main__":
     _overwrite_config_with_cmd_arguments(_config, _args)
 
     # Train HGN network
-    hgn = train(_config, cpu=_args.cpu)
+    hgn = train(_config)
