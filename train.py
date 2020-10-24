@@ -14,6 +14,7 @@ from utilities.training_logger import TrainingLogger
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 from utilities.losses import reconstruction_loss, kld_loss, geco_constraint
 
+
 def _avoid_overwriting(experiment_id):
     # This function throws an error if the given experiment data already exists in runs/
     logdir = os.path.join('runs', experiment_id)
@@ -21,6 +22,7 @@ def _avoid_overwriting(experiment_id):
         assert len(os.listdir(logdir)) == 0,\
             f'Experiment id {experiment_id} already exists in runs/. Remove it, change the name ' \
             f'in the yaml file.'
+
 
 class HgnTrainer:
     def __init__(self, params, cpu=False, resume=False):
@@ -32,34 +34,40 @@ class HgnTrainer:
 
         self.params = params
         self.cpu = cpu
-        self.resume= resume
+        self.resume = resume
 
         # Set device
         self.device = 'cpu'
-        self.device = "cuda:" + str(params["gpu_id"]) if torch.cuda.is_available() else "cpu"
+        self.device = "cuda:" + str(
+            params["gpu_id"]) if torch.cuda.is_available() else "cpu"
 
         # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
         self.dtype = torch.__getattribute__(params["networks"]["dtype"])
 
         # Load hgn from parameters to deice
-        self.hgn = load_hgn(params=self.params, device=self.device, dtype=self.dtype)
+        self.hgn = load_hgn(params=self.params,
+                            device=self.device,
+                            dtype=self.dtype)
 
         # Either generate data on-the-fly or load the data from disk
         if "environment" in self.params:
             print("Training with ONLINE data...")
-            self.train_data_loader, self.test_data_loader = get_online_dataloaders(self.params)
+            self.train_data_loader, self.test_data_loader = get_online_dataloaders(
+                self.params)
         else:
             print("Training with OFFLINE data...")
-            self.train_data_loader, self.test_data_loader = get_offline_dataloaders(self.params)
+            self.train_data_loader, self.test_data_loader = get_offline_dataloaders(
+                self.params)
 
         # Initialize training logger
         self.training_logger = TrainingLogger(hyper_params=self.params,
-                                         loss_freq=1,
-                                         rollout_freq=10,
-                                         model_freq=10000)
+                                              loss_freq=1,
+                                              rollout_freq=10,
+                                              model_freq=10000)
 
         # Initialize tensorboard writer
-        self.model_save_file = os.path.join(self.params["model_save_dir"], self.params["experiment_id"])
+        self.model_save_file = os.path.join(self.params["model_save_dir"],
+                                            self.params["experiment_id"])
 
         # Define optimization modules
         optim_params = [
@@ -98,49 +106,58 @@ class HgnTrainer:
             A dictionary of losses and the model's prediction of the rollout. The reconstruction loss and
             KL divergence are floats and prediction is the HGNResult object with data of the forward pass.
         """
+        self.optimizer.zero_grad()
 
         hgn_output = self.hgn.forward(rollout_batch=rollouts)
         target = hgn_output.input
         prediction = hgn_output.reconstructed_rollout
-        
-        if self.params["networks"]["variational"]:    
-            C, rec_loss = geco_constraint(target, prediction, self.params["geco"]["tol"])
-            C_curr = C.item()
+
+        if self.params["networks"]["variational"]:
+            tol = self.params["geco"]["tol"]
+            alpha = self.params["geco"]["alpha"]
+            lagrange_mult_param = self.params["geco"]["langrange_multiplier_param"]
+
+            C, rec_loss = geco_constraint(target, prediction, tol)  # C has gradient
+
+            # Compute moving average of constraint C (without gradient)
+            if self.C_ma is None:
+                self.C_ma = C.detach()
+            else:
+                self.C_ma = alpha * self.C_ma + (1 - alpha) * C.detach()
+
+            C = C + (self.C_ma - C.detach())  # Move C without affecting its gradient
+
             # Compute KL divergence
             mu = hgn_output.z_mean
             logvar = hgn_output.z_logvar
-            kld = kld_loss(mu, logvar)
-    
-            # Compute moving average of constraint C
-            if self.C_ma is None:
-                self.C_ma = C
-            else:
-                # not exactly sure if i should detach here on in the expression below 
-                self.C_ma = self.params["geco"]["alpha"] * self.C_ma.detach() + \
-                            (1 - self.params["geco"]["alpha"]) * C
+            kld = kld_loss(mu=mu, logvar=logvar)
 
-            C = C + (self.C_ma - C)
-            
             # Compute losses
             train_loss = kld + self.langrange_multiplier * C
 
-            losses = {'loss/train': train_loss,
-                      'loss/kld': kld,
-                      'loss/C_cur': C_curr,
-                      'loss/C_ma': self.C_ma,
-                      'loss/rec': rec_loss,
-                      'other/langrange_mult': self.langrange_multiplier
-                     }
-
             # clamping the langrange multiplier to avoid inf values
-            self.langrange_multiplier = torch.clamp(self.langrange_multiplier * 
-                                                    torch.exp(self.params["geco"]["langrange_multiplier_param"]
-                                                    * self.C_ma.detach()), 1e-10, 1e10)
-        else: # not variational
+            self.langrange_multiplier *= torch.exp(lagrange_mult_param * C.detach())
+            self.langrange_multiplier = torch.clamp(self.langrange_multiplier,
+                                                    1e-10, 1e10)
+
+            losses = {
+                'loss/train': train_loss.item(),
+                'loss/kld': kld.item(),
+                'loss/C_cur': C.item(),
+                'loss/C_ma': self.C_ma.item(),
+                'loss/rec': rec_loss.item(),
+                'other/langrange_mult': self.langrange_multiplier.item()
+            }
+
+        else:  # not variational
             # Compute frame reconstruction error
-            rec_loss = reconstruction_loss(target=prediction.input, 
-                                       prediction=prediction.reconstructed_rollout)
-            losses = {'loss/train' : rec_loss}
+            rec_loss = reconstruction_loss(
+                target=prediction.input,
+                prediction=prediction.reconstructed_rollout)
+            losses = {'loss/train': rec_loss.item()}
+
+        train_loss.backward()
+        self.optimizer.step()
 
         return losses, hgn_output
 
@@ -153,7 +170,7 @@ class HgnTrainer:
         if params["networks"]["variational"]:
             self.langrange_multiplier = 1
             self.C_ma = None
-        
+
         # TRAIN
         for ep in range(params["optimization"]["epochs"]):
             print("Epoch %s / %s" %
@@ -164,19 +181,18 @@ class HgnTrainer:
                 rollout_batch = rollout_batch.to(self.device).type(self.dtype)
 
                 # Do an optimization step
-                self.optimizer.zero_grad()
                 losses, prediction = self.training_step(rollouts=rollout_batch)
-                losses['loss/train'].backward()
-                self.optimizer.step()
 
                 # Log progress
                 self.training_logger.step(losses=losses,
-                                     rollout_batch=rollout_batch,
-                                     prediction=prediction,
-                                     model=self.hgn)
+                                          rollout_batch=rollout_batch,
+                                          prediction=prediction,
+                                          model=self.hgn)
 
                 # Progress-bar msg
-                msg = ", ".join([f"{k}: {v:.2e}" for k,v in losses.items() if v is not None])
+                msg = ", ".join([
+                    f"{k}: {v:.2e}" for k, v in losses.items() if v is not None
+                ])
                 pbar.set_description(msg)
             # Save model
             self.hgn.save(model_save_file)
@@ -193,10 +209,13 @@ class HgnTrainer:
         for _, rollout_batch in enumerate(pbar):
             rollout_batch = rollout_batch.to(self.device).type(self.dtype)
             prediction = self.hgn.forward(rollout_batch=rollout_batch)
-            error = reconstruction_loss(target=prediction.input,
-                prediction=prediction.reconstructed_rollout).detach().cpu().numpy()
+            error = reconstruction_loss(
+                target=prediction.input,
+                prediction=prediction.reconstructed_rollout).detach().cpu(
+                ).numpy()
             test_error += error / len(self.test_data_loader)
         self.training_logger.log_test_error(test_error)
+
 
 if __name__ == "__main__":
 
@@ -204,31 +223,47 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--params', action='store', nargs=1, required=False,
-        help='Path to the yaml file with the training configuration. If not specified,'
-             'experiment_params/default_online.yaml will be used'
+        '--params',
+        action='store',
+        nargs=1,
+        required=False,
+        help=
+        'Path to the yaml file with the training configuration. If not specified,'
+        'experiment_params/default_online.yaml will be used')
+    parser.add_argument(
+        '--name',
+        action='store',
+        nargs=1,
+        required=False,
+        help=
+        'If specified, this name will be used instead of experiment_name of the yaml file.'
     )
     parser.add_argument(
-        '--name', action='store', nargs=1, required=False,
-        help='If specified, this name will be used instead of experiment_name of the yaml file.'
-    )
+        '--cpu',
+        action='store_true',
+        required=False,
+        default=False,
+        help=
+        'If specified, the training will be run on cpu. Otherwise, it will be run on GPU, '
+        'unless GPU is not available.')
     parser.add_argument(
-        '--cpu', action='store_true', required=False, default=False,
-        help='If specified, the training will be run on cpu. Otherwise, it will be run on GPU, '
-             'unless GPU is not available.'
-    )
-    parser.add_argument(
-        '--resume', action='store', required=False, nargs='?', default=None,
-        help='Resume the training from a saved model. If a path is provided, the training will '
-             'be resumed from the given checkpoint. Otherwise, the last checkpoint will be taken '
-             'from saved_models/<experiment_id>'
-    )
+        '--resume',
+        action='store',
+        required=False,
+        nargs='?',
+        default=None,
+        help=
+        'Resume the training from a saved model. If a path is provided, the training will '
+        'be resumed from the given checkpoint. Otherwise, the last checkpoint will be taken '
+        'from saved_models/<experiment_id>')
     args = parser.parse_args()
 
     if args.resume is not None:
-        raise NotImplementedError('Resume training from command line is not implemented yet')
+        raise NotImplementedError(
+            'Resume training from command line is not implemented yet')
 
-    params_file = args.params[0] if args.params is not None else DEFAULT_PARAM_FILE
+    params_file = args.params[
+        0] if args.params is not None else DEFAULT_PARAM_FILE
     # Read parameters
     with open(params_file, 'r') as f:
         params = yaml.load(f, Loader=yaml.FullLoader)
