@@ -205,11 +205,6 @@ if __name__ == "__main__":
              'quotes, i.e. --param environment.mass:"[0.5, 0.5]".'
     )
     parser.add_argument(
-        '--cpu', action='store_true', required=False, default=False,
-        help='If specified, the training will be run on cpu. Otherwise, it will be run on GPU, '
-             'unless GPU is not available.'
-    )
-    parser.add_argument(
         '--resume', action='store', required=False, nargs='?', default=None,
         help='NOT IMPLEMENTED YET. Resume the training from a saved model. If a path is provided, '
              'the training will be resumed from the given checkpoint. Otherwise, the last '
