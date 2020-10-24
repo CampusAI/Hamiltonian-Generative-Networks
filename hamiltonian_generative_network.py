@@ -20,6 +20,7 @@ class HGN:
 
     def __init__(self,
                  integrator,
+<<<<<<< HEAD
                  encoder=None,
                  transformer=None,
                  hnn=None,
@@ -29,6 +30,11 @@ class HGN:
                  device="cpu",
                  dtype=torch.float,
                  seq_len=30,
+=======
+                 device,
+                 dtype,
+                 seq_len,
+>>>>>>> geco
                  channels=3):
         """Instantiate a Hamiltonian Generative Network.
 
@@ -38,8 +44,6 @@ class HGN:
             hnn (networks.hamiltonian_net.HamiltonianNet): Hamiltonian neural network.
             decoder (networks.decoder_net.DecoderNet): Decoder neural network.
             integrator (Integrator): HGN integrator.
-            optimizer (torch.optim.Optimizer): PyTorch Network optimizer.
-            loss (torch.nn.modules.loss): PyTorch Loss.
             device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
             dtype (torch.dtype): Data type used for the networks.
             seq_len (int): Number of frames in each rollout.
@@ -57,11 +61,7 @@ class HGN:
         self.hnn = hnn
         self.decoder = decoder
         self.integrator = integrator
-
-        # Optimization
-        self.optimizer = optimizer
-        self.loss = loss
-
+    
     def forward(self, rollout_batch, n_steps=None, variational=True):
         """Get the prediction of the HGN for a given rollout_batch of n_steps.
 
@@ -116,6 +116,7 @@ class HGN:
         prediction.append_energy(last_energy)  # This is the energy of previous timestep
         return prediction
 
+<<<<<<< HEAD
     def fit(self, rollouts, variational=True):
         """Perform a training step with the given rollouts batch.
 
@@ -160,6 +161,8 @@ class HGN:
         kl_div_np = kl_div.detach().cpu().numpy(
         ) if kl_div is not None else None
         return reconstruction_error_np, kl_div_np, prediction
+=======
+>>>>>>> geco
 
     def load(self, directory):
         """Load networks' parameters

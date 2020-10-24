@@ -43,3 +43,8 @@ optimization:
   transformer_lr: 1.5e-4
   hnn_lr: 1.5e-4
   decoder_lr: 1.5e-4
+
+geco:
+  alpha: 0.99
+  tol: 1.0e-3 # per pixel error tolerance
+  langrange_multiplier_param: 1.0e-5
