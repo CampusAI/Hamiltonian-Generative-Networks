@@ -30,10 +30,10 @@ def backward_hook(module, grad_input, grad_output):
     """
     if module.name == 'Transformer_out':
         q, p = transformer_net.TransformerNet.to_phase_space(grad_output[0])
-        set_gradient('Transformer_out_q', q.detach().numpy())
-        set_gradient('Transformer_out_p', p.detach().numpy())
+        set_gradient('Transformer_out_q', q.detach().cpu().numpy())
+        set_gradient('Transformer_out_p', p.detach().cpu().numpy())
     else:
-        set_gradient(module.name, grad_output[0].detach().numpy())
+        set_gradient(module.name, grad_output[0].detach().cpu().numpy())
     return None
 
 

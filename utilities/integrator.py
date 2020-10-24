@@ -55,7 +55,7 @@ class Integrator:
                                      grad_outputs=torch.ones_like(energy))[0]
 
         if remember_energy:
-            self.energy = energy.detach().numpy()
+            self.energy = energy.detach().cpu().numpy()
 
         return dq_dt, dp_dt
 

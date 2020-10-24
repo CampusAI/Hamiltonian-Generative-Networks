@@ -112,7 +112,7 @@ class HGN:
             prediction.append_reconstruction(x_reconstructed)
         
         # We need to add the energy of the system at the last time-step
-        last_energy = self.hnn(q=q, p=p).detach().numpy()
+        last_energy = self.hnn(q=q, p=p).detach().cpu().numpy()
         prediction.append_energy(last_energy)  # This is the energy of previous timestep
         return prediction
 

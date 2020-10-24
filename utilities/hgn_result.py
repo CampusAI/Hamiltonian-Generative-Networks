@@ -100,6 +100,6 @@ class HgnResult():
         """Visualize the predicted rollout.
         """
         rollout_batch = conversions.to_channels_last(
-            self.reconstructed_rollout).detach().numpy()
+            self.reconstructed_rollout).detach().cpu().numpy()
         sequence = conversions.batch_to_sequence(rollout_batch)
         visualize_rollout(sequence)
