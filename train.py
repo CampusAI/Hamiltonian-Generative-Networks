@@ -237,5 +237,5 @@ if __name__ == "__main__":
     if args.name is not None:
         params['experiment_id'] = args.name[0]
     # Train HGN network
-    trainer = hgn_trainer(params, cpu=args.cpu)
+    trainer = HgnTrainer(params, cpu=args.cpu)
     hgn = trainer.fit()
