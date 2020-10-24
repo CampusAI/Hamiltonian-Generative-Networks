@@ -71,21 +71,20 @@ def _overwrite_config_with_cmd_arguments(config, args):
 
 
 if __name__ == '__main__':
-    DATASETS_ROOT = os.path.join(os.path.dirname(__file__), 'datasets')
-    DEFAULT_CONFIG_FILE = os.path.join(
-        os.path.dirname(__file__), 'experiment_params/default_online.yaml')
-    DEFAULT_ENVIRONMENTS_PATH = os.path.join(
-        os.path.dirname(__file__), 'experiment_params/', 'default_environments/'
-    )
+    DEFAULT_DATASETS_ROOT = 'datasets/'
+    DEFAULT_DATASET_CONFIG_FILE = 'experiment_params/dataset_online_default.yaml'
+    DEFAULT_TRAIN_CONFIG_FILE = 'experiment_params/train_config_default.yaml'
+    DEFAULT_ENVIRONMENTS_PATH = 'experiment_params/default_environments/'
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--config-file', action='store', nargs=1, type=str, required=False,
-        help='YAML file from which to read the dataset parameters. If not specified,'
-             'experiment_params/default_online.yaml will be used.')
-    parser.add_argument('--name', action='store', nargs=1, required=False,
-                        help='Use this name for the dataset instead of experiment_name in the '
-                             'yaml file.')
+        '--name', action='store', nargs=1, required=True, help='The dataset name.'
+    )
+    parser.add_argument(
+        '--dataset-config', action='store', nargs=1, type=str, required=False,
+        help=f'YAML file from which to read the dataset parameters. If not specified, '
+             f'{DEFAULT_DATASET_CONFIG_FILE} will be used.'
+    )
     parser.add_argument(
         '--ntrain', action='store', nargs=1, required=False, type=int,
         help='Number of training sample to generate.'
@@ -96,28 +95,29 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--env', action='store', nargs=1, required=False, type=str,
-        help='The default environment specifications to use. Can be \'pendulum\', \'spring\', '
-             '\'two_bodies\', \'three_bodies\', \'chaotic_pendulum\'. If this argument is '
-             'specified, a default environment section will be loaded from the correspondent yaml '
-             'file in experiment_params/default_environments/'
+        help=f'The default environment specifications to use. Can be \'pendulum\', \'spring\', '
+             f'\'two_bodies\', \'three_bodies\', \'chaotic_pendulum\'. If this argument is '
+             f'specified, a default environment section will be loaded from the correspondent yaml '
+             f'file in {DEFAULT_ENVIRONMENTS_PATH}'
     )
     parser.add_argument(
         '--datasets-root', action='store', nargs=1, required=False, type=str,
-        help='Root of the datasets folder in which the dataset will be stored. If not specified, '
-             'datasets/ will be used as default.'
+        help=f'Root of the datasets folder in which the dataset will be stored. If not specified, '
+             f'{DEFAULT_DATASETS_ROOT} will be used as default.'
     )
     parser.add_argument(
         '--params', action='store', nargs='+', required=False,
-        help='Set a parameter with the given value. The format of an argument is '
+        help='Override one or more parameters in the config. The format of an argument is '
              'param_name=param_value. Nested parameters are accessible by using a dot, '
              'i.e. --param dataset.img_size=32. IMPORTANT: lists must be enclosed in double '
-             'quotes, i.e. --param mass:"[0.5, 0.5]".'
+             'quotes, i.e. --param environment.mass:"[0.5, 0.5]".'
     )
     _args = parser.parse_args()
 
     # Read yaml file with parameters definition
-    _config_file = _args.config_file[0] if _args.config_file is not None else DEFAULT_CONFIG_FILE
-    _dataset_config = _read_config(_config_file)
+    _dataset_config_file = _args.dataset_config[0] if _args.dataset_config is not None else \
+        DEFAULT_DATASET_CONFIG_FILE
+    _dataset_config = _read_config(_dataset_config_file)
 
     # Overwrite dictionary from command line args to ensure they will be used
     _overwrite_config_with_cmd_arguments(_dataset_config, _args)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     N_CHANNELS = _dataset_config['dataset']['rollout']['n_channels']
 
     # Get dataset output path
-    dataset_root = DATASETS_ROOT if _args.datasets_root is None else _args.datasets_root[0]
+    dataset_root = DEFAULT_DATASETS_ROOT if _args.datasets_root is None else _args.datasets_root[0]
     dataset_root = os.path.join(dataset_root, EXP_NAME)
 
     # Get the environment object from dictionary parameters

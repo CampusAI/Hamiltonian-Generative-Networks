@@ -1,6 +1,8 @@
 """Script to train the Hamiltonian Generative Network
 """
+import ast
 import argparse
+import copy
 import os
 import yaml
 
@@ -43,7 +45,7 @@ def train(params, resume=False):
 
     # Either generate data on-the-fly or load the data from disk
     if "train_data" in params["dataset"]:
-        print("Training with OFFLINE data...")
+        print(f"Training with OFFLINE data from dataset {params['dataset']['train_data']}")
         train_data_loader, test_data_loader = get_offline_dataloaders(params)
     else:
         assert "environment" in params, "Nor environment nor train_data are specified in the " \
@@ -105,37 +107,123 @@ def train(params, resume=False):
     return hgn
 
 
+def _overwrite_config_with_cmd_arguments(config, args):
+    if args.name is not None:
+        config['experiment_id'] = args.name[0]
+    if args.epochs is not None:
+        config['optimization']['epochs'] = args.epochs[0]
+    if args.dataset_path is not None:
+        # Read the parameters.yaml file in the given dataset path
+        dataset_config = _read_config(os.path.join(_args.dataset_path[0], 'parameters.yaml'))
+        config['dataset'] = {
+            'train_data': dataset_config['dataset']['train_data'],
+            'test_data': dataset_config['dataset']['test_data']
+        }
+        config['dataset']['rollout'] = dataset_config['dataset']['rollout']
+    if args.env is not None:
+        if 'train_data' in config['dataset']:
+            raise ValueError(
+                f'--env was given but configuration is set for offline training: '
+                f'train_data={config["dataset"]["train_data"]}'
+            )
+        env_params = _read_config(DEFAULT_ENVIRONMENTS_PATH + args.env[0] + '.yaml')
+        config['environment'] = env_params['environment']
+    if args.params is not None:
+        for p in args.params:
+            key, value = p.split('=')
+            ptr = config
+            keys = key.split('.')
+            for i, k in enumerate(keys):
+                if i == len(keys) - 1:
+                    ptr[k] = ast.literal_eval(value)
+                else:
+                    ptr = ptr[k]
+
+
+def _read_config(config_file):
+    with open(config_file, 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    return config
+
+
+def _merge_configs(train_config, dataset_config):
+    config = copy.deepcopy(train_config)
+    for key, value in dataset_config.items():
+        config[key] = value
+    # If the config specifies a dataset path, we take the rollout from the configuration file
+    # in the given dataset
+    if 'dataset' in config and 'train_data' in config['dataset']:
+        dataset_config = _read_config(  # Read parameters.yaml in root of given dataset
+            os.path.join(os.path.dirname(config['dataset']['train_data']), 'parameters.yaml'))
+        config['dataset']['rollout'] = dataset_config['dataset']['rollout']
+    return config
+
+
 if __name__ == "__main__":
 
-    DEFAULT_PARAM_FILE = "experiment_params/default_online.yaml"
+    DEFAULT_TRAIN_CONFIG_FILE = "experiment_params/train_config_default.yaml"
+    DEFAULT_DATASET_CONFIG_FILE = "experiment_params/dataset_online_default.yaml"
+    DEFAULT_ENVIRONMENTS_PATH = "experiment_params/default_environments/"
+    DEFAULT_SAVE_MODELS_DIR = "saved_models/"
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--params', action='store', nargs=1, required=False,
-        help='Path to the yaml file with the training configuration. If not specified,'
-             'experiment_params/default_online.yaml will be used'
+        '--train-config', action='store', nargs=1, type=str, required=True,
+        help=f'Path to the training configuration yaml file.'
+    )
+    parser.add_argument(
+        '--dataset-config', action='store', nargs=1, type=str, required=False,
+        help=f'Path to the dataset configuration yaml file.'
     )
     parser.add_argument(
         '--name', action='store', nargs=1, required=False,
-        help='If specified, this name will be used instead of experiment_name of the yaml file.'
+        help='If specified, this name will be used instead of experiment_id of the yaml file.'
+    )
+    parser.add_argument(
+        '--epochs', action='store', nargs=1, type=int, required=False,
+        help='The number of training epochs. If not specified, optimization.epochs of the '
+             'training configuration will be used.'
+    )
+    parser.add_argument(
+        '--env', action='store', nargs=1, type=str, required=False,
+        help='The environment to use (for online training only). Possible values are '
+             '\'pendulum\', \'spring\', \'two_bodies\', \'three_bodies\', corresponding to '
+             'environment configurations in experiment_params/default_environments/. If not '
+             'specified, the environment specified in the given --dataset-config will be used.'
+    )
+    parser.add_argument(
+        '--dataset-path', action='store', nargs=1, type=str, required=False,
+        help='Path to a stored dataset to use for training. For offline training only. In this '
+             'case no dataset configuration file will be loaded.'
+    )
+    parser.add_argument(
+        '--params', action='store', nargs='+', required=False,
+        help='Override one or more parameters in the config. The format of an argument is '
+             'param_name=param_value. Nested parameters are accessible by using a dot, '
+             'i.e. --param dataset.img_size=32. IMPORTANT: lists must be enclosed in double '
+             'quotes, i.e. --param environment.mass:"[0.5, 0.5]".'
     )
     parser.add_argument(
         '--resume', action='store', required=False, nargs='?', default=None,
-        help='Resume the training from a saved model. If a path is provided, the training will '
-             'be resumed from the given checkpoint. Otherwise, the last checkpoint will be taken '
-             'from saved_models/<experiment_id>'
+        help='NOT IMPLEMENTED YET. Resume the training from a saved model. If a path is provided, '
+             'the training will be resumed from the given checkpoint. Otherwise, the last '
+             'checkpoint will be taken from saved_models/<experiment_id>.'
     )
-    args = parser.parse_args()
+    _args = parser.parse_args()
 
-    if args.resume is not None:
-        raise NotImplementedError('Resume training from command line is not implemented yet')
+    # Read configurations
+    _train_config = _read_config(_args.train_config[0])
+    if _args.dataset_path is None:  # Will use the dataset config file (or default if not given)
+        _dataset_config_file = DEFAULT_DATASET_CONFIG_FILE if _args.dataset_config is None else \
+            _args.dataset_config[0]
+        _dataset_config = _read_config(_dataset_config_file)
+        _config = _merge_configs(_train_config, _dataset_config)
+    else:  # Will use the dataset given in the command line arguments
+        assert _args.dataset_config is None, 'Both --dataset-path and --dataset-config were given.'
+        _config = _train_config
 
-    params_file = args.params[0] if args.params is not None else DEFAULT_PARAM_FILE
-    # Read parameters
-    with open(params_file, 'r') as f:
-        params = yaml.load(f, Loader=yaml.FullLoader)
+    # Overwrite configuration with command line arguments
+    _overwrite_config_with_cmd_arguments(_config, _args)
 
-    if args.name is not None:
-        params['experiment_id'] = args.name[0]
     # Train HGN network
-    hgn = train(params)
+    hgn = train(_config)

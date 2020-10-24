@@ -22,47 +22,82 @@ Re-implementation of Hamiltonian Generative Networks [paper](https://arxiv.org/a
 
 ## How to train
 The [train.py](train.py) script takes care of performing the training.
-To start a training, run
-```cmd
-python train.py [--params param_file] [--name experimen_name] [--cpu]
+To start a training, run 
+```commandline
+python train.py --train-config <path_to_train_config_file>
 ```
-where the optional argument `--param` can be used to specify the parameter
-file to be used. `--name` can be used to overwrite the `experiment_id` of the
-yaml file and save the data under the new name. `--cpu` can be used to force
-training on the CPU, otherwise the training will be performed in the GPU (if available). 
 
+```
+optional arguments:
+  -h, --help            show this help message and exit
+  --train-config TRAIN_CONFIG
+                        Path to the training configuration yaml file.
+  --dataset-config DATASET_CONFIG
+                        Path to the dataset configuration yaml file.
+  --name NAME           If specified, this name will be used instead of
+                        experiment_id of the yaml file.
+  --epochs EPOCHS       The number of training epochs. If not specified,
+                        optimization.epochs of the training configuration will
+                        be used.
+  --env ENV             The environment to use (for online training only).
+                        Possible values are 'pendulum', 'spring',
+                        'two_bodies', 'three_bodies', corresponding to
+                        environment configurations in
+                        experiment_params/default_environments/. If not
+                        specified, the environment specified in the given
+                        --dataset-config will be used.
+  --dataset-path DATASET_PATH
+                        Path to a stored dataset to use for training. For
+                        offline training only. In this case no dataset
+                        configuration file will be loaded.
+  --params PARAMS [PARAMS ...]
+                        Override one or more parameters in the config. The
+                        format of an argument is param_name=param_value.
+                        Nested parameters are accessible by using a dot, i.e.
+                        --param dataset.img_size=32. IMPORTANT: lists must be
+                        enclosed in double quotes, i.e. --param
+                        environment.mass:"[0.5, 0.5]".
+  --resume [RESUME]     NOT IMPLEMENTED YET. Resume the training from a saved
+                        model. If a path is provided, the training will be
+                        resumed from the given checkpoint. Otherwise, the last
+                        checkpoint will be taken from
+                        saved_models/<experiment_id>.
+```
+The `experiment_params/` folder contains default dataset and training configuration files.
 Training can be done in on-line or off-line mode.
 
-- In on-line mode the dataset is generated during training. The parameter file must therefore
-contain a `environment:` section with all the parameters of the environment to use.
-The parameter `dataset:` section must contain the parameters for dataset generation.
-See [experiment_params/default_online.yaml](experiment_params/default_online.yaml) for an
-exhaustive example.
-- In off-line mode the training is performed on a saved dataset. Therefore, the
-`dataset:` section of the parameter file must only contain the training data and test data paths
-in the corrsepondent variables `train_data` and `test_data`.
-See [experiment_params/default_offline](experiment_params/default_offline.yaml) for an exhaustive
-example.
+- In **on-line mode** data is generated during training, eliminating the need for a
+heavy dataset. A dataset configuration file must be provided in the `--dataset-config`
+argument. This file must define the `environment:` and `dataset:` sections
+(see [experiment_params/dataset_online_default.yaml](experiment_params/dataset_online_default.yaml))
+. The `--env` argument may be used to override the environment defined in the config file
+with one of the default environments in `experiment_params/default_environments/`.
 
+- In **off-line mode** the training is performed from a stored dataset (see the section below
+on how to generate datasets). A dataset config specifying the train and test dataset paths
+in the `train_data:` and `test_data:` sections can be given to `--dataset-config` (see
+[experiment_params/dataset_offline_default.yaml](experiment_params/dataset_offline_default.yaml))
+. Otherwise, the path to an existing dataset root folder (the one containing the
+`parameters.yaml` file ) must be provided to the `--dataset-path` argument. 
 ## Generating and saving datasets
 A dataset can be generated starting from a `yaml` parameter file that specifies all its parameters
 in the `environment` and `dataset` sections. To create a dataset, run
 ```commandline
 python environments/generate_data.py
-
-Creates a train and test dataset and prints a
-.yaml file ready to be run for offline training.
 ```
+which will create the dataset in a folder with the given name (see args below) and will
+write a `parameters.yaml` file within it, that can be directly used for off-line training
+on the created dataset.
 
-```commandline
+```
 optional arguments:
   -h, --help            show this help message and exit
-  --config-file CONFIG_FILE
+  --name NAME           The dataset name.
+  --dataset-config DATASET_CONFIG
                         YAML file from which to read the dataset parameters.
-                        If not specified,experiment_params/default_online.yaml
-                        will be used.
-  --name NAME           Use this name for the dataset instead of
-                        experiment_name in the yaml file.
+                        If not specified,
+                        experiment_params/dataset_online_default.yaml will be
+                        used.
   --ntrain NTRAIN       Number of training sample to generate.
   --ntest NTEST         Number of test samples to generate.
   --env ENV             The default environment specifications to use. Can be
@@ -76,10 +111,10 @@ optional arguments:
                         be stored. If not specified, datasets/ will be used as
                         default.
   --params PARAMS [PARAMS ...]
-                        Set a parameter with the given value. The format of an
-                        argument is param_name=param_value. Nested parameters
-                        are accessible by using a dot, i.e. --param
-                        dataset.img_size=32. IMPORTANT: lists must be enclosed
-                        in double quotes, i.e. --param mass:"[0.5, 0.5]".
-
+                        Override one or more parameters in the config. The
+                        format of an argument is param_name=param_value.
+                        Nested parameters are accessible by using a dot, i.e.
+                        --param dataset.img_size=32. IMPORTANT: lists must be
+                        enclosed in double quotes, i.e. --param
+                        environment.mass:"[0.5, 0.5]".
 ```
