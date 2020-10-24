@@ -27,7 +27,7 @@ To start a training, run
 python train.py --train-config <path_to_train_config_file>
 ```
 
-```cmd
+```
 optional arguments:
   -h, --help            show this help message and exit
   --train-config TRAIN_CONFIG
@@ -62,7 +62,6 @@ optional arguments:
                         resumed from the given checkpoint. Otherwise, the last
                         checkpoint will be taken from
                         saved_models/<experiment_id>.
-
 ```
 The `experiment_params/` folder contains default dataset and training configuration files.
 Training can be done in on-line or off-line mode.
@@ -90,7 +89,7 @@ which will create the dataset in a folder with the given name (see args below) a
 write a `parameters.yaml` file within it, that can be directly used for off-line training
 on the created dataset.
 
-```commandline
+```
 optional arguments:
   -h, --help            show this help message and exit
   --name NAME           The dataset name.
