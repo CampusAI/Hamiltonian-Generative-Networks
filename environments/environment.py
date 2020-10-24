@@ -76,6 +76,22 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
+    def _world_to_pixels(self, x, y, res):
+        """Maps coordinates from world space to pixel space
+
+        Args:
+            x (float): x coordinate of the world space.
+            y (float): y coordinate of the world space.
+            res (int): Image resolution in pixels (images are square).
+
+        Returns:
+            (int, int): Tuple of coordinates in pixel space.
+        """
+        pix_x = int(res*(x + self.get_world_size())/(2*self.get_world_size()))
+        pix_y = int(res*(y + self.get_world_size())/(2*self.get_world_size()))
+
+        return (pix_x, pix_y)
+
     def _sample_init_conditions(self, radius_bound):
         """Samples random initial conditions for the environment
 

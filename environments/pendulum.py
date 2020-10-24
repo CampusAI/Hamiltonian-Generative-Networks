@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 
 from environment import Environment, visualize_rollout
@@ -88,27 +89,18 @@ class Pendulum(Environment):
         """
         q = self._rollout[0, :]
         length = len(q)
-        if color:
-            vid = np.zeros((length, res, res, 3), dtype='float')
-            vid += 80./255.
-        else:
-            vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1. / res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
-        [I, J] = np.meshgrid(grid, grid)
+        vid = np.zeros((length, res, res, 3), dtype='float')
+        space_res = 2.*self.get_world_size()/res
         for t in range(length):
-            if color:
-                vid[t, :, :, 0] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
-                                             (J - self.length*np.cos(q[t]))**2) /
-                                            (self.mass**2))**4)
-                vid[t, :, :, 1] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
-                                             (J - self.length*np.cos(q[t]))**2) /
-                                            (self.mass**2))**4)
-            else:
-                vid[t, :, :, 0] += np.exp(-(((I - self.length*np.sin(q[t]))**2 +
-                                             (J - self.length*np.cos(q[t]))**2) /
-                                            (self.mass**2))**4)
-            vid[t][vid[t] > 1] = 1
-
+            vid[t] = cv2.circle(vid[t], self._world_to_pixels(self.length*np.sin(q[t]),
+                                                              self.length*np.cos(q[t]), res),
+                                int(self.mass/space_res), (1., 1., 0.), -1)
+            vid[t] = cv2.blur(vid[t], (3, 3))
+        if color:
+            vid += 80./255.
+            vid[vid > 1.] = 1.
+        else:
+            vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 
     def _sample_init_conditions(self, radius_bound):
@@ -133,9 +125,10 @@ if __name__ == "__main__":
     rolls = pd.sample_random_rollouts(number_of_frames=100,
                                       delta_time=0.1,
                                       number_of_rollouts=16,
-                                      img_size=32,
+                                      img_size=64,
                                       noise_level=0.,
-                                      radius_bound=(0., 0.001),
+                                      radius_bound=(1.3, 2.3),
+                                      color=False,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

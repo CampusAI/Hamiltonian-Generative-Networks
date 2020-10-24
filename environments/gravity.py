@@ -1,5 +1,6 @@
 import warnings
 
+import cv2
 import numpy as np
 
 from environment import Environment, visualize_rollout
@@ -137,37 +138,32 @@ class NObjectGravity(Environment):
         """
         q = self._rollout.reshape(2, self.n_objects, 2, -1)[0]
         length = q.shape[-1]
-        if color:
-            vid = np.zeros((length, res, res, 3), dtype='float')
-            vid += 80./255.
-        else:
-            vid = np.zeros((length, res, res, 1), dtype='float')
-        grid = np.arange(0, 1, 1./res) * 2 * self.WORLD_SIZE - self.WORLD_SIZE
-        [I, J] = np.meshgrid(grid, grid)
+        vid = np.zeros((length, res, res, 3), dtype='float')
+        space_res = 2.*self.get_world_size()/res
         for t in range(length):
-            if color:
-                for n in range(self.n_objects):
-                    brush = self.colors[n]
-                    color_term = np.exp(-(((I - q[n, 0, t])**2 +
-                                           (J - q[n, 1, t])**2) /
-                                          ((self.mass[n]/2.)**2))**4)
-                    if brush == 'y':
-                        vid[t, :, :, 0] += color_term
-                        vid[t, :, :, 1] += color_term
-                    elif brush == 'r':
-                        vid[t, :, :, 0] += color_term
-                    elif brush == 'g':
-                        vid[t, :, :, 1] += color_term
-
-                    vid[t][vid[t] < 0] = 0
-            else:
-                for i in range(self.n_objects):
-                    vid[t, :, :, 0] += np.exp(-(((I - q[i, 0, t])**2 +
-                                                 (J - q[i, 1, t])**2) /
-                                                ((self.mass[i]/2.)**2))**4)
-            vid[t][vid[t] > 1] = 1
-            vid[t][vid[t] < 0] = 0
-
+            for n in range(self.n_objects):
+                brush = self.colors[n]
+                if brush == 'y':
+                    vid[t] = cv2.circle(vid[t],
+                                        self._world_to_pixels(
+                                            q[n, 0, t], q[n, 1, t], res),
+                                        int(self.mass[n]*.55/space_res), (1., 1., 0.), -1)
+                elif brush == 'r':
+                    vid[t] = cv2.circle(vid[t],
+                                        self._world_to_pixels(
+                                            q[n, 0, t], q[n, 1, t], res),
+                                        int(self.mass[n]*.55/space_res), (1., 0., 0.), -1)
+                elif brush == 'g':
+                    vid[t] = cv2.circle(vid[t],
+                                        self._world_to_pixels(
+                                            q[n, 0, t], q[n, 1, t], res),
+                                        int(self.mass[n]*.55/space_res), (0., 0., 1.), -1)
+            vid[t] = cv2.blur(vid[t], (3, 3))
+        if color:
+            vid += 80./255.
+            vid[vid > 1.] = 1.
+        else:
+            vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 
     def _sample_init_conditions(self, radius_bound):
@@ -222,11 +218,11 @@ if __name__ == "__main__":
     og = NObjectGravity(mass=[1., 1.],
                         g=1., orbit_noise=0.05)
     rolls = og.sample_random_rollouts(number_of_frames=30,
-                                      delta_time=0.125,
+                                      delta_time=0.5,
                                       number_of_rollouts=1,
                                       img_size=32,
-                                      noise_level=0.05,
-                                      radius_bound=(.9, 1.2),
+                                      noise_level=0.,
+                                      radius_bound=(.5, 1.5),
                                       seed=None)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
