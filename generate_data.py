@@ -49,8 +49,6 @@ def _prepare_out_config(config, train_path, test_path):
 def _overwrite_config_with_cmd_arguments(config, args):
     # This function overwrites parameters in the given dictionary
     # with the correspondent command line arguments.
-    if args.name is not None:
-        config['experiment_id'] = args.name[0]
     if args.ntrain is not None:
         config['dataset']['num_train_samples'] = args.ntrain[0]
     if args.ntest is not None:

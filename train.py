@@ -115,11 +115,8 @@ def _overwrite_config_with_cmd_arguments(config, args):
     if args.dataset_path is not None:
         # Read the parameters.yaml file in the given dataset path
         dataset_config = _read_config(os.path.join(_args.dataset_path[0], 'parameters.yaml'))
-        config['dataset'] = {
-            'train_data': dataset_config['dataset']['train_data'],
-            'test_data': dataset_config['dataset']['test_data']
-        }
-        config['dataset']['rollout'] = dataset_config['dataset']['rollout']
+        for key, value in dataset_config.items():
+            config[key] = value
     if args.env is not None:
         if 'train_data' in config['dataset']:
             raise ValueError(
