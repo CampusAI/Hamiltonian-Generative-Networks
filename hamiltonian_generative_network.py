@@ -19,23 +19,15 @@ class HGN:
     DECODER_FILENAME = "decoder.pt"
 
     def __init__(self,
+                 encoder,
+                 transformer,
+                 hnn,
+                 decoder,
                  integrator,
-<<<<<<< HEAD
-                 encoder=None,
-                 transformer=None,
-                 hnn=None,
-                 decoder=None,
-                 optimizer=None,
-                 loss=torch.nn.MSELoss(),
-                 device="cpu",
-                 dtype=torch.float,
-                 seq_len=30,
-=======
                  device,
                  dtype,
                  seq_len,
->>>>>>> geco
-                 channels=3):
+                 channels):
         """Instantiate a Hamiltonian Generative Network.
 
         Args:
@@ -115,54 +107,6 @@ class HGN:
         last_energy = self.hnn(q=q, p=p).detach().numpy()
         prediction.append_energy(last_energy)  # This is the energy of previous timestep
         return prediction
-
-<<<<<<< HEAD
-    def fit(self, rollouts, variational=True):
-        """Perform a training step with the given rollouts batch.
-
-        TODO: Move the whole fit() code inside forward if adding hooks to the training, as direct
-            calls to self.forward() do not trigger them.
-
-        Args:
-            rollouts (torch.Tensor): Tensor of shape (batch_size, seq_len, channels, height, width)
-                corresponding to a batch of sampled rollouts.
-            variational (bool): Whether to sample from the encoder and compute the KL loss,
-                or train in fully deterministic mode.
-
-        Returns:
-            A tuple (reconstruction_error, kl_error, result) where reconstruction_error and
-            kl_error are floats and result is the HgnResult object with data of the forward pass.
-        """
-        # Re-set gradients and forward new batch
-        self.optimizer.zero_grad()
-        prediction = self.forward(rollout_batch=rollouts,
-                                  variational=variational)
-
-        # Compute frame reconstruction error
-        reconstruction_error = self.loss(
-            input=prediction.input, target=prediction.reconstructed_rollout)
-
-        total_loss = reconstruction_error
-        kl_div = None
-        if variational:
-            # Compute KL divergence
-            mu = prediction.z_mean
-            logvar = prediction.z_logvar
-            # TODO(Oleguer) Sum or mean?
-            kl_div = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
-            # Compute loss
-            beta = 0.01  # TODO(Stathi) Compute beta value
-            total_loss += beta * kl_div
-
-        # Optimization step
-        total_loss.backward()
-        self.optimizer.step()
-        reconstruction_error_np = reconstruction_error.detach().cpu().numpy()
-        kl_div_np = kl_div.detach().cpu().numpy(
-        ) if kl_div is not None else None
-        return reconstruction_error_np, kl_div_np, prediction
-=======
->>>>>>> geco
 
     def load(self, directory):
         """Load networks' parameters
