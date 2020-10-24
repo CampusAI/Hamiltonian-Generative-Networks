@@ -1,12 +1,12 @@
 import torch
 
 
-def reconstruction_loss(target, prediction):
+def reconstruction_loss(prediction, target):
     """Computes the MSE loss between the target and the predictions.
         
     Args:
-        target (Tensor): The target batch
         prediction (Tensor) The prediction of the model
+        target (Tensor): The target batch
 
     Returns:
         (Tensor): MSE loss
@@ -27,12 +27,11 @@ def kld_loss(mu, logvar):
     Returns:
         (torch.Tensor): KL divergence.
     """
-    return torch.mean(-0.5 *
-                      torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), 1))
+    return -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
 
 
 def geco_constraint(target, prediction, tol):
     """Computes the constraint for the geco algorithm
     """
-    rec_loss = reconstruction_loss(prediction, target)
+    rec_loss = reconstruction_loss(prediction=prediction, target=target)
     return rec_loss - tol**2, rec_loss
