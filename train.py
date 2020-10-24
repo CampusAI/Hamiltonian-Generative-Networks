@@ -22,7 +22,7 @@ def _avoid_overwriting(experiment_id):
             f'Experiment id {experiment_id} already exists in runs/. Remove it, change the name ' \
             f'in the yaml file.'
 
-class hgn_trainer:
+class HgnTrainer:
     def __init__(self, params, cpu=False, resume=False):
         """Instantiate and train the Hamiltonian Generative Network.
 
