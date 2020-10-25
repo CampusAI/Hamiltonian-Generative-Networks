@@ -58,13 +58,11 @@ class HgnTrainer:
 
         # Either generate data on-the-fly or load the data from disk
         if "train_data" in self.params["dataset"]:
-            print("Training with ONLINE data...")
-            self.train_data_loader, self.test_data_loader = get_online_dataloaders(
-                self.params)
+            print("Training with OFFLINE data...")
+            self.train_data_loader, self.test_data_loader = get_offline_dataloaders(self.params)
         else:
             print("Training with OFFLINE data...")
-            self.train_data_loader, self.test_data_loader = get_offline_dataloaders(
-                self.params)
+            self.train_data_loader, self.test_data_loader = get_online_dataloaders(self.params)
 
         # Initialize training logger
         self.training_logger = TrainingLogger(
