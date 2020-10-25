@@ -64,7 +64,7 @@ if __name__ == "__main__":
         for batch in tqdm(train):
             optimizer.zero_grad()
             batch.requires_grad_(True)
-            neg_elbo = nhf.elbo(q=batch, lagrange_multiplier=lagrange_multiplier)
+            neg_elbo = -nhf.elbo(q=batch, lagrange_multiplier=lagrange_multiplier)
             neg_elbo.backward()
             optimizer.step()
         print(neg_elbo)
