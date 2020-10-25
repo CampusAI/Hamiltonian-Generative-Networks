@@ -3,7 +3,7 @@ import sys
 
 import torch
 import torch.nn as nn
-import torch.distributions.normal as normal
+import torch.distributions.multivariate_normal as multivariate_normal
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utilities.integrator import Integrator
@@ -24,6 +24,7 @@ class Encoder(nn.Module):
 
         # Activation
         self.activation = nn.ReLU()
+        self.type(torch.float)
 
     def forward(self, q):
         # Compute mean
@@ -39,8 +40,13 @@ class Encoder(nn.Module):
         # Reparametrization trick NOTE: I think it would be better to use normal.Normal.rsample()
         std = torch.exp(0.5 * logvar)
         epsilon = torch.randn_like(mu)
-        p = mu + std * epsilon
-        return p, mu, logvar
+        # p = mu + std * epsilon
+        # return p, mu, logvar
+        std_mat = torch.diag_embed(std)
+        mn = multivariate_normal.MultivariateNormal(mu, std_mat)
+        p = mn.rsample(sample_shape=(q.size()[0], ))
+        log_prob_p = mn.log_prob(p)
+        return p, log_prob_p
 
 
 class PartialEnergy(nn.Module):
@@ -50,6 +56,7 @@ class PartialEnergy(nn.Module):
         self.fc2 = nn.Linear(128, 128)
         self.fc3 = nn.Linear(128, 1)
         self.activation = nn.Softplus()
+        self.type(torch.float)
 
     def forward(self, x):
         x = self.activation(self.fc1(x))
@@ -70,7 +77,7 @@ class Hamiltonian(nn.Module):
 
 
 class Flow(nn.Module):
-    def __init__(self, input_size, delta_t):
+    def __init__(self, input_size):
         super().__init__()
         self.hnn = Hamiltonian(input_size)
         self.integrator = Integrator(delta_t=None, method="Leapfrog")
@@ -86,7 +93,7 @@ class NHF:
         self.input_size = input_size
         self.delta_t = abs(delta_t)
 
-        self.flows = [Flow(input_size)] * flow_steps
+        self.flows = [Flow(input_size) for _ in range(flow_steps)]
         self.encoder = Encoder(input_size)
         self.src_distribution = src_distribution
 
@@ -98,10 +105,14 @@ class NHF:
         """
         delta_t = self.delta_t
         assert delta_t > 0  # Integrator step must be positive when sampling
+        sample_shape = (1,)
         q = self.src_distribution.sample(
-            sample_shape=self.input_size
+            sample_shape=sample_shape
         )  #NOTE: Not sure if should sample them separately or together
-        p = self.src_distribution.sample(sample_shape=self.input_size)
+        p = self.src_distribution.sample(sample_shape=sample_shape)
+        q.requires_grad_(True)
+        p.requires_grad_(True)
+        
         for flow in self.flows:
             q, p = flow(q=q, p=p, delta_t=delta_t)
         return q
@@ -114,10 +125,11 @@ class NHF:
         """
         delta_t = -self.delta_t
         assert delta_t < 0  # Integrator step must be negative when infering
-        
+
         # Get p_T from q_T
-        _, p, _ = self.encoder(q)  #NOTE: Should we use the mean when doing inference?
-        
+        _, p, _ = self.encoder(
+            q)  #NOTE: Should we use the mean when doing inference?
+
         # Apply the inverse of all the flows
         for flow in reversed(self.flows):
             q, p = flow(q=q, p=p, delta_t=delta_t)
@@ -126,10 +138,9 @@ class NHF:
     def elbo(self, q, lagrange_multiplier=1.0):
         delta_t = -self.delta_t
         assert delta_t < 0  # Integrator step must be negative when infering
-        
+
         # Get p_T from q_T
-        p, p_mean, p_logvar = self.encoder(q)
-        log_prob_p = normal.Normal(p_mean, p_logvar).log_prob(p)  # Store log_prob of sample p
+        p, log_prob_p = self.encoder(q)
 
         # Apply the inverse of all the flows
         for flow in reversed(self.flows):
@@ -138,5 +149,5 @@ class NHF:
         # Compute ELBO(q_T)
         elbo_q = self.src_distribution.log_prob(q) +\
                  self.src_distribution.log_prob(p) -\
-                 log_prob_p
-        return elbo_q
+                 lagrange_multiplier*log_prob_p
+        return torch.mean(elbo_q)
