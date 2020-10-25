@@ -4,14 +4,14 @@ import torch
 class Integrator:
     """HGN integrator class: Implements different integration methods for Hamiltonian differential equations.
     """
-    METHODS = ["Euler", "RK4", "Leapfrog"]
+    METHODS = ["Euler", "RK4", "Leapfrog", "Yoshida"]
 
     def __init__(self, delta_t, method="Euler"):
         """Initialize HGN integrator.
 
         Args:
             delta_t (float): Time difference between integration steps.
-            method (str, optional): Integration method, must be "Euler", "RK4", or "Leapfrog". Defaults to "Euler".
+            method (str, optional): Integration method, must be "Euler", "RK4", "Leapfrog" or "Yoshida". Defaults to "Euler".
 
         Raises:
             KeyError: If the integration method passed is invalid.
@@ -134,6 +134,42 @@ class Integrator:
         p_next = p_next_half + dp_next_dt * (self.delta_t) / 2
         return q_next, p_next
 
+    def _ys_step(self, q, p, hnn):
+        """Compute next latent-space position and momentum using 4th order Yoshida integration method.
+
+        Args:
+            q (torch.Tensor): Latent-space position tensor.
+            p (torch.Tensor): Latent-space momentum tensor.
+            hnn (HamiltonianNet): Hamiltonian Neural Network.
+
+        Returns:
+            tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
+        """
+        # yoshida coeficients c_n and d_m
+        w_1 = 1./(2 - 2**(1./3))
+        w_0 = -(2**(1./3))*w_1
+        c_1 = c_4 = w_1/2.
+        c_2 = c_3 = (w_0 + w_1)/2.
+        d_1 = d_3 = w_1
+        d_2 = w_0
+
+        # first order
+        q_1 = q + c_1*p*self.delta_t
+        _, a_1 = self._get_grads(q_1, p, hnn, remember_energy=True)
+        p_1 = p + d_1*a_1*self.delta_t
+        # second order
+        q_2 = q_1 + c_2*p_1*self.delta_t
+        _, a_2 = self._get_grads(q_2, p, hnn, remember_energy=False)
+        p_2 = p_1 + d_2*a_2*self.delta_t
+        # third order
+        q_3 = q_2 + c_3*p_2*self.delta_t
+        _, a_3 = self._get_grads(q_3, p, hnn, remember_energy=False)
+        p_3 = p_2 + d_3*a_3*self.delta_t
+        # fourth order
+        q_4 = q_3 + c_4*p_3*self.delta_t
+
+        return q_4, p_3
+
     def step(self, q, p, hnn):
         """Compute next latent-space position and momentum.
 
@@ -154,4 +190,6 @@ class Integrator:
             return self._rk_step(q, p, hnn)
         if self.method == "Leapfrog":
             return self._lf_step(q, p, hnn)
+        if self.method == "Yoshida":
+            return self._ys_step(q, p, hnn)
         raise NotImplementedError
