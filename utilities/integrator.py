@@ -134,13 +134,18 @@ class Integrator:
         p_next = p_next_half + dp_next_dt * (self.delta_t) / 2
         return q_next, p_next
 
-    def step(self, q, p, hnn):
+    def step(self, q, p, hnn, delta_t=None):
         """Compute next latent-space position and momentum.
 
         Args:
             q (torch.Tensor): Latent-space position tensor.
             p (torch.Tensor): Latent-space momentum tensor.
             hnn (HamiltonianNet): Hamiltonian Neural Network.
+            delta_t (float): Time difference between integration steps.
+            If None will use the one selected in the constructor.
+
+        Side-effects:
+            self.delta_t (float): Is set to delta_t if delta_t is provided
 
         Raises:
             NotImplementedError: If the integration method requested is not implemented.
@@ -148,6 +153,7 @@ class Integrator:
         Returns:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
+        self.delta_t = delta_t if delta_t is not None else self.delta_t
         if self.method == "Euler":
             return self._euler_step(q, p, hnn)
         if self.method == "RK4":
