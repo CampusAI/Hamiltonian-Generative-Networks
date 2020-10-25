@@ -79,3 +79,16 @@ class Flow(nn.Module):
         q_next, p_next = self.integrator.step(q, p, self.hnn, self.delta_t)
         return q_next, p_next
 
+
+class NHF:
+    def __init__(self, input_size, flow_steps, src_distribution):
+        self.flows = [Flow(input_size)]*flow_steps
+        self.encoder = Encoder(input_size)
+        self.src_distribution = src_distribution
+
+    def sample(self, sample_shape):
+        q = self.src_distribution.sample(sample_shape=sample_shape)  #NOTE: Not sure if it should be .rsample(), dont think so
+        p = self.src_distribution.sample(sample_shape=sample_shape)
+        for flow in self.flows:
+            q, p = flow(q=q, p=p)
+        return q, p
