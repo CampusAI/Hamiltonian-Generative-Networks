@@ -171,7 +171,7 @@ class HgnTrainer:
 
         # Initial values for geco algorithm
         if self.params["networks"]["variational"]:
-            self.langrange_multiplier = 1
+            self.langrange_multiplier = self.params["geco"]["initial_lagrange_multiplier"]
             self.C_ma = None
 
         # TRAIN
