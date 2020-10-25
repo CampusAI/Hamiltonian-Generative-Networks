@@ -159,11 +159,11 @@ class Integrator:
         p_1 = p + d_1*a_1*self.delta_t
         # second order
         q_2 = q_1 + c_2*p_1*self.delta_t
-        _, a_2 = self._get_grads(q_2, p, hnn, remember_energy=True)
+        _, a_2 = self._get_grads(q_2, p, hnn, remember_energy=False)
         p_2 = p_1 + d_2*a_2*self.delta_t
         # third order
         q_3 = q_2 + c_3*p_2*self.delta_t
-        _, a_3 = self._get_grads(q_3, p, hnn, remember_energy=True)
+        _, a_3 = self._get_grads(q_3, p, hnn, remember_energy=False)
         p_3 = p_2 + d_3*a_3*self.delta_t
         # fourth order
         q_4 = q_3 + c_4*p_3*self.delta_t
