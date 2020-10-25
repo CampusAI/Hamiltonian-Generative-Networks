@@ -46,5 +46,5 @@ optimization:
 
 geco:
   alpha: 0.99
-  tol: 1.0e-3 # per pixel error tolerance
-  lagrange_multiplier_param: 1.0e-5
+  tol: 1.0e-4 # per pixel error tolerance
+  lagrange_multiplier_param: 0.1
