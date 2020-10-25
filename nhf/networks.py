@@ -68,20 +68,14 @@ class Hamiltonian(nn.Module):
 
 
 class Flow(nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size, delta_t):
         super().__init__()
         self.hnn = Hamiltonian(input_size)
-        self.integrator = Integrator(delta_t=0.125, method="Leapfrog")
+        self.integrator = Integrator(delta_t=delta_t, method="Leapfrog")
+        self.delta_t = delta_t
         # Note change delta_t to delta_t/2 and apply two steps
 
-    def forward(self, s):
-        pass
-
-
-# class NHF:
-#     def __init__(self, input_size, rollout_length):
-#         self.flows = [Flow(input_size)]*rollout_length
-#         self.encoder = Encoder(input_size)
-
-#     def forward(self, rollout):
+    def forward(self, q, p):
+        q_next, p_next = self.integrator.step(q, p, self.hnn, self.delta_t)
+        return q_next, p_next
 
