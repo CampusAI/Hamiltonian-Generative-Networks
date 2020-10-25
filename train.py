@@ -329,6 +329,11 @@ if __name__ == "__main__":
              'the training will be resumed from the given checkpoint. Otherwise, the last '
              'checkpoint will be taken from saved_models/<experiment_id>.'
     )
+
+    parser.add_argument(
+        '-y, --y', '--yes', action='store_true', default=False,
+        help='Skip asking for user confirmation and directly start the training.'
+    )
     _args = parser.parse_args()
 
     # Read configurations
@@ -346,7 +351,8 @@ if __name__ == "__main__":
     _overwrite_config_with_cmd_arguments(_config, _args)
 
     # Show configuration and ask user for confirmation
-    _ask_confirmation(_config)
+    if not _args.yes:
+        _ask_confirmation(_config)
 
     # Train HGN network
     trainer = HgnTrainer(_config)

@@ -1,0 +1,7 @@
+# Example file for running several trainings in parallel with run_experiments.py
+[
+    'python train.py --train-config experiment_params/train_config_default.yaml --name 1 -y',
+    'python train.py --train-config experiment_params/train_config_default.yaml --name 2 -y',
+    'python train.py --train-config experiment_params/train_config_default.yaml --name 3 -y',
+    'python train.py --train-config experiment_params/train_config_default.yaml --name 4 -y',
+]
