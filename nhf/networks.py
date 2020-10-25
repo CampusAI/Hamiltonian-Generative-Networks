@@ -137,6 +137,6 @@ class NHF:
 
         # Compute ELBO(q_T)
         elbo_q = self.src_distribution.log_prob(q) +\
-                 self.src_distribution.log_prob(p) +\
+                 self.src_distribution.log_prob(p) -\
                  log_prob_p
         return elbo_q
