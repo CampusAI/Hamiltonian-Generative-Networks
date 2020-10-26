@@ -42,7 +42,7 @@ class Encoder(nn.Module):
         # epsilon = torch.randn_like(mu)
         # p = mu + std * epsilon
         # return p, mu, logvar
-        std_mat = torch.diag_embed(std)
+        std_mat = torch.diag_embed(std**2)
         mn = multivariate_normal.MultivariateNormal(mu, std_mat)
         p = mn.rsample(sample_shape=(q.size()[0], ))
         log_prob_p = mn.log_prob(p)
