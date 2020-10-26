@@ -30,12 +30,12 @@ class Encoder(nn.Module):
         # Compute mean
         mu = self.activation(self.mu_fc1(q))
         mu = self.activation(self.mu_fc2(mu))
-        mu = self.activation(self.mu_fc3(mu))
+        mu = self.mu_fc3(mu)
 
         # Compute log-variance
         logvar = self.activation(self.logvar_fc1(q))
         logvar = self.activation(self.logvar_fc2(logvar))
-        logvar = self.activation(self.logvar_fc3(logvar))
+        logvar = self.logvar_fc3(logvar)
 
         # Reparametrization trick NOTE: I think it would be better to use normal.Normal.rsample()
         std = torch.exp(0.5 * logvar)
@@ -61,7 +61,7 @@ class PartialEnergy(nn.Module):
     def forward(self, x):
         x = self.activation(self.fc1(x))
         x = self.activation(self.fc2(x))
-        x = self.activation(self.fc3(x))
+        x = self.fc3(x)
         return x
 
 
@@ -83,7 +83,7 @@ class Flow(nn.Module):
         self.integrator = Integrator(delta_t=None, method="Leapfrog")
         # Note change delta_t to delta_t/2 and apply two steps
 
-    def forward(self, q, p, delta_t):
+    def forward(self, q, p, delta_t=0.1):
         q_next, p_next = self.integrator.step(q, p, self.hnn, delta_t)
         return q_next, p_next
 
