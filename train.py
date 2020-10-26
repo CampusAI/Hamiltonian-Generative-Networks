@@ -167,6 +167,9 @@ class HgnTrainer:
 
     def fit(self):
         """The trainer fits an HGN.
+
+        Returns:
+            (HGN) An HGN model that has been fitted to the data
         """
 
         # Initial values for geco algorithm
