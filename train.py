@@ -14,6 +14,7 @@ import tqdm
 
 from utilities.integrator import Integrator
 from utilities.training_logger import TrainingLogger
+from utilities import loader
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 from utilities.losses import reconstruction_loss, kld_loss, geco_constraint
 
@@ -28,6 +29,7 @@ def _avoid_overwriting(experiment_id):
 
 
 class HgnTrainer:
+
     def __init__(self, params, resume=False):
         """Instantiate and train the Hamiltonian Generative Network.
 
@@ -55,6 +57,8 @@ class HgnTrainer:
         self.hgn = load_hgn(params=self.params,
                             device=self.device,
                             dtype=self.dtype)
+        if 'load_path' in self.params:
+            self.load_and_reset(self.params, self.device, self.dtype)
 
         # Either generate data on-the-fly or load the data from disk
         if "train_data" in self.params["dataset"]:
@@ -99,6 +103,19 @@ class HgnTrainer:
         ]
         self.optimizer = torch.optim.Adam(optim_params)
 
+    def load_and_reset(self, params, device, dtype):
+        self.hgn.load(params['load_path'])
+        if 'reset' in params:
+            assert params['reset'] in ['encoder', 'decoder', 'hamiltonian', 'transformer']
+            if 'encoder' in params['reset']:
+                self.hgn.encoder = loader.load_encoder(params, device, dtype)
+            if 'decoder' in params['reset']:
+                self.hgn.decoder = loader.load_decoder(params, device, dtype)
+            if 'transformer' in params['reset']:
+                self.hgn.transformer = loader.load_transformer(params, device, dtype)
+            if 'hamiltonian' in params['reset']:
+                self.hgn.hnn = loader.load_hamiltonian(params, device, dtype)
+
     def training_step(self, rollouts):
         """Perform a training step with the given rollouts batch.
 
@@ -140,9 +157,9 @@ class HgnTrainer:
             train_loss = kld + self.langrange_multiplier * C
 
             # clamping the langrange multiplier to avoid inf values
-            self.langrange_multiplier = self.langrange_multiplier * torch.exp(lagrange_mult_param * C.detach())
-            self.langrange_multiplier = torch.clamp(self.langrange_multiplier,
-                                                    1e-10, 1e10)
+            self.langrange_multiplier = self.langrange_multiplier * torch.exp(
+                lagrange_mult_param * C.detach())
+            self.langrange_multiplier = torch.clamp(self.langrange_multiplier, 1e-10, 1e10)
 
             losses = {
                 'loss/train': train_loss.item(),
@@ -246,6 +263,10 @@ def _overwrite_config_with_cmd_arguments(config, args):
                     ptr[k] = ast.literal_eval(value)
                 else:
                     ptr = ptr[k]
+    if args.load is not None:
+        config['load_path'] = args.load[0]
+    if args.reset is not None:
+        config['reset'] = args.reset
 
 
 def _read_config(config_file):
@@ -332,6 +353,15 @@ if __name__ == "__main__":
         help='NOT IMPLEMENTED YET. Resume the training from a saved model. If a path is provided, '
              'the training will be resumed from the given checkpoint. Otherwise, the last '
              'checkpoint will be taken from saved_models/<experiment_id>.'
+    )
+    parser.add_argument(
+        '--load', action='store', type=str, required=False, nargs=1,
+        help='Path from which to load the HGN.'
+    )
+    parser.add_argument(
+        '--reset', action='store', nargs='+', required=False,
+        help='Use only in combimation with --load, tells the trainer to reinstantiate the given '
+             'networks. Values: \'encoder\', \'transformer\', \'decoder\', \'hamiltonian\'.'
     )
     _args = parser.parse_args()
 
