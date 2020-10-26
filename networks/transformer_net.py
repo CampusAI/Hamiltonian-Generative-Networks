@@ -83,7 +83,7 @@ class TransformerNet(nn.Module):
                       stride=strides[i + 1]) for i in range(hidden_conv_layers)
         ])
         self.out_conv = nn.Conv2d(in_channels=n_filters[-1],
-                                  out_channels=out_channels * 2,
+                                  out_channels=out_channels,
                                   kernel_size=kernel_sizes[-1],
                                   padding=paddings[-1],
                                   stride=strides[-1])
@@ -103,8 +103,7 @@ class TransformerNet(nn.Module):
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
         x = self.activation(self.out_conv(x))
-        q, p = self.to_phase_space(x)
-        return q, p
+        return x
 
     @staticmethod
     def to_phase_space(encoding):

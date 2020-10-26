@@ -24,18 +24,29 @@ def load_hgn(params, device, dtype):
         dtype (torch.dtype): Data type to be used by the networks.
     """
     # Define networks
-    encoder = EncoderNet(seq_len=params["dataset"]["rollout"]["seq_length"],
-                         in_channels=params["dataset"]["rollout"]["n_channels"],
-                         **params["networks"]["encoder"],
-                         dtype=dtype).to(device)
-    transformer = TransformerNet(
-        in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"],
+    encoder_q = EncoderNet(seq_len=1,
+                           in_channels=params["dataset"]["rollout"]["n_channels"],
+                           **params["networks"]["encoder_q"],
+                           dtype=dtype).to(device)
+    transformer_q = TransformerNet(
+        in_channels=params["networks"]["encoder_q"]["out_channels"],
+        **params["networks"]["transformer_q"],
         dtype=dtype).to(device)
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
-                         dtype=dtype).to(device)
+    hnn_q = HamiltonianNet(**params["networks"]["hamiltonian_q"],
+                           dtype=dtype).to(device)
+    # Define networks
+    encoder_p = EncoderNet(seq_len=params["dataset"]["rollout"]["seq_length"],
+                           in_channels=params["dataset"]["rollout"]["n_channels"],
+                           **params["networks"]["encoder_p"],
+                           dtype=dtype).to(device)
+    transformer_p = TransformerNet(
+        in_channels=params["networks"]["encoder_p"]["out_channels"],
+        **params["networks"]["transformer_p"],
+        dtype=dtype).to(device)
+    hnn_p = HamiltonianNet(**params["networks"]["hamiltonian_p"],
+                           dtype=dtype).to(device)
     decoder = DecoderNet(
-        in_channels=params["networks"]["transformer"]["out_channels"],
+        in_channels=params["networks"]["transformer_p"]["out_channels"],
         out_channels=params["dataset"]["rollout"]["n_channels"],
         **params["networks"]["decoder"],
         dtype=dtype).to(device)
@@ -45,9 +56,12 @@ def load_hgn(params, device, dtype):
                             method=params["integrator"]["method"])
     
     # Instantiate Hamiltonian Generative Network
-    hgn = HGN(encoder=encoder,
-              transformer=transformer,
-              hnn=hnn,
+    hgn = HGN(encoder_q=encoder_q,
+              transformer_q=transformer_q,
+              hnn_q=hnn_q,
+              encoder_p=encoder_p,
+              transformer_p=transformer_p,
+              hnn_p=hnn_p,
               decoder=decoder,
               integrator=integrator,
               device=device,

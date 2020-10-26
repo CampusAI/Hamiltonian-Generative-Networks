@@ -61,7 +61,7 @@ class HgnTrainer:
             print("Training with OFFLINE data...")
             self.train_data_loader, self.test_data_loader = get_offline_dataloaders(self.params)
         else:
-            print("Training with OFFLINE data...")
+            print("Training with ONLINE data...")
             self.train_data_loader, self.test_data_loader = get_online_dataloaders(self.params)
 
         # Initialize training logger
@@ -69,7 +69,7 @@ class HgnTrainer:
             hyper_params=self.params,
             loss_freq=100,
             rollout_freq=1000,
-            model_freq=10000
+            model_freq=5000
         )
 
         # Initialize tensorboard writer
@@ -80,22 +80,20 @@ class HgnTrainer:
 
         # Define optimization modules
         optim_params = [
-            {
-                'params': self.hgn.encoder.parameters(),
-                'lr': params["optimization"]["encoder_lr"]
-            },
-            {
-                'params': self.hgn.transformer.parameters(),
-                'lr': params["optimization"]["transformer_lr"]
-            },
-            {
-                'params': self.hgn.hnn.parameters(),
-                'lr': params["optimization"]["hnn_lr"]
-            },
-            {
-                'params': self.hgn.decoder.parameters(),
-                'lr': params["optimization"]["decoder_lr"]
-            },
+            {'params': self.hgn.encoder_q.parameters(),
+                'lr': params["optimization"]["encoder_lr"]},
+            {'params': self.hgn.transformer_q.parameters(),
+                'lr': params["optimization"]["transformer_lr"]},
+            {'params': self.hgn.hnn_q.parameters(),
+                'lr': params["optimization"]["hnn_lr"]},
+            {'params': self.hgn.encoder_p.parameters(),
+                'lr': params["optimization"]["encoder_lr"]},
+            {'params': self.hgn.transformer_p.parameters(),
+                'lr': params["optimization"]["transformer_lr"]},
+            {'params': self.hgn.hnn_p.parameters(),
+                'lr': params["optimization"]["hnn_lr"]},
+            {'params': self.hgn.decoder.parameters(),
+                'lr': params["optimization"]["decoder_lr"]},
         ]
         self.optimizer = torch.optim.Adam(optim_params)
 
@@ -132,9 +130,14 @@ class HgnTrainer:
             C = C + (self.C_ma - C.detach())  # Move C without affecting its gradient
 
             # Compute KL divergence
-            mu = hgn_output.z_mean
-            logvar = hgn_output.z_logvar
-            kld = kld_loss(mu=mu, logvar=logvar)
+            mu_q = hgn_output.z_mean_q
+            logvar_q = hgn_output.z_logvar_q
+            kld_q = kld_loss(mu=mu_q, logvar=logvar_q)
+            mu_p = hgn_output.z_mean_p
+            logvar_p = hgn_output.z_logvar_p
+            kld_p = kld_loss(mu=mu_p, logvar=logvar_p)
+
+            kld = kld_q + kld_p
 
             # Compute losses
             train_loss = kld + self.langrange_multiplier * C

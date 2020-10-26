@@ -64,7 +64,7 @@ class HamiltonianNet(nn.Module):
             raise ValueError(
                 'Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
                 'can only be either all None, or all defined by the user.')
-        in_channels = in_shape[0] * 2
+        in_channels = in_shape[0]
         paddings = [int(k / 2) for k in kernel_sizes]
         self.in_conv = nn.Conv2d(in_channels=in_channels,
                                  out_channels=n_filters[0],
@@ -93,7 +93,7 @@ class HamiltonianNet(nn.Module):
         self.activation = act_func
         self.type(dtype)
 
-    def forward(self, q, p):
+    def forward(self, x):
         """Forward pass that returns the Hamiltonian for the given q and p inputs.
 
         q and p must be two (batch_size, channels, height, width) tensors.
@@ -105,9 +105,6 @@ class HamiltonianNet(nn.Module):
         Returns:
             A (batch_size, 1) shaped tensor with the energy for each input in the batch.
         """
-        x = torch.cat(
-            (q, p),
-            dim=1)  # Concatenate q and p to obtain a N x 2C x H x W tensor
         x = self.activation(self.in_conv(x))
         for layer in self.hidden_layers:
             x = self.activation(layer(x))

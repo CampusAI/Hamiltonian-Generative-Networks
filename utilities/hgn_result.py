@@ -24,9 +24,12 @@ class HgnResult():
             device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
         """
         self.input = None
-        self.z_mean = None
-        self.z_logvar = None
-        self.z_sample = None
+        self.z_mean_q = None
+        self.z_logvar_q = None
+        self.z_sample_q = None
+        self.z_mean_p = None
+        self.z_logvar_p = None
+        self.z_sample_p = None
         self.q_s = []
         self.p_s = []
         self.energies = []  # Estimated energy of the system by the Hamiltonian network
@@ -42,7 +45,7 @@ class HgnResult():
         """
         self.input = rollout
 
-    def set_z(self, z_sample, z_mean=None, z_logvar=None):
+    def set_z(self, z_sample_q, z_mean_q, z_logvar_q, z_sample_p, z_mean_p, z_logvar_p):
         """Store latent encodings and correspondent distribution parameters.
 
         Args:
@@ -50,9 +53,13 @@ class HgnResult():
             z_mean (torch.Tensor, optional): Batch of means of the latent distribution.
             z_logvar (torch.Tensor, optional): Batch of log variances of the latent distributions.
         """
-        self.z_mean = z_mean
-        self.z_logvar = z_logvar
-        self.z_sample = z_sample
+        self.z_sample_q = z_sample_q
+        self.z_mean_q = z_mean_q
+        self.z_logvar_q = z_logvar_q
+
+        self.z_sample_p = z_sample_p
+        self.z_mean_p = z_mean_p
+        self.z_logvar_p = z_logvar_p
 
     def append_state(self, q, p):
         """Append the guessed position (q) and momentum (p) to guessed list .

@@ -13,15 +13,22 @@ class HGN:
     
     This class models the HGN and implements its training and evaluation.
     """
-    ENCODER_FILENAME = "encoder.pt"
-    TRANSFORMER_FILENAME = "transformer.pt"
-    HAMILTONIAN_FILENAME = "hamiltonian.pt"
+    ENCODER_Q_FILENAME = "encoder_q.pt"
+    TRANSFORMER_Q_FILENAME = "transformer_q.pt"
+    HAMILTONIAN_Q_FILENAME = "hamiltonian_q.pt"
     DECODER_FILENAME = "decoder.pt"
+    ENCODER_P_FILENAME = "encoder_p.pt"
+    TRANSFORMER_P_FILENAME = "transformer_p.pt"
+    HAMILTONIAN_P_FILENAME = "hamiltonian_p.pt"
+
 
     def __init__(self,
-                 encoder,
-                 transformer,
-                 hnn,
+                 encoder_q,
+                 transformer_q,
+                 hnn_q,
+                 encoder_p,
+                 transformer_p,
+                 hnn_p,
                  decoder,
                  integrator,
                  device,
@@ -48,9 +55,12 @@ class HGN:
         self.dtype = dtype
 
         # Modules
-        self.encoder = encoder
-        self.transformer = transformer
-        self.hnn = hnn
+        self.encoder_q = encoder_q
+        self.transformer_q = transformer_q
+        self.hnn_q = hnn_q
+        self.encoder_p = encoder_p
+        self.transformer_p = transformer_p
+        self.hnn_p = hnn_p
         self.decoder = decoder
         self.integrator = integrator
     
@@ -77,15 +87,19 @@ class HGN:
                                device=self.device)
         prediction.set_input(rollout_batch)
 
+        first_img = rollout_batch[:, 0]
         # Concat along channel dimension
         rollout_batch = conversions.concat_rgb(rollout_batch)
 
         # Latent distribution
-        z, z_mean, z_logvar = self.encoder(rollout_batch, sample=variational)
-        prediction.set_z(z_sample=z, z_mean=z_mean, z_logvar=z_logvar)
+        z_q, z_mean_q, z_logvar_q = self.encoder_q(first_img, sample=variational)
+        z_p, z_mean_p, z_logvar_p = self.encoder_p(rollout_batch, sample=variational)
+        prediction.set_z(z_sample_q=z_q, z_mean_q=z_mean_q, z_logvar_q=z_logvar_q,
+                         z_sample_p=z_p, z_mean_p=z_mean_p, z_logvar_p=z_logvar_p)
 
         # Initial state
-        q, p = self.transformer(z)
+        q = self.transformer_q(z_q)
+        p = self.transformer_p(z_p)
         prediction.append_state(q=q, p=p)
 
         # Initial state reconstruction
@@ -95,7 +109,7 @@ class HGN:
         # Estimate predictions
         for _ in range(n_steps - 1):
             # Compute next state
-            q, p = self.integrator.step(q=q, p=p, hnn=self.hnn)
+            q, p = self.integrator.step(q=q, p=p, hnn_q=self.hnn_q, hnn_p=self.hnn_p)
             prediction.append_state(q=q, p=p)
             prediction.append_energy(self.integrator.energy)  # This is the energy of previous timestep
 
@@ -105,28 +119,10 @@ class HGN:
         
         # We need to add the energy of the system at the last time-step
         with torch.no_grad():
-            last_energy = self.hnn(q=q, p=p).detach().cpu().numpy()
+            last_energy = self.hnn_q(x=q).detach().cpu().numpy() \
+                          + self.hnn_p(x=p).detach().cpu().numpy()
         prediction.append_energy(last_energy)  # This is the energy of previous timestep
         return prediction
-
-    def load(self, directory):
-        """Load networks' parameters
-
-        Args:
-            directory (string): Path to the saved models
-        """
-        self.encoder = torch.load(os.path.join(directory,
-                                               self.ENCODER_FILENAME),
-                                  map_location=self.device)
-        self.transformer = torch.load(os.path.join(directory,
-                                                   self.TRANSFORMER_FILENAME),
-                                      map_location=self.device)
-        self.hnn = torch.load(os.path.join(directory,
-                                           self.HAMILTONIAN_FILENAME),
-                              map_location=self.device)
-        self.decoder = torch.load(os.path.join(directory,
-                                               self.DECODER_FILENAME),
-                                  map_location=self.device)
 
     def save(self, directory):
         """Save networks' parameters
@@ -135,21 +131,21 @@ class HGN:
             directory (string): Path where to save the models, if does not exist it, is created
         """
         pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
-        torch.save(self.encoder, os.path.join(directory,
-                                              self.ENCODER_FILENAME))
-        torch.save(self.transformer,
-                   os.path.join(directory, self.TRANSFORMER_FILENAME))
-        torch.save(self.hnn, os.path.join(directory,
-                                          self.HAMILTONIAN_FILENAME))
+        torch.save(self.encoder_q, os.path.join(directory,
+                                              self.ENCODER_Q_FILENAME))
+        torch.save(self.transformer_q,
+                   os.path.join(directory, self.TRANSFORMER_Q_FILENAME))
+        torch.save(self.hnn_q, os.path.join(directory,
+                                          self.HAMILTONIAN_Q_FILENAME))
         torch.save(self.decoder, os.path.join(directory,
                                               self.DECODER_FILENAME))
+        torch.save(self.encoder_p, os.path.join(directory,
+                                                self.ENCODER_P_FILENAME))
+        torch.save(self.transformer_p,
+                   os.path.join(directory, self.TRANSFORMER_P_FILENAME))
+        torch.save(self.hnn_p, os.path.join(directory,
+                                          self.HAMILTONIAN_P_FILENAME))
 
-    def debug_mode(self):
-        """Set the network to debug mode, i.e. allow intermediate gradients to be retrieved.
-        """
-        for module in [self.encoder, self.transformer, self.decoder, self.hnn]:
-            for name, layer in module.named_parameters():
-                layer.retain_grad()
 
     def get_random_sample(self, n_steps, img_shape=(32, 32)):
         """Sample a rollout from the HGN

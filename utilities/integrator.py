@@ -25,7 +25,7 @@ class Integrator:
         self.delta_t = delta_t
         self.method = method
 
-    def _get_grads(self, q, p, hnn, remember_energy=False):
+    def _get_grads(self, q, p, hnn_q, hnn_p, remember_energy=False):
         """Apply the Hamiltonian equations to the Hamiltonian network to get dq_dt, dp_dt.
 
         Args:
@@ -38,7 +38,9 @@ class Integrator:
             tuple(torch.Tensor, torch.Tensor): Position and momentum time derivatives: dq_dt, dp_dt.
         """
         # Compute energy of the system
-        energy = hnn(q=q, p=p)
+        energy_q = hnn_q(x=q)
+        energy_p = hnn_p(x=p)
+        energy = energy_q + energy_p
 
         # dq_dt = dH/dp
         dq_dt = torch.autograd.grad(energy,
@@ -113,7 +115,7 @@ class Integrator:
                                      (k4_p / 6))
         return q_next, p_next
 
-    def _lf_step(self, q, p, hnn):
+    def _lf_step(self, q, p, hnn_q, hnn_p):
         """Compute next latent-space position and momentum using LeapFrog integration method.
 
         Args:
@@ -125,12 +127,12 @@ class Integrator:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
         # get acceleration
-        _, dp_dt = self._get_grads(q, p, hnn, remember_energy=True)
+        _, dp_dt = self._get_grads(q=q, p=p, hnn_q=hnn_q, hnn_p=hnn_p, remember_energy=True)
         # leapfrog step
         p_next_half = p + dp_dt * (self.delta_t) / 2
         q_next = q + p_next_half * self.delta_t
         # momentum synchronization
-        _, dp_next_dt = self._get_grads(q_next, p_next_half, hnn)
+        _, dp_next_dt = self._get_grads(q=q_next, p=p_next_half, hnn_q=hnn_q, hnn_p=hnn_p)
         p_next = p_next_half + dp_next_dt * (self.delta_t) / 2
         return q_next, p_next
 
@@ -170,7 +172,7 @@ class Integrator:
 
         return q_4, p_3
 
-    def step(self, q, p, hnn):
+    def step(self, q, p, hnn_q, hnn_p):
         """Compute next latent-space position and momentum.
 
         Args:
@@ -184,12 +186,6 @@ class Integrator:
         Returns:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
-        if self.method == "Euler":
-            return self._euler_step(q, p, hnn)
-        if self.method == "RK4":
-            return self._rk_step(q, p, hnn)
         if self.method == "Leapfrog":
-            return self._lf_step(q, p, hnn)
-        if self.method == "Yoshida":
-            return self._ys_step(q, p, hnn)
+            return self._lf_step(q=q, p=p, hnn_q=hnn_q, hnn_p=hnn_p)
         raise NotImplementedError
