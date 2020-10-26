@@ -124,6 +124,7 @@ class ChaoticPendulum(Environment):
         length = q.shape[-1]
         vid = np.zeros((length, res, res, 3), dtype='float')
         space_res = 2.*self.get_world_size()/res
+        vid[:, :, :] = [0., 0., 1.]
         for t in range(length):
             coords_1 = self._world_to_pixels(
                 self.length * np.sin(q[0, t]), self.length * np.cos(q[0, t]), res)
@@ -132,12 +133,12 @@ class ChaoticPendulum(Environment):
                 self.length * np.cos(q[0, t]) + self.length * np.cos(q[1, t]),
                 res)
             vid[t] = cv2.circle(vid[t], coords_1, int(
-                self.length/(space_res*3)), (1., 1., 0.), -1)
+                self.length/(space_res*3)), (0., 1., 0.), -1)
             vid[t] = cv2.circle(vid[t], coords_2, int(
                 self.length/(space_res*3)), (1., 0., 0.), -1)
             vid[t] = cv2.blur(vid[t], (3, 3))
         if color:
-            vid += 80./255.
+            #vid += 80./255.
             vid[vid > 1.] = 1.
         else:
             vid = np.expand_dims(np.max(vid, axis=-1), -1)
