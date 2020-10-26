@@ -324,6 +324,10 @@ if __name__ == "__main__":
              'quotes, i.e. --param environment.mass:"[0.5, 0.5]".'
     )
     parser.add_argument(
+        '-y', '-y', action='store_true', default=False, required=False,
+        help='Whether to skip asking for user confirmation before starting the training.'
+    )
+    parser.add_argument(
         '--resume', action='store', required=False, nargs='?', default=None,
         help='NOT IMPLEMENTED YET. Resume the training from a saved model. If a path is provided, '
              'the training will be resumed from the given checkpoint. Otherwise, the last '
@@ -346,7 +350,8 @@ if __name__ == "__main__":
     _overwrite_config_with_cmd_arguments(_config, _args)
 
     # Show configuration and ask user for confirmation
-    _ask_confirmation(_config)
+    if not _args.y:
+        _ask_confirmation(_config)
 
     # Train HGN network
     trainer = HgnTrainer(_config)
