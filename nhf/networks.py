@@ -39,7 +39,7 @@ class Encoder(nn.Module):
 
         # Reparametrization trick NOTE: I think it would be better to use normal.Normal.rsample()
         std = torch.exp(0.5 * logvar)
-        epsilon = torch.randn_like(mu)
+        # epsilon = torch.randn_like(mu)
         # p = mu + std * epsilon
         # return p, mu, logvar
         std_mat = torch.diag_embed(std)
@@ -106,9 +106,7 @@ class NHF:
         delta_t = self.delta_t
         assert delta_t > 0  # Integrator step must be positive when sampling
         sample_shape = (1,)
-        q = self.src_distribution.sample(
-            sample_shape=sample_shape
-        )  #NOTE: Not sure if should sample them separately or together
+        q = self.src_distribution.sample(sample_shape=sample_shape)  #NOTE: Not sure if should sample them separately or together
         p = self.src_distribution.sample(sample_shape=sample_shape)
         q.requires_grad_(True)
         p.requires_grad_(True)
@@ -127,8 +125,8 @@ class NHF:
         assert delta_t < 0  # Integrator step must be negative when infering
 
         # Get p_T from q_T
-        _, p, _ = self.encoder(
-            q)  #NOTE: Should we use the mean when doing inference?
+        # NOTE: Should we use the mean when doing inference?
+        p, _ = self.encoder(q)
 
         # Apply the inverse of all the flows
         for flow in reversed(self.flows):
