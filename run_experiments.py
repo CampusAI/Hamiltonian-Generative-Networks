@@ -28,7 +28,15 @@ if __name__ == '__main__':
         '--nthreads', action='store', nargs=1, type=int, required=True,
         help='Maximum number of threads that will be run in parallel.'
     )
+    parser.add_argument(
+        '--wait', action='store', nargs=1, type=int, required=False,
+        help='The number of seconds to wait before starting this script.'
+    )
     args = parser.parse_args()
+
+    print(f'Waiting {args.wait[0]} seconds before starting.')
+    if args.wait is not None:
+        time.sleep(args.wait[0])
 
     with open(args.cmd_file[0]) as cmd_file:
         commands = ast.literal_eval(cmd_file.read())
