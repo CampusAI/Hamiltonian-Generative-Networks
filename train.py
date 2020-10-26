@@ -237,7 +237,7 @@ def _overwrite_config_with_cmd_arguments(config, args):
         env_params = _read_config(DEFAULT_ENVIRONMENTS_PATH + args.env[0] + '.yaml')
         config['environment'] = env_params['environment']
     if args.potential_learning:
-        config['networks']['potential_learning'] = True
+        config['networks']['hamiltonian']['potential_learning'] = True
     if args.params is not None:
         for p in args.params:
             key, value = p.split('=')
