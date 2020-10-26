@@ -10,7 +10,7 @@ environment:
 # Define data characteristics
 dataset:
   img_size: 32
-  radius_bound: [1.3, 2.3]
+  radius_bound: 'auto'
   num_train_samples: 50000  # Total number of rollouts used when training on-line.
   num_test_samples: 100  # Number of test samples.
   rollout:
