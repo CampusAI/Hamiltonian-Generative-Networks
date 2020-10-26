@@ -128,7 +128,7 @@ class HgnTrainer:
                 self.C_ma = C.detach()
             else:
                 self.C_ma = alpha * self.C_ma + (1 - alpha) * C.detach()
-
+            C_curr = C.detach().item() # keep track for logging
             C = C + (self.C_ma - C.detach())  # Move C without affecting its gradient
 
             # Compute KL divergence
@@ -147,7 +147,7 @@ class HgnTrainer:
             losses = {
                 'loss/train': train_loss.item(),
                 'loss/kld': kld.item(),
-                'loss/C': C.item(),
+                'loss/C': C_curr,
                 'loss/C_ma': self.C_ma.item(),
                 'loss/rec': rec_loss.item(),
                 'other/langrange_mult': self.langrange_multiplier.item()
