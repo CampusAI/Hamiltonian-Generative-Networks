@@ -10,6 +10,7 @@ import yaml
 
 import numpy as np
 import torch
+from torch.optim import lr_scheduler
 import tqdm
 
 from utilities.integrator import Integrator
@@ -78,6 +79,11 @@ class HgnTrainer:
             self.params["experiment_id"]
         )
 
+        if "all_l" in self.params:
+            params["optimization"]["encoder_lr"] = params["optimization"]["all_lr"]
+            params["optimization"]["transformer_lr"] = params["optimization"]["all_lr"]
+            params["optimization"]["hnn_lr"] = params["optimization"]["all_lr"]
+            params["optimization"]["decoder_lr"] = params["optimization"]["all_lr"]
         # Define optimization modules
         optim_params = [
             {
@@ -98,6 +104,10 @@ class HgnTrainer:
             },
         ]
         self.optimizer = torch.optim.Adam(optim_params)
+        if "end_lr_multiplier" in params["optimization"]:
+            end = params["optimization"]["end_lr_multiplier"]
+            lambda_decay = lambda epoch: 1. - (1 - end) * epoch / params["optimization"]["epochs"]
+            self.lr_scheduler = lr_scheduler.LambdaLR(self.optimizer, lambda_decay)
 
     def training_step(self, rollouts):
         """Perform a training step with the given rollouts batch.
@@ -198,6 +208,7 @@ class HgnTrainer:
                 pbar.set_description(msg)
             # Save model
             self.hgn.save(self.model_save_file)
+            self.lr_scheduler.step()
 
         self.test()
         return self.hgn
