@@ -28,6 +28,9 @@ def generate_and_save(root_path, environment, n_samples, n_frames, delta_time, i
             color=color,
             seed=i + start_seed
         )[0]
+        if rolls.shape[0] < n_frames:
+            i = i -1
+            continue
         filename = "{0:05d}".format(i)
         np.savez(os.path.join(path, filename), rolls)
     return path

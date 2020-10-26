@@ -34,8 +34,8 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    print(f'Waiting {args.wait[0]} seconds before starting.')
     if args.wait is not None:
+        print(f'Waiting {args.wait[0]} seconds before starting.')
         time.sleep(args.wait[0])
 
     with open(args.cmd_file[0]) as cmd_file:

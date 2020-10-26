@@ -206,9 +206,11 @@ class HgnTrainer:
                     f"{k}: {v:.2e}" for k, v in losses.items() if v is not None
                 ])
                 pbar.set_description(msg)
+
             # Save model
             self.hgn.save(self.model_save_file)
-            self.lr_scheduler.step()
+            if "end_lr_multiplier" in self.params["optimization"]:
+                self.lr_scheduler.step()
 
         self.test()
         return self.hgn

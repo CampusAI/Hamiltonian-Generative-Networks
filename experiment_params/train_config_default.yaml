@@ -48,7 +48,7 @@ geco:
   alpha: 0.99
   tol: 1.0e-4 # per pixel error tolerance
   initial_lagrange_multiplier: 1.0
-  lagrange_multiplier_param: 0.1
+  lagrange_multiplier_param: 0.05
   # To train in a beta-vae fashion use the following parameters:
   # alpha: 0.0
   # tol: 0.0
