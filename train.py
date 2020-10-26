@@ -104,6 +104,14 @@ class HgnTrainer:
         self.optimizer = torch.optim.Adam(optim_params)
 
     def load_and_reset(self, params, device, dtype):
+        """Load the HGN from the path specified in params['load_path'] and reset the networks in
+        params['reset'].
+
+        Args:
+            params (dict): Dictionary with all the necessary parameters to load the networks.
+            device (str): 'gpu:N' or 'cpu'
+            dtype (torch.dtype): Data type to be used in computations.
+        """
         self.hgn.load(params['load_path'])
         if 'reset' in params:
             assert params['reset'] in ['encoder', 'decoder', 'hamiltonian', 'transformer']
