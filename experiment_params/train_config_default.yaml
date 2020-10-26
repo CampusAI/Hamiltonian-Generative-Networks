@@ -1,19 +1,7 @@
-# Experiment ID
 experiment_id: "default_offline"
 model_save_dir: "saved_models"
 
-gpu_id: 0  # Will use this gpu if available
-
-# Define data paths
-dataset:
-  train_data: "pendulum_data/train"  # Should be of 50k samples
-  test_data: "pendulum_data/test"  # Should be of 50k samples
-  rollout:
-    seq_length: 30
-    delta_time: 0.125
-    n_channels: 3
-    noise_level: 0  # Level of environment noise. 0 means no noise, 1 means max noise.
-                    # Maximum values are defined in each environment.
+device: 'cuda:0'  # Will use this device if available, otherwise wil use cpu
 
 # Define networks architectures
 networks:
@@ -56,3 +44,14 @@ optimization:
   transformer_lr: 1.5e-4
   hnn_lr: 1.5e-4
   decoder_lr: 1.5e-4
+
+geco:
+  alpha: 0.99
+  tol: 1.0e-4 # per pixel error tolerance
+  initial_lagrange_multiplier: 1.0
+  lagrange_multiplier_param: 0.1
+  # To train in a beta-vae fashion use the following parameters:
+  # alpha: 0.0
+  # tol: 0.0
+  # initial_lagrange_multiplier: 1 / beta
+  # lagrange_multiplier_param = 1.0
