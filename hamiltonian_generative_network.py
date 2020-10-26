@@ -105,7 +105,10 @@ class HGN:
         
         # We need to add the energy of the system at the last time-step
         with torch.no_grad():
-            last_energy = self.hnn(q=q, p=p).detach().cpu().numpy()
+            if not self.hnn.potential_learning:
+                last_energy = self.hnn(q=q, p=p).detach().cpu().numpy()
+            else:
+                last_energy = self.hnn(q=q).detach().cpu().numpy()
         prediction.append_energy(last_energy)  # This is the energy of previous timestep
         return prediction
 
