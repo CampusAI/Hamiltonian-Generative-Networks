@@ -157,7 +157,7 @@ class NObjectGravity(Environment):
                     vid[t] = cv2.circle(vid[t],
                                         self._world_to_pixels(
                                             q[n, 0, t], q[n, 1, t], res),
-                                        int(self.mass[n]*.55/space_res), (0., 0., 1.), -1)
+                                        int(self.mass[n]*.55/space_res), (0., 1., 0.), -1)
             vid[t] = cv2.blur(vid[t], (3, 3))
         if color:
             vid += 80./255.
