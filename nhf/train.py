@@ -32,7 +32,8 @@ class RandomDistribution(torch.utils.data.Dataset):
         self.indexes = np.array(list(range(probs.size)))
         
         self.dataset_length = points
-        self.dataset = np.swapaxes(self.sample(points), 0, 1)
+        # self.dataset = np.swapaxes(self.sample(points), 0, 1)
+        self.dataset = np.random.multivariate_normal(np.zeros(2), np.eye(2), size=points)
         self.dataset = np.array(self.dataset, dtype=np.float32)
 
     def sample(self, points):
@@ -48,18 +49,20 @@ class RandomDistribution(torch.utils.data.Dataset):
 
 
 if __name__ == "__main__":
-    # kernel density estimate (KDE) plots used 1000 samples and isotropic Gaussian kernel bandwidth of 0.3
-    distro = RandomDistribution(points=1000)
-    train = torch.utils.data.DataLoader(distro, batch_size=2, shuffle=True)
+    final_distribution = RandomDistribution(points=1000)
+    # plot_dataset(np.swapaxes(np.array(final_distribution.dataset), 0, 1))
+    train = torch.utils.data.DataLoader(final_distribution, batch_size=10, shuffle=True)
     
     src_distribution = distributions.multivariate_normal.MultivariateNormal(torch.zeros(2), torch.eye(2))
-    nhf = NHF(input_size=2, delta_t=0.1, flow_steps=2, src_distribution=src_distribution)
-    
+    nhf = NHF(input_size=2, delta_t=0.1, flow_steps=1, src_distribution=src_distribution)
+
     optim_params = [{'params': flow.parameters()} for flow in nhf.flows]
-    optimizer = torch.optim.Adam(optim_params, lr=3.0e-4)
+    optim_params.append({'params': nhf.encoder.parameters()})
+    optimizer = torch.optim.Adam(optim_params, lr=3.0e-3)
     
-    lagrange_multiplier = 0.1
-    epochs = 10
+    lagrange_multiplier = 1.0
+    epochs = 20
+    errors = []
     for epoch in range(epochs): 
         for batch in tqdm(train):
             optimizer.zero_grad()
@@ -68,6 +71,10 @@ if __name__ == "__main__":
             neg_elbo.backward()
             optimizer.step()
         print(neg_elbo)
+        errors.append(neg_elbo)
+
+    plt.plot(errors)
+    plt.show()    
 
     samples = []
     for _ in range(100):
@@ -77,4 +84,4 @@ if __name__ == "__main__":
     print(samples.shape)
     plot_dataset(np.swapaxes(np.array(samples), 0, 1))
 
-    plot_dataset(distro.sample(1000))
+    # plot_dataset(distro.sample(1000))
