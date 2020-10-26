@@ -114,7 +114,11 @@ class HgnTrainer:
         """
         self.hgn.load(params['load_path'])
         if 'reset' in params:
-            assert params['reset'] in ['encoder', 'decoder', 'hamiltonian', 'transformer']
+            if isinstance(params['reset'], list):
+                for net in params['reset']:
+                    assert net in ['encoder', 'decoder', 'hamiltonian', 'transformer']
+            else:
+                assert params['reset'] in ['encoder', 'decoder', 'hamiltonian', 'transformer']
             if 'encoder' in params['reset']:
                 self.hgn.encoder = loader.load_encoder(params, device, dtype)
             if 'decoder' in params['reset']:
