@@ -103,10 +103,10 @@ class HgnResult():
         energy_std = np.std(energies, axis=0)
         return np.mean(energies), np.mean(energy_std)
 
-    def visualize(self):
+    def visualize(self, interval=50, show_step=False):
         """Visualize the predicted rollout.
         """
         rollout_batch = conversions.to_channels_last(
             self.reconstructed_rollout).detach().cpu().numpy()
         sequence = conversions.batch_to_sequence(rollout_batch)
-        visualize_rollout(sequence)
+        visualize_rollout(sequence, interval=interval, show_step=show_step)
