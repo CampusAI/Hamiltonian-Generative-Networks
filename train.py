@@ -110,8 +110,9 @@ class HgnTrainer:
         """
         self.optimizer.zero_grad()
 
-        if self.params['optimization']['use_half_rollout']:
-            roll = rollouts[:, :int(rollouts.shape[1] / 2)]
+        if 'use_steps' in self.params['optimization']:
+            nsteps = self.params['optimization']['use_steps']
+            roll = rollouts[:, :nsteps]
         else:
             roll = rollouts
         hgn_output = self.hgn.forward(rollout_batch=roll)

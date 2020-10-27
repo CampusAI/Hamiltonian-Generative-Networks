@@ -35,8 +35,10 @@ def load_hgn(params, device, dtype):
     hnn_q = HamiltonianNet(**params["networks"]["hamiltonian_q"],
                            dtype=dtype).to(device)
     # Define networks
-    seq_len = params["dataset"]["rollout"]["seq_length"]
-    seq_len = int(seq_len / 2) if params["optimization"]["use_half_rollout"] else seq_len
+    if 'use_steps' in params['optimization']:
+        seq_len = params['optimization']['use_steps']
+    else:
+        seq_len = params["dataset"]["rollout"]["seq_length"]
     encoder_p = EncoderNet(
         seq_len=seq_len,
         in_channels=params["dataset"]["rollout"]["n_channels"],
