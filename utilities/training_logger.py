@@ -55,6 +55,13 @@ class TrainingLogger:
                 prediction.reconstructed_rollout.detach().cpu(),
                 self.iteration)
 
+            # Sample from HGN and add to tensorboard
+            random_sample = model.get_random_sample(n_steps=50, img_shape=(32, 32))
+            self.writer.add_video(
+                'data/sample',
+                random_sample.reconstructed_rollout.detach().cpu(),
+                self.iteration)
+    
         if self.iteration % self.model_freq == 0:
             save_dir = os.path.join(
                 self.hparams["model_save_dir"], self.hparams["experiment_id"] +
