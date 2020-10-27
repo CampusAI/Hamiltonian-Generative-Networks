@@ -40,20 +40,16 @@ def load_hgn(params, device, dtype):
         **params["networks"]["decoder"],
         dtype=dtype).to(device)
 
-    # Define HGN integrator
-    integrator = Integrator(delta_t=params["dataset"]["rollout"]["delta_time"],
-                            method=params["integrator"]["method"])
-    
     # Instantiate Hamiltonian Generative Network
     hgn = HGN(encoder=encoder,
               transformer=transformer,
               hnn=hnn,
               decoder=decoder,
-              integrator=integrator,
               device=device,
               dtype=dtype,
               seq_len=params["dataset"]["rollout"]["seq_length"],
-              channels=params["dataset"]["rollout"]["n_channels"])
+              channels=params["dataset"]["rollout"]["n_channels"],
+              delta_t=params["dataset"]["rollout"]["delta_time"])
     return hgn
 
 

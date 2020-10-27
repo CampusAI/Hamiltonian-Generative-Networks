@@ -54,7 +54,7 @@ class HgnTrainer:
         # Load hgn from parameters to deice
         self.hgn = load_hgn(params=self.params,
                             device=self.device,
-                            dtype=self.dtype)
+                            dtype=self.dtype,)
 
         # Either generate data on-the-fly or load the data from disk
         if "train_data" in self.params["dataset"]:

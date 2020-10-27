@@ -23,11 +23,11 @@ class HGN:
                  transformer,
                  hnn,
                  decoder,
-                 integrator,
                  device,
                  dtype,
                  seq_len,
-                 channels):
+                 channels,
+                 delta_t=0.125):
         """Instantiate a Hamiltonian Generative Network.
 
         Args:
@@ -35,7 +35,6 @@ class HGN:
             transformer (networks.transformer_net.TransformerNet): Transformer neural network.
             hnn (networks.hamiltonian_net.HamiltonianNet): Hamiltonian neural network.
             decoder (networks.decoder_net.DecoderNet): Decoder neural network.
-            integrator (Integrator): HGN integrator.
             device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
             dtype (torch.dtype): Data type used for the networks.
             seq_len (int): Number of frames in each rollout.
@@ -52,8 +51,8 @@ class HGN:
         self.transformer = transformer
         self.hnn = hnn
         self.decoder = decoder
-        self.integrator = integrator
-    
+        self.delta_t = delta_t
+
     def forward(self, rollout_batch, n_steps=None, variational=True):
         """Get the prediction of the HGN for a given rollout_batch of n_steps.
 
@@ -92,13 +91,12 @@ class HGN:
         x_reconstructed = self.decoder(q)
         prediction.append_reconstruction(x_reconstructed)
 
-        delta_t = self.integrator.delta_t
         # Estimate predictions
         for _ in range(n_steps - 1):
             # Compute next state
             delta_q, delta_p = self.hnn(q=q, p=p)
-            q = q + delta_q * delta_t
-            p = p + delta_p * delta_t
+            q = q + delta_q * self.delta_t
+            p = p + delta_p * self.delta_t
             prediction.append_state(q=q, p=p)
 
             # Compute state reconstruction
