@@ -144,7 +144,24 @@ class HGN:
         torch.save(self.transformer_p,
                    os.path.join(directory, self.TRANSFORMER_P_FILENAME))
         torch.save(self.hnn_p, os.path.join(directory,
-                                          self.HAMILTONIAN_P_FILENAME))
+                                            self.HAMILTONIAN_P_FILENAME))
+
+    def load(self, directory):
+        self.encoder_q = torch.load(
+            os.path.join(directory, self.ENCODER_Q_FILENAME), map_location=self.device)
+        self.encoder_p = torch.load(
+            os.path.join(directory, self.ENCODER_P_FILENAME), map_location=self.device)
+        self.transformer_q = torch.load(
+            os.path.join(directory, self.TRANSFORMER_Q_FILENAME), map_location=self.device)
+        self.transformer_p = torch.load(
+            os.path.join(directory, self.TRANSFORMER_P_FILENAME), map_location=self.device)
+        self.hnn_q = torch.load(
+            os.path.join(directory, self.HAMILTONIAN_Q_FILENAME), map_location=self.device)
+        self.hnn_p = torch.load(
+            os.path.join(directory, self.HAMILTONIAN_P_FILENAME), map_location=self.device)
+
+        self.decoder = torch.load(
+            os.path.join(directory, self.DECODER_FILENAME), map_location=self.device)
 
 
     def get_random_sample(self, n_steps, img_shape=(32, 32)):
