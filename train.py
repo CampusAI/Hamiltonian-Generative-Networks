@@ -71,9 +71,9 @@ class HgnTrainer:
         # Initialize training logger
         self.training_logger = TrainingLogger(
             hyper_params=self.params,
-            loss_freq=10,
-            rollout_freq=10,
-            model_freq=1
+            loss_freq=50,
+            rollout_freq=1000,
+            model_freq=5000
         )
 
         # Initialize tensorboard writer
