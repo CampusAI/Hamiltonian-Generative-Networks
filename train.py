@@ -71,9 +71,9 @@ class HgnTrainer:
         # Initialize training logger
         self.training_logger = TrainingLogger(
             hyper_params=self.params,
-            loss_freq=100,
-            rollout_freq=1000,
-            model_freq=5000
+            loss_freq=10,
+            rollout_freq=10,
+            model_freq=1
         )
 
         # Initialize tensorboard writer
@@ -110,21 +110,33 @@ class HgnTrainer:
             device (str): 'gpu:N' or 'cpu'
             dtype (torch.dtype): Data type to be used in computations.
         """
+        valid_params = [
+            'encoder_q', 'encoder_p', 'decoder', 'hamiltonian_q', 'hamiltonian_p',
+            'transformer_q', 'transformer_p'
+        ]
         self.hgn.load(params['load_path'])
         if 'reset' in params:
             if isinstance(params['reset'], list):
                 for net in params['reset']:
-                    assert net in ['encoder', 'decoder', 'hamiltonian', 'transformer']
+                    assert net in valid_params
             else:
-                assert params['reset'] in ['encoder', 'decoder', 'hamiltonian', 'transformer']
-            if 'encoder' in params['reset']:
-                self.hgn.encoder = loader.instantiate_encoder(params, device, dtype)
+                assert params['reset'] in valid_params
+            if 'encoder_q' in params['reset']:
+                self.hgn.encoder_q = loader.instantiate_encoder_q(params, device, dtype)
+            if 'encoder_p' in params['reset']:
+                self.hgn.encoder_p = loader.instantiate_encoder_p(params, device, dtype)
+            if 'transformer_q' in params['reset']:
+                self.hgn.transformer_q = loader.instantiate_transformer_q(params, device, dtype)
+            if 'transformer_p' in params['reset']:
+                self.hgn.transformer_p = loader.instantiate_transformer_p(params, device, dtype)
+            if 'hamiltonian_q' in params['reset']:
+                self.hgn.hnn_q = loader.instantiate_hamiltonian_q(params, device, dtype)
+                print('Loaded hamiltonian q')
+            if 'hamiltonian_p' in params['reset']:
+                print('Loaded hamiltonian p')
+                self.hgn.hnn_p = loader.instantiate_hamiltonian_p(params, device, dtype)
             if 'decoder' in params['reset']:
                 self.hgn.decoder = loader.instantiate_decoder(params, device, dtype)
-            if 'transformer' in params['reset']:
-                self.hgn.transformer = loader.instantiate_transformer(params, device, dtype)
-            if 'hamiltonian' in params['reset']:
-                self.hgn.hnn = loader.instantiate_hamiltonian(params, device, dtype)
 
     def training_step(self, rollouts):
         """Perform a training step with the given rollouts batch.

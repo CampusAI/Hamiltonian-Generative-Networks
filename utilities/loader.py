@@ -15,26 +15,58 @@ from networks.transformer_net import TransformerNet
 from utilities.integrator import Integrator
 
 
-def instantiate_encoder(params, device, dtype):
-    encoder = EncoderNet(seq_len=params["dataset"]["rollout"]["seq_length"],
-                         in_channels=params["dataset"]["rollout"]["n_channels"],
-                         **params["networks"]["encoder"],
-                         dtype=dtype).to(device)
-    return encoder
+def instantiate_encoder_q(params, device, dtype):
+    encoder_q = EncoderNet(seq_len=1,
+                           in_channels=params["dataset"]["rollout"]["n_channels"],
+                           **params["networks"]["encoder_q"],
+                           dtype=dtype).to(device)
+    return encoder_q
 
 
-def instantiate_transformer(params, device, dtype):
-    transformer = TransformerNet(
-        in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"],
+def instantiate_encoder_p(params, device, dtype):
+    if "use_steps" in params["optimization"]:
+        seq_len = params["optimization"]["use_steps"]
+    else:
+        seq_len = params["dataset"]["rollout"]["seq_length"]
+    encoder_p = EncoderNet(
+        seq_len=seq_len,
+        in_channels=params["dataset"]["rollout"]["n_channels"],
+        **params["networks"]["encoder_p"],
+        dtype=dtype
+    ).to(device)
+    return encoder_p
+
+
+def instantiate_transformer_q(params, device, dtype):
+    transformer_q = TransformerNet(
+        in_channels=params["networks"]["encoder_q"]["out_channels"],
+        **params["networks"]["transformer_q"],
         dtype=dtype).to(device)
-    return transformer
+    return transformer_q
 
 
-def instantiate_hamiltonian(params, device, dtype):
-    hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
-                         dtype=dtype).to(device)
-    return hnn
+def instantiate_transformer_p(params, device, dtype):
+    transformer_p = TransformerNet(
+        in_channels=params["networks"]["encoder_p"]["out_channels"],
+        **params["networks"]["transformer_p"],
+        dtype=dtype).to(device)
+    return transformer_p
+
+
+def instantiate_hamiltonian_q(params, device, dtype):
+    hnn_p = HamiltonianNet(
+        **params["networks"]["hamiltonian_q"],
+        dtype=dtype
+    ).to(device)
+    return hnn_p
+
+
+def instantiate_hamiltonian_p(params, device, dtype):
+    hnn_p = HamiltonianNet(
+        **params["networks"]["hamiltonian_p"],
+        dtype=dtype
+    ).to(device)
+    return hnn_p
 
 
 def instantiate_decoder(params, device, dtype):
