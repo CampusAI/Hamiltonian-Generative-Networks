@@ -21,20 +21,19 @@ class HGN:
     TRANSFORMER_P_FILENAME = "transformer_p.pt"
     HAMILTONIAN_P_FILENAME = "hamiltonian_p.pt"
 
-
     def __init__(self,
-                 encoder_q,
-                 transformer_q,
-                 hnn_q,
-                 encoder_p,
-                 transformer_p,
-                 hnn_p,
-                 decoder,
                  integrator,
+                 seq_len,
                  device,
                  dtype,
-                 seq_len,
-                 channels):
+                 encoder_q=None,
+                 transformer_q=None,
+                 hnn_q=None,
+                 encoder_p=None,
+                 transformer_p=None,
+                 hnn_p=None,
+                 decoder=None,
+                 channels=3,):
         """Instantiate a Hamiltonian Generative Network.
 
         Args:
@@ -116,7 +115,7 @@ class HGN:
             # Compute state reconstruction
             x_reconstructed = self.decoder(q)
             prediction.append_reconstruction(x_reconstructed)
-        
+
         # We need to add the energy of the system at the last time-step
         with torch.no_grad():
             last_energy = self.hnn_q(x=q).detach().cpu().numpy() \
