@@ -29,7 +29,7 @@ networks:
     hidden_conv_layers: 2
     n_filters: [48, 32, 16]  # first + hidden
     kernel_sizes: [3, 3, 3, 5]  # first + hidden + last
-    strides: [ 1, 1, 1, 1]  # first + hidden + last
+    strides: [ 1, 1, 1, 2]  # first + hidden + last
     out_channels: 16
   transformer_p:
     hidden_conv_layers: 2
