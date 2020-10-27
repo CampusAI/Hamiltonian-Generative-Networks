@@ -56,6 +56,7 @@ integrator:
 optimization:
   epochs: 5
   batch_size: 16
+  use_half_rollout: False
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4

@@ -110,7 +110,12 @@ class HgnTrainer:
         """
         self.optimizer.zero_grad()
 
-        hgn_output = self.hgn.forward(rollout_batch=rollouts)
+        if self.params['optimization']['use_half_rollout']:
+            roll = rollouts[:, :int(rollouts.shape[1] / 2)]
+        else:
+            roll = rollouts
+        hgn_output = self.hgn.forward(rollout_batch=roll)
+        hgn_output.input = rollouts
         target = hgn_output.input
         prediction = hgn_output.reconstructed_rollout
 
