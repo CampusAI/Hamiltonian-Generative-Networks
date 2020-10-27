@@ -15,10 +15,11 @@ def _read_config(path):
 
 if __name__ == '__main__':
     SEQ_LEN = 60
-    N_STEPS = 30
     DELTA_TIME = 0.125
     MODEL_TO_LOAD = 'saved_models/split'
     DEFAULT_PARAMS = _read_config('experiment_params/train_config_default.yaml')
+
+    nsteps = DEFAULT_PARAMS['optimization']['use_steps']
 
     env = pendulum.Pendulum(mass=0.5, length=1., g=3.)
 
@@ -35,5 +36,5 @@ if __name__ == '__main__':
     rollout = torch.from_numpy(rollout)
     rollout = conversions.to_channels_first(rollout).type(torch.float)
 
-    res = hgn.forward(rollout[:, :N_STEPS])
+    res = hgn.forward(rollout[:, :nsteps])
     res.visualize(interval=400, show_step=True)
