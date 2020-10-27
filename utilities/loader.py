@@ -53,25 +53,17 @@ def instantiate_transformer_p(params, device, dtype):
     return transformer_p
 
 
-def instantiate_hamiltonian_q(params, device, dtype):
-    hnn_p = HamiltonianNet(
-        **params["networks"]["hamiltonian_q"],
+def instantiate_potential(params, device, dtype):
+    potential = HamiltonianNet(
+        **params["networks"]["potential"],
         dtype=dtype
     ).to(device)
-    return hnn_p
-
-
-def instantiate_hamiltonian_p(params, device, dtype):
-    hnn_p = HamiltonianNet(
-        **params["networks"]["hamiltonian_p"],
-        dtype=dtype
-    ).to(device)
-    return hnn_p
+    return potential
 
 
 def instantiate_decoder(params, device, dtype):
     decoder = DecoderNet(
-        in_channels=params["networks"]["transformer"]["out_channels"],
+        in_channels=params["networks"]["transformer_q"]["out_channels"],
         out_channels=params["dataset"]["rollout"]["n_channels"],
         **params["networks"]["decoder"],
         dtype=dtype).to(device)
@@ -87,55 +79,31 @@ def load_hgn(params, device, dtype):
         dtype (torch.dtype): Data type to be used by the networks.
     """
     # Define networks
-    encoder_q = EncoderNet(seq_len=1,
-                           in_channels=params["dataset"]["rollout"]["n_channels"],
-                           **params["networks"]["encoder_q"],
-                           dtype=dtype).to(device)
-    transformer_q = TransformerNet(
-        in_channels=params["networks"]["encoder_q"]["out_channels"],
-        **params["networks"]["transformer_q"],
-        dtype=dtype).to(device)
-    hnn_q = HamiltonianNet(**params["networks"]["hamiltonian_q"],
-                           dtype=dtype).to(device)
-    # Define networks
-    if 'use_steps' in params['optimization']:
-        seq_len = params['optimization']['use_steps']
-    else:
-        seq_len = params["dataset"]["rollout"]["seq_length"]
-    encoder_p = EncoderNet(
-        seq_len=seq_len,
-        in_channels=params["dataset"]["rollout"]["n_channels"],
-        **params["networks"]["encoder_p"],
-        dtype=dtype).to(device)
-    transformer_p = TransformerNet(
-        in_channels=params["networks"]["encoder_p"]["out_channels"],
-        **params["networks"]["transformer_p"],
-        dtype=dtype).to(device)
-    hnn_p = HamiltonianNet(**params["networks"]["hamiltonian_p"],
-                           dtype=dtype).to(device)
-    decoder = DecoderNet(
-        in_channels=params["networks"]["transformer_p"]["out_channels"],
-        out_channels=params["dataset"]["rollout"]["n_channels"],
-        **params["networks"]["decoder"],
-        dtype=dtype).to(device)
+    encoder_q = instantiate_encoder_q(params, device, dtype)
+    transformer_q = instantiate_transformer_q(params, device, dtype)
+    potential = instantiate_potential(params, device, dtype)
+    encoder_p = instantiate_encoder_p(params, device, dtype)
+    transformer_p = instantiate_transformer_p(params, device, dtype)
+    decoder = instantiate_decoder(params, device, dtype)
 
     # Define HGN integrator
     integrator = Integrator(delta_t=params["dataset"]["rollout"]["delta_time"],
                             method=params["integrator"]["method"])
     
     # Instantiate Hamiltonian Generative Network
-    hgn = HGN(encoder_q=encoder_q,
-              transformer_q=transformer_q,
-              hnn_q=hnn_q,
-              encoder_p=encoder_p,
-              transformer_p=transformer_p,
-              hnn_p=hnn_p,
-              decoder=decoder,
-              integrator=integrator,
-              device=device,
-              dtype=dtype,
-              seq_len=params["dataset"]["rollout"]["seq_length"],
-              channels=params["dataset"]["rollout"]["n_channels"])
+    hgn = HGN(
+        encoder_q=encoder_q,
+        transformer_q=transformer_q,
+        encoder_p=encoder_p,
+        transformer_p=transformer_p,
+        potential=potential,
+        decoder=decoder,
+        integrator=integrator,
+        device=device,
+        dtype=dtype,
+        seq_len=params["dataset"]["rollout"]["seq_length"],
+        channels=params["dataset"]["rollout"]["n_channels"]
+    )
     return hgn
 
 

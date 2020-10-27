@@ -26,8 +26,7 @@ if __name__ == '__main__':
     hgn = hamiltonian_generative_network.HGN(integrator=leapfrog, seq_len=SEQ_LEN, device='cpu',
                                              dtype=torch.float)
     hgn.load(MODEL_TO_LOAD)
-    hgn.hnn_q = loader.instantiate_hamiltonian_q(DEFAULT_PARAMS, 'cpu', torch.float)
-    hgn.hnn_p = loader.instantiate_hamiltonian_p(DEFAULT_PARAMS, 'cpu', torch.float)
+    hgn.potential = loader.instantiate_potential(DEFAULT_PARAMS, 'cpu', torch.float)
 
     rollout = env.sample_random_rollouts(
         number_of_frames=SEQ_LEN, delta_time=DELTA_TIME, number_of_rollouts=1, img_size=32,

@@ -53,7 +53,7 @@ class HgnTrainer:
         # Get dtype, will raise a 'module 'torch' has no attribute' if there is a typo
         self.dtype = torch.__getattribute__(params["networks"]["dtype"])
 
-        # Load hgn from parameters to deice
+        # Load hgn from parameters to device
         self.hgn = load_hgn(params=self.params,
                             device=self.device,
                             dtype=self.dtype)
@@ -88,14 +88,12 @@ class HgnTrainer:
                 'lr': params["optimization"]["encoder_lr"]},
             {'params': self.hgn.transformer_q.parameters(),
                 'lr': params["optimization"]["transformer_lr"]},
-            {'params': self.hgn.hnn_q.parameters(),
+            {'params': self.hgn.potential.parameters(),
                 'lr': params["optimization"]["hnn_lr"]},
             {'params': self.hgn.encoder_p.parameters(),
                 'lr': params["optimization"]["encoder_lr"]},
             {'params': self.hgn.transformer_p.parameters(),
                 'lr': params["optimization"]["transformer_lr"]},
-            {'params': self.hgn.hnn_p.parameters(),
-                'lr': params["optimization"]["hnn_lr"]},
             {'params': self.hgn.decoder.parameters(),
                 'lr': params["optimization"]["decoder_lr"]},
         ]
@@ -111,7 +109,7 @@ class HgnTrainer:
             dtype (torch.dtype): Data type to be used in computations.
         """
         valid_params = [
-            'encoder_q', 'encoder_p', 'decoder', 'hamiltonian_q', 'hamiltonian_p',
+            'encoder_q', 'encoder_p', 'decoder', 'potential',
             'transformer_q', 'transformer_p'
         ]
         self.hgn.load(params['load_path'])
@@ -129,12 +127,8 @@ class HgnTrainer:
                 self.hgn.transformer_q = loader.instantiate_transformer_q(params, device, dtype)
             if 'transformer_p' in params['reset']:
                 self.hgn.transformer_p = loader.instantiate_transformer_p(params, device, dtype)
-            if 'hamiltonian_q' in params['reset']:
-                self.hgn.hnn_q = loader.instantiate_hamiltonian_q(params, device, dtype)
-                print('Loaded hamiltonian q')
-            if 'hamiltonian_p' in params['reset']:
-                print('Loaded hamiltonian p')
-                self.hgn.hnn_p = loader.instantiate_hamiltonian_p(params, device, dtype)
+            if 'potential' in params['reset']:
+                self.hgn.potential = loader.instantiate_potential(params, device, dtype)
             if 'decoder' in params['reset']:
                 self.hgn.decoder = loader.instantiate_decoder(params, device, dtype)
 

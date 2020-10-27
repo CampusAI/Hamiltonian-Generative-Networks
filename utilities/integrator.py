@@ -25,41 +25,31 @@ class Integrator:
         self.delta_t = delta_t
         self.method = method
 
-    def _get_grads(self, q, p, hnn_q, hnn_p, remember_energy=False):
+    def _get_grads(self, q, potential, remember_energy=False):
         """Apply the Hamiltonian equations to the Hamiltonian network to get dq_dt, dp_dt.
 
         Args:
             q (torch.Tensor): Latent-space position tensor.
-            p (torch.Tensor): Latent-space momentum tensor.
-            hnn (HamiltonianNet): Hamiltonian Neural Network.
+            potential (HamiltonianNet): Hamiltonian Neural Network for p.
             remember_energy (bool): Whether to store the computed energy in self.energy.
 
         Returns:
             tuple(torch.Tensor, torch.Tensor): Position and momentum time derivatives: dq_dt, dp_dt.
         """
         # Compute energy of the system
-        energy_q = hnn_q(x=q)
-        energy_p = hnn_p(x=p)
-        energy = energy_q + energy_p
-
-        # dq_dt = dH/dp
-        dq_dt = torch.autograd.grad(energy,
-                                    p,
-                                    create_graph=True,
-                                    retain_graph=True,
-                                    grad_outputs=torch.ones_like(energy))[0]
+        energy_q = potential(x=q)
 
         # dp_dt = -dH/dq
-        dp_dt = -torch.autograd.grad(energy,
+        dp_dt = -torch.autograd.grad(energy_q,
                                      q,
                                      create_graph=True,
                                      retain_graph=True,
-                                     grad_outputs=torch.ones_like(energy))[0]
+                                     grad_outputs=torch.ones_like(energy_q))[0]
 
         if remember_energy:
-            self.energy = energy.detach().cpu().numpy()
+            self.energy = energy_q.detach().cpu().numpy()
 
-        return dq_dt, dp_dt
+        return dp_dt
 
     def _euler_step(self, q, p, hnn):
         """Compute next latent-space position and momentum using Euler integration method.
@@ -115,7 +105,7 @@ class Integrator:
                                      (k4_p / 6))
         return q_next, p_next
 
-    def _lf_step(self, q, p, hnn_q, hnn_p):
+    def _lf_step(self, q, p, potential):
         """Compute next latent-space position and momentum using LeapFrog integration method.
 
         Args:
@@ -127,12 +117,12 @@ class Integrator:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
         # get acceleration
-        _, dp_dt = self._get_grads(q=q, p=p, hnn_q=hnn_q, hnn_p=hnn_p, remember_energy=True)
+        dp_dt = self._get_grads(q=q, potential=potential, remember_energy=True)
         # leapfrog step
         p_next_half = p + dp_dt * (self.delta_t) / 2
         q_next = q + p_next_half * self.delta_t
         # momentum synchronization
-        _, dp_next_dt = self._get_grads(q=q_next, p=p_next_half, hnn_q=hnn_q, hnn_p=hnn_p)
+        dp_next_dt = self._get_grads(q=q_next, potential=potential)
         p_next = p_next_half + dp_next_dt * (self.delta_t) / 2
         return q_next, p_next
 
@@ -172,13 +162,13 @@ class Integrator:
 
         return q_4, p_3
 
-    def step(self, q, p, hnn_q, hnn_p):
+    def step(self, q, p, potential):
         """Compute next latent-space position and momentum.
 
         Args:
             q (torch.Tensor): Latent-space position tensor.
             p (torch.Tensor): Latent-space momentum tensor.
-            hnn (HamiltonianNet): Hamiltonian Neural Network.
+            potential (HamiltonianNet): Hamiltonian Neural Network.
 
         Raises:
             NotImplementedError: If the integration method requested is not implemented.
@@ -187,5 +177,5 @@ class Integrator:
             tuple(torch.Tensor, torch.Tensor): Next time-step position and momentum: q_next, p_next.
         """
         if self.method == "Leapfrog":
-            return self._lf_step(q=q, p=p, hnn_q=hnn_q, hnn_p=hnn_p)
+            return self._lf_step(q=q, p=p, potential=potential)
         raise NotImplementedError

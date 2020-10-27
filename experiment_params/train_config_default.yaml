@@ -9,40 +9,34 @@ networks:
   dtype : "float"
   encoder_q:
     hidden_conv_layers: 1
-    n_filters: [32, 16]  # first + hidden
+    n_filters: [16, 8]  # first + hidden
     kernel_sizes: [3, 3, 5]  # first + hidden + last
     strides: [1, 1, 2]  # first + hidden + last
-    out_channels: 16
+    out_channels: 8
   transformer_q:
     hidden_conv_layers: 1
-    n_filters: [16, 16]  # first + hidden
+    n_filters: [8, 8]  # first + hidden
     kernel_sizes: [3, 3, 3]  # first + hidden + last
     strides: [1, 2, 2]  # first + hidden + last
-    out_channels: 16  # Channels of latent q representation
-  hamiltonian_q:
-    hidden_conv_layers: 3
-    in_shape: [16, 4, 4]  # Should be coherent with transformer output
-    n_filters: [32, 64, 64, 64, 64]  # first + hidden
-    kernel_sizes: [3, 3, 3, 3, 3]  # first + hidden + last
-    strides: [1, 1, 1, 1, 1]  # first + hidden + last
+    out_channels: 4  # Channels of latent q representation
+  potential:
+    hidden_conv_layers: 0
+    in_shape: [4, 4, 4]  # Should be coherent with transformer output
+    n_filters: [8, 8]  # first + hidden + 1
+    kernel_sizes: [3, 3]  # first + hidden + last
+    strides: [1, 1]  # first + hidden + last
   encoder_p:
-    hidden_conv_layers: 3
-    n_filters: [ 64, 48, 32, 16]  # first + hidden
-    kernel_sizes: [ 3, 3, 3, 3, 5]  # first + hidden + last
-    strides: [ 1, 1, 1, 1, 2]  # first + hidden + last
-    out_channels: 16
+    hidden_conv_layers: 1
+    n_filters: [32, 16]  # first + hidden
+    kernel_sizes: [3, 3, 3]  # first + hidden + last
+    strides: [ 1, 1, 2]  # first + hidden + last
+    out_channels: 8
   transformer_p:
     hidden_conv_layers: 1
-    n_filters: [ 16, 16 ]  # first + hidden
+    n_filters: [ 8, 8 ]  # first + hidden
     kernel_sizes: [ 3, 3, 3 ]  # first + hidden + last
     strides: [ 1, 2, 2 ]  # first + hidden + last
-    out_channels: 16  # MUST BE SAME OF transformer_q
-  hamiltonian_p:
-    hidden_conv_layers: 3
-    in_shape: [ 16, 4, 4 ]  # Should be coherent with transformer output
-    n_filters: [ 32, 64, 64, 64, 64]  # first + hidden
-    kernel_sizes: [ 3, 3, 3, 3, 3 ]  # first + hidden + last
-    strides: [ 1, 1, 1, 1, 1 ]  # first + hidden + last
+    out_channels: 4  # Channels of latent q representation
   decoder:
     n_residual_blocks: 3
     n_filters: [32, 32, 32]
@@ -56,7 +50,7 @@ integrator:
 optimization:
   epochs: 5
   batch_size: 16
-  use_steps: 15
+  use_steps: 10
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4

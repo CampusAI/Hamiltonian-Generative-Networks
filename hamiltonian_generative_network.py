@@ -15,11 +15,10 @@ class HGN:
     """
     ENCODER_Q_FILENAME = "encoder_q.pt"
     TRANSFORMER_Q_FILENAME = "transformer_q.pt"
-    HAMILTONIAN_Q_FILENAME = "hamiltonian_q.pt"
+    POTENTIAL_NAME = "potential.pt"
     DECODER_FILENAME = "decoder.pt"
     ENCODER_P_FILENAME = "encoder_p.pt"
     TRANSFORMER_P_FILENAME = "transformer_p.pt"
-    HAMILTONIAN_P_FILENAME = "hamiltonian_p.pt"
 
     def __init__(self,
                  integrator,
@@ -28,11 +27,10 @@ class HGN:
                  dtype,
                  encoder_q=None,
                  transformer_q=None,
-                 hnn_q=None,
                  encoder_p=None,
                  transformer_p=None,
-                 hnn_p=None,
                  decoder=None,
+                 potential=None,
                  channels=3,):
         """Instantiate a Hamiltonian Generative Network.
 
@@ -56,10 +54,9 @@ class HGN:
         # Modules
         self.encoder_q = encoder_q
         self.transformer_q = transformer_q
-        self.hnn_q = hnn_q
+        self.potential = potential
         self.encoder_p = encoder_p
         self.transformer_p = transformer_p
-        self.hnn_p = hnn_p
         self.decoder = decoder
         self.integrator = integrator
     
@@ -84,9 +81,9 @@ class HGN:
         prediction_shape[1] = n_steps
         prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
                                device=self.device)
-        prediction.set_input(rollout_batch)
 
         first_img = rollout_batch[:, 0]
+
         # Concat along channel dimension
         rollout_batch = conversions.concat_rgb(rollout_batch)
 
@@ -108,7 +105,7 @@ class HGN:
         # Estimate predictions
         for _ in range(n_steps - 1):
             # Compute next state
-            q, p = self.integrator.step(q=q, p=p, hnn_q=self.hnn_q, hnn_p=self.hnn_p)
+            q, p = self.integrator.step(q=q, p=p, potential=self.potential)
             prediction.append_state(q=q, p=p)
             prediction.append_energy(self.integrator.energy)  # This is the energy of previous timestep
 
@@ -118,8 +115,7 @@ class HGN:
 
         # We need to add the energy of the system at the last time-step
         with torch.no_grad():
-            last_energy = self.hnn_q(x=q).detach().cpu().numpy() \
-                          + self.hnn_p(x=p).detach().cpu().numpy()
+            last_energy = self.potential(x=q).detach().cpu().numpy()
         prediction.append_energy(last_energy)  # This is the energy of previous timestep
         return prediction
 
@@ -131,19 +127,17 @@ class HGN:
         """
         pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
         torch.save(self.encoder_q, os.path.join(directory,
-                                              self.ENCODER_Q_FILENAME))
+                                                self.ENCODER_Q_FILENAME))
         torch.save(self.transformer_q,
                    os.path.join(directory, self.TRANSFORMER_Q_FILENAME))
-        torch.save(self.hnn_q, os.path.join(directory,
-                                          self.HAMILTONIAN_Q_FILENAME))
+        torch.save(self.potential, os.path.join(directory,
+                                                self.POTENTIAL_NAME))
         torch.save(self.decoder, os.path.join(directory,
                                               self.DECODER_FILENAME))
         torch.save(self.encoder_p, os.path.join(directory,
                                                 self.ENCODER_P_FILENAME))
         torch.save(self.transformer_p,
                    os.path.join(directory, self.TRANSFORMER_P_FILENAME))
-        torch.save(self.hnn_p, os.path.join(directory,
-                                            self.HAMILTONIAN_P_FILENAME))
 
     def load(self, directory):
         self.encoder_q = torch.load(
@@ -154,10 +148,8 @@ class HGN:
             os.path.join(directory, self.TRANSFORMER_Q_FILENAME), map_location=self.device)
         self.transformer_p = torch.load(
             os.path.join(directory, self.TRANSFORMER_P_FILENAME), map_location=self.device)
-        self.hnn_q = torch.load(
-            os.path.join(directory, self.HAMILTONIAN_Q_FILENAME), map_location=self.device)
-        self.hnn_p = torch.load(
-            os.path.join(directory, self.HAMILTONIAN_P_FILENAME), map_location=self.device)
+        self.potential = torch.load(
+            os.path.join(directory, self.POTENTIAL_NAME), map_location=self.device)
 
         self.decoder = torch.load(
             os.path.join(directory, self.DECODER_FILENAME), map_location=self.device)
