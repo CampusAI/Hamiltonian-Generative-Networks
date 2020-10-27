@@ -92,21 +92,18 @@ class HGN:
         x_reconstructed = self.decoder(q)
         prediction.append_reconstruction(x_reconstructed)
 
+        delta_t = self.integrator.delta_t
         # Estimate predictions
         for _ in range(n_steps - 1):
             # Compute next state
-            q, p = self.integrator.step(q=q, p=p, hnn=self.hnn)
+            delta_q, delta_p = self.hnn(q=q, p=p)
+            q = q + delta_q * delta_t
+            p = p + delta_p * delta_t
             prediction.append_state(q=q, p=p)
-            prediction.append_energy(self.integrator.energy)  # This is the energy of previous timestep
 
             # Compute state reconstruction
             x_reconstructed = self.decoder(q)
             prediction.append_reconstruction(x_reconstructed)
-        
-        # We need to add the energy of the system at the last time-step
-        with torch.no_grad():
-            last_energy = self.hnn(q=q, p=p).detach().cpu().numpy()
-        prediction.append_energy(last_energy)  # This is the energy of previous timestep
         return prediction
 
     def load(self, directory):

@@ -43,9 +43,6 @@ class TrainingLogger:
             for loss_name, loss_value in losses.items():
                 if loss_value is not None:
                     self.writer.add_scalar(f'{loss_name}', loss_value, self.iteration)
-            enery_mean, energy_std = prediction.get_energy()
-            self.writer.add_scalar(f'energy/mean', enery_mean, self.iteration)
-            self.writer.add_scalar(f'energy/std', energy_std, self.iteration)
 
         if self.iteration % self.rollout_freq == 0:
             self.writer.add_video('data/input',

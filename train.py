@@ -162,7 +162,6 @@ class HgnTrainer:
 
         train_loss.backward()
         self.optimizer.step()
-
         return losses, hgn_output
 
     def fit(self):

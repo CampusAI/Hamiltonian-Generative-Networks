@@ -64,6 +64,7 @@ class HamiltonianNet(nn.Module):
             raise ValueError(
                 'Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
                 'can only be either all None, or all defined by the user.')
+        self.in_shape = in_shape
         in_channels = in_shape[0] * 2
         paddings = [int(k / 2) for k in kernel_sizes]
         self.in_conv = nn.Conv2d(in_channels=in_channels,
@@ -83,13 +84,9 @@ class HamiltonianNet(nn.Module):
             out_size = int((out_size - kernel_sizes[i] + 2 * paddings[i]) /
                            strides[i]) + 1
         self.out_conv = nn.Conv2d(in_channels=n_filters[-1],
-                                  out_channels=n_filters[-1],
+                                  out_channels=in_channels,
                                   kernel_size=kernel_sizes[-1],
                                   padding=paddings[-1])
-        out_size = int(
-            (out_size - kernel_sizes[-1] + 2 * paddings[-1]) / strides[-1]) + 1
-        self.n_flat = (out_size**2) * n_filters[-1]
-        self.linear = nn.Linear(in_features=self.n_flat, out_features=1)
         self.activation = act_func
         self.type(dtype)
 
@@ -111,13 +108,7 @@ class HamiltonianNet(nn.Module):
         x = self.activation(self.in_conv(x))
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
-        x = self.activation(self.out_conv(x))
-        x = x.view(-1, self.n_flat)
-        x = self.linear(x)
-        return x
+        x = self.out_conv(x)
+        q, p = x[:, :self.in_shape[0]], x[:, self.in_shape[0]:]
+        return q, p
 
-
-if __name__ == '__main__':
-    hamiltonian_net = HamiltonianNet(in_shape=(16, 4, 4))
-    q, p = torch.randn((2, 128, 16, 4, 4))
-    h = hamiltonian_net(q, p)

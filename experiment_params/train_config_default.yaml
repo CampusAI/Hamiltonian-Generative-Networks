@@ -30,10 +30,6 @@ networks:
     n_filters: [64, 64, 64]
     kernel_sizes: [3, 3, 3, 3]
 
-# Define HGN Integrator
-integrator:
-  method: "Leapfrog"
-
 # Define optimization
 optimization:
   epochs: 5
