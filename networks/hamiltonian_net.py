@@ -109,7 +109,7 @@ class HamiltonianNet(nn.Module):
         for layer in self.hidden_layers:
             x = self.activation(layer(x))
         x = self.activation(self.out_conv(x))
-        x = x.view(-1, self.n_flat)
+        x = x.reshape(-1, self.n_flat)
         x = self.linear(x)
         return x
 
