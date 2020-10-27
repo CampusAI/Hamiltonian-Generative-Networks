@@ -15,7 +15,7 @@ from networks.transformer_net import TransformerNet
 from utilities.integrator import Integrator
 
 
-def load_encoder(params, device, dtype):
+def instantiate_encoder(params, device, dtype):
     encoder = EncoderNet(seq_len=params["dataset"]["rollout"]["seq_length"],
                          in_channels=params["dataset"]["rollout"]["n_channels"],
                          **params["networks"]["encoder"],
@@ -23,7 +23,7 @@ def load_encoder(params, device, dtype):
     return encoder
 
 
-def load_transformer(params, device, dtype):
+def instantiate_transformer(params, device, dtype):
     transformer = TransformerNet(
         in_channels=params["networks"]["encoder"]["out_channels"],
         **params["networks"]["transformer"],
@@ -31,13 +31,13 @@ def load_transformer(params, device, dtype):
     return transformer
 
 
-def load_hamiltonian(params, device, dtype):
+def instantiate_hamiltonian(params, device, dtype):
     hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
                          dtype=dtype).to(device)
     return hnn
 
 
-def load_decoder(params, device, dtype):
+def instantiate_decoder(params, device, dtype):
     decoder = DecoderNet(
         in_channels=params["networks"]["transformer"]["out_channels"],
         out_channels=params["dataset"]["rollout"]["n_channels"],

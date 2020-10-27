@@ -120,13 +120,13 @@ class HgnTrainer:
             else:
                 assert params['reset'] in ['encoder', 'decoder', 'hamiltonian', 'transformer']
             if 'encoder' in params['reset']:
-                self.hgn.encoder = loader.load_encoder(params, device, dtype)
+                self.hgn.encoder = loader.instantiate_encoder(params, device, dtype)
             if 'decoder' in params['reset']:
-                self.hgn.decoder = loader.load_decoder(params, device, dtype)
+                self.hgn.decoder = loader.instantiate_decoder(params, device, dtype)
             if 'transformer' in params['reset']:
-                self.hgn.transformer = loader.load_transformer(params, device, dtype)
+                self.hgn.transformer = loader.instantiate_transformer(params, device, dtype)
             if 'hamiltonian' in params['reset']:
-                self.hgn.hnn = loader.load_hamiltonian(params, device, dtype)
+                self.hgn.hnn = loader.instantiate_hamiltonian(params, device, dtype)
 
     def training_step(self, rollouts):
         """Perform a training step with the given rollouts batch.
