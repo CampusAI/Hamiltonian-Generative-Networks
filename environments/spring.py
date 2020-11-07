@@ -66,6 +66,12 @@ class Spring(Environment):
         """
         return (0.1, 1.0)
 
+    def _get_default_ball_color(self):
+        """Returns:
+            color_ball (tuple): (R, G, B) default color ball for rendering.
+        """
+        return (173./255, 146./255, 0.)
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -95,12 +101,14 @@ class Spring(Environment):
         length = len(q)
         vid = np.zeros((length, res, res, 3), dtype='float')
         space_res = 2.*self.get_world_size()/res
+        background_color = self._get_default_background_color()
+        ball_color = self._get_default_ball_color()
         for t in range(length):
             vid[t] = cv2.circle(vid[t], self._world_to_pixels(0, q[t], res),
-                                int(self.mass/space_res), (1., 1., 0.), -1)
-            vid[t] = cv2.blur(vid[t], (3, 3))
+                                int(self.mass/space_res), ball_color, -1)
+            vid[t] = cv2.blur(cv2.blur(vid[t], (2, 2)), (2, 2))
         if color:
-            vid += 80./255.
+            vid[:] += background_color
             vid[vid > 1.] = 1.
         else:
             vid = np.expand_dims(np.max(vid, axis=-1), -1)
@@ -124,14 +132,14 @@ class Spring(Environment):
 # Sample code for sampling rollouts
 if __name__ == "__main__":
 
-    sp = Spring(mass=.5, elastic_cst=2, damping_ratio=.1)
+    sp = Spring(mass=.5, elastic_cst=2, damping_ratio=0.)
     rolls = sp.sample_random_rollouts(number_of_frames=100,
                                       delta_time=0.1,
                                       number_of_rollouts=16,
                                       img_size=32,
                                       noise_level=0.,
                                       radius_bound=(.5, 1.4),
-                                      color=False,
+                                      color=True,
                                       seed=None)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

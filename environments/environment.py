@@ -77,6 +77,38 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _sample_init_conditions(self, radius_bound):
+        """Samples random initial conditions for the environment
+
+        Args:
+            radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
+
+        Raises:
+            NotImplementedError: Class instantiation has no implementation
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_default_ball_color(self):
+        """Returns:
+            color_ball (tuple): (R, G, B) default color ball for rendering.
+
+        Raises:
+            NotImplementedError: Class instantiation has no implementation
+        """
+        raise NotImplementedError
+
+    def _get_default_background_color(self):
+        """Retrieves the default background color used for rendering.
+
+        Returns:
+            [float, float, float]: RGB default background color for image display
+        """
+        return [81./255, 88./255, 93./255]
+
     def _world_to_pixels(self, x, y, res):
         """Maps coordinates from world space to pixel space
 
@@ -92,19 +124,6 @@ class Environment(ABC):
         pix_y = int(res*(y + self.get_world_size())/(2*self.get_world_size()))
 
         return (pix_x, pix_y)
-
-    def _sample_init_conditions(self, radius_bound):
-        """Samples random initial conditions for the environment
-
-        Args:
-            radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
-                Optionally, it can be a string 'auto'. In that case, the value returned by
-                get_default_radius_bounds() will be returned.
-
-        Raises:
-            NotImplementedError: Class instantiation has no implementation
-        """
-        raise NotImplementedError
 
     def _evolution(self, total_time=10, delta_time=0.1):
         """Performs rollout of the physical system given some initial conditions.

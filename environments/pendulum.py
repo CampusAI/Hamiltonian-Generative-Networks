@@ -64,6 +64,12 @@ class Pendulum(Environment):
         """
         return (1.3, 2.3)
 
+    def _get_default_ball_color(self):
+        """Returns:
+            color_ball (tuple): (R, G, B) default color ball for rendering.
+        """
+        return (173./255, 146./255, 0.)
+
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -90,14 +96,16 @@ class Pendulum(Environment):
         q = self._rollout[0, :]
         length = len(q)
         vid = np.zeros((length, res, res, 3), dtype='float')
+        background_color = self._get_default_background_color()
+        ball_color = self._get_default_ball_color()
         space_res = 2.*self.get_world_size()/res
         for t in range(length):
             vid[t] = cv2.circle(vid[t], self._world_to_pixels(self.length*np.sin(q[t]),
                                                               self.length*np.cos(q[t]), res),
-                                int(self.mass/space_res), (1., 1., 0.), -1)
-            vid[t] = cv2.blur(vid[t], (3, 3))
+                                int(self.mass/space_res), ball_color, -1)
+            vid[t] = cv2.blur(cv2.blur(vid[t], (2, 2)), (2, 2))
         if color:
-            vid += 80./255.
+            vid[:] += background_color
             vid[vid > 1.] = 1.
         else:
             vid = np.expand_dims(np.max(vid, axis=-1), -1)
@@ -125,10 +133,10 @@ if __name__ == "__main__":
     rolls = pd.sample_random_rollouts(number_of_frames=100,
                                       delta_time=0.1,
                                       number_of_rollouts=16,
-                                      img_size=64,
+                                      img_size=32,
                                       noise_level=0.,
                                       radius_bound=(1.3, 2.3),
-                                      color=False,
+                                      color=True,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])
