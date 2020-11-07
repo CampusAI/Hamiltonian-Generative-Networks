@@ -165,7 +165,7 @@ class HGN:
         # Sample from a normal distribution the latent representation of the rollout
         latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0],
                         img_shape[1])
-        latent_representation = torch.randn(latent_shape)
+        latent_representation = torch.randn(latent_shape).to(self.device)
 
         # Instantiate prediction object
         prediction_shape = (1, n_steps, self.channels, img_shape[0],
