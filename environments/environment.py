@@ -15,6 +15,9 @@ class Environment(ABC):
             q ([float], optional): generalized position in n-d space
             p ([float], optional): generalized momentum in n-d space
         """
+        self._default_background_color = [81./255, 88./255, 93./255]
+        self._default_ball_colors = [
+            (173./255, 146./255, 0.), (173./255, 0., 0.), (0., 146./255, 0.)]
         self._rollout = None
         self.q = None
         self.p = None
@@ -90,24 +93,6 @@ class Environment(ABC):
             NotImplementedError: Class instantiation has no implementation
         """
         raise NotImplementedError
-
-    @abstractmethod
-    def _get_default_ball_color(self):
-        """Returns:
-            color_ball (tuple): (R, G, B) default color ball for rendering.
-
-        Raises:
-            NotImplementedError: Class instantiation has no implementation
-        """
-        raise NotImplementedError
-
-    def _get_default_background_color(self):
-        """Retrieves the default background color used for rendering.
-
-        Returns:
-            [float, float, float]: RGB default background color for image display
-        """
-        return [81./255, 88./255, 93./255]
 
     def _world_to_pixels(self, x, y, res):
         """Maps coordinates from world space to pixel space

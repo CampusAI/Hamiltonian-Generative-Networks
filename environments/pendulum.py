@@ -64,12 +64,6 @@ class Pendulum(Environment):
         """
         return (1.3, 2.3)
 
-    def _get_default_ball_color(self):
-        """Returns:
-            color_ball (tuple): (R, G, B) default color ball for rendering.
-        """
-        return (173./255, 146./255, 0.)
-
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -96,18 +90,16 @@ class Pendulum(Environment):
         q = self._rollout[0, :]
         length = len(q)
         vid = np.zeros((length, res, res, 3), dtype='float')
-        background_color = self._get_default_background_color()
-        ball_color = self._get_default_ball_color()
+        ball_color = self._default_ball_colors[0]
         space_res = 2.*self.get_world_size()/res
         for t in range(length):
             vid[t] = cv2.circle(vid[t], self._world_to_pixels(self.length*np.sin(q[t]),
                                                               self.length*np.cos(q[t]), res),
                                 int(self.mass/space_res), ball_color, -1)
             vid[t] = cv2.blur(cv2.blur(vid[t], (2, 2)), (2, 2))
-        if color:
-            vid[:] += background_color
-            vid[vid > 1.] = 1.
-        else:
+        vid += self._default_background_color
+        vid[vid > 1.] = 1.
+        if not color:
             vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 

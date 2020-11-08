@@ -66,12 +66,6 @@ class ChaoticPendulum(Environment):
         """
         return (0.5, 1.3)
 
-    def _get_default_ball_color(self):
-        """Returns:
-            color_ball [(tuple)]: (R, G, B) default color balls for rendering.
-        """
-        return [(173./255, 146./255, 0.), (173./255, 0., 0.)]
-
     def _dynamics(self, t, states):
         """Defines system dynamics
 
@@ -129,8 +123,7 @@ class ChaoticPendulum(Environment):
         q = self._rollout.reshape(2, 2, -1)[0, :, :]
         length = q.shape[-1]
         vid = np.zeros((length, res, res, 3), dtype='float')
-        background_color = self._get_default_background_color()
-        ball_colors = self._get_default_ball_color()
+        ball_colors = self._default_ball_colors
         space_res = 2.*self.get_world_size()/res
         for t in range(length):
             coords_1 = self._world_to_pixels(
@@ -144,10 +137,9 @@ class ChaoticPendulum(Environment):
             vid[t] = cv2.circle(vid[t], coords_2, int(
                 self.length/(space_res*3)), ball_colors[1], -1)
             vid[t] = cv2.blur(cv2.blur(vid[t], (2, 2)), (2, 2))
-        if color:
-            vid += 80./255.
-            vid[vid > 1.] = 1.
-        else:
+        vid += self._default_background_color
+        vid[vid > 1.] = 1.
+        if not color:
             vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 
