@@ -14,7 +14,7 @@ dataset:
   num_train_samples: 50000  # Total number of rollouts used when training on-line.
   num_test_samples: 100  # Number of test samples.
   rollout:
-    seq_length: 30
+    seq_length: 34
     delta_time: 0.125
     n_channels: 3
     noise_level: 0  # Level of environment noise. 0 means no noise, 1 means max noise.

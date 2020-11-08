@@ -38,6 +38,7 @@ integrator:
 optimization:
   epochs: 5
   batch_size: 16
+  input_frames: 5  # Number of frames to feed to the encoder while training
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4

@@ -55,7 +55,7 @@ def load_hgn(params, device, dtype):
         dtype (torch.dtype): Data type to be used by the networks.
     """
     # Define networks
-    encoder = EncoderNet(seq_len=params["dataset"]["rollout"]["seq_length"],
+    encoder = EncoderNet(seq_len=params["optimization"]["input_frames"],
                          in_channels=params["dataset"]["rollout"]["n_channels"],
                          **params["networks"]["encoder"],
                          dtype=dtype).to(device)

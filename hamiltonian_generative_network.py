@@ -72,7 +72,7 @@ class HGN:
 
         # Instantiate prediction object
         prediction_shape = list(rollout_batch.shape)
-        prediction_shape[1] = n_steps
+        prediction_shape[1] = n_steps + 1  # Count the first one
         prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
                                device=self.device)
         prediction.set_input(rollout_batch)
@@ -93,7 +93,7 @@ class HGN:
         prediction.append_reconstruction(x_reconstructed)
 
         # Estimate predictions
-        for _ in range(n_steps - 1):
+        for _ in range(n_steps):
             # Compute next state
             q, p = self.integrator.step(q=q, p=p, hnn=self.hnn)
             prediction.append_state(q=q, p=p)
@@ -181,7 +181,6 @@ class HGN:
 
         # Initial state reconstruction
         x_reconstructed = self.decoder(q)
-        print(x_reconstructed.shape)
         prediction.append_reconstruction(x_reconstructed)
 
         # Estimate predictions

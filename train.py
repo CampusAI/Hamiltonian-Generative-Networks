@@ -65,14 +65,14 @@ class HgnTrainer:
             print("Training with OFFLINE data...")
             self.train_data_loader, self.test_data_loader = get_offline_dataloaders(self.params)
         else:
-            print("Training with OFFLINE data...")
+            print("Training with ONLINE data...")
             self.train_data_loader, self.test_data_loader = get_online_dataloaders(self.params)
 
         # Initialize training logger
         self.training_logger = TrainingLogger(
             hyper_params=self.params,
             loss_freq=100,
-            rollout_freq=1000,
+            rollout_freq=10000,
             model_freq=10000
         )
 
@@ -141,8 +141,13 @@ class HgnTrainer:
         """
         self.optimizer.zero_grad()
 
-        hgn_output = self.hgn.forward(rollout_batch=rollouts)
-        target = hgn_output.input
+        rollout_len = rollouts.shape[1]
+        input_frames = self.params['optimization']['input_frames']
+        assert(input_frames <= rollout_len)  # optimization.use_steps must be smaller (or equal) to rollout.sequence_length
+        roll = rollouts[:, :input_frames]
+
+        hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
+        target = rollouts[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
         prediction = hgn_output.reconstructed_rollout
 
         if self.params["networks"]["variational"]:
