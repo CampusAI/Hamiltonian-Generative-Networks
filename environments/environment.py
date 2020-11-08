@@ -15,6 +15,9 @@ class Environment(ABC):
             q ([float], optional): generalized position in n-d space
             p ([float], optional): generalized momentum in n-d space
         """
+        self._default_background_color = [81./255, 88./255, 93./255]
+        self._default_ball_colors = [
+            (173./255, 146./255, 0.), (173./255, 0., 0.), (0., 146./255, 0.)]
         self._rollout = None
         self.q = None
         self.p = None
@@ -77,6 +80,20 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def _sample_init_conditions(self, radius_bound):
+        """Samples random initial conditions for the environment
+
+        Args:
+            radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
+                Optionally, it can be a string 'auto'. In that case, the value returned by
+                get_default_radius_bounds() will be returned.
+
+        Raises:
+            NotImplementedError: Class instantiation has no implementation
+        """
+        raise NotImplementedError
+
     def _world_to_pixels(self, x, y, res):
         """Maps coordinates from world space to pixel space
 
@@ -92,19 +109,6 @@ class Environment(ABC):
         pix_y = int(res*(y + self.get_world_size())/(2*self.get_world_size()))
 
         return (pix_x, pix_y)
-
-    def _sample_init_conditions(self, radius_bound):
-        """Samples random initial conditions for the environment
-
-        Args:
-            radius_bound (float, float): Radius lower and upper bound of the phase state sampling.
-                Optionally, it can be a string 'auto'. In that case, the value returned by
-                get_default_radius_bounds() will be returned.
-
-        Raises:
-            NotImplementedError: Class instantiation has no implementation
-        """
-        raise NotImplementedError
 
     def _evolution(self, total_time=10, delta_time=0.1):
         """Performs rollout of the physical system given some initial conditions.

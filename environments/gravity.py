@@ -139,7 +139,12 @@ class NObjectGravity(Environment):
         q = self._rollout.reshape(2, self.n_objects, 2, -1)[0]
         length = q.shape[-1]
         vid = np.zeros((length, res, res, 3), dtype='float')
+        ball_colors = self._default_ball_colors
         space_res = 2.*self.get_world_size()/res
+        if self.n_objects == 2:
+            factor = 0.55
+        else:
+            factor = 0.25
         for t in range(length):
             for n in range(self.n_objects):
                 brush = self.colors[n]
@@ -147,22 +152,21 @@ class NObjectGravity(Environment):
                     vid[t] = cv2.circle(vid[t],
                                         self._world_to_pixels(
                                             q[n, 0, t], q[n, 1, t], res),
-                                        int(self.mass[n]*.55/space_res), (1., 1., 0.), -1)
+                                        int(self.mass[n]*factor/space_res), ball_colors[0], -1)
                 elif brush == 'r':
                     vid[t] = cv2.circle(vid[t],
                                         self._world_to_pixels(
                                             q[n, 0, t], q[n, 1, t], res),
-                                        int(self.mass[n]*.55/space_res), (1., 0., 0.), -1)
+                                        int(self.mass[n]*factor/space_res), ball_colors[1], -1)
                 elif brush == 'g':
                     vid[t] = cv2.circle(vid[t],
                                         self._world_to_pixels(
                                             q[n, 0, t], q[n, 1, t], res),
-                                        int(self.mass[n]*.55/space_res), (0., 1., 0.), -1)
-            vid[t] = cv2.blur(vid[t], (3, 3))
-        if color:
-            vid += 80./255.
-            vid[vid > 1.] = 1.
-        else:
+                                        int(self.mass[n]*factor/space_res), ball_colors[2], -1)
+            vid[t] = cv2.blur(cv2.blur(vid[t], (2, 2)), (2, 2))
+        vid += self._default_background_color
+        vid[vid > 1.] = 1.
+        if not color:
             vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 
@@ -218,7 +222,7 @@ if __name__ == "__main__":
     og = NObjectGravity(mass=[1., 1.],
                         g=1., orbit_noise=0.05)
     rolls = og.sample_random_rollouts(number_of_frames=30,
-                                      delta_time=0.5,
+                                      delta_time=0.125,
                                       number_of_rollouts=1,
                                       img_size=32,
                                       noise_level=0.,
