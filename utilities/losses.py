@@ -34,12 +34,12 @@ def geco_constraint(target, prediction, tol):
     """Computes the constraint for the geco algorithm.
 
     Args:
-        target(Tensor): the rollout target
-        prediction(Tensor): the prediction of the model
-        tol(float): the tolerance we accept between target and prediction
+        target (toch.Tensor): the rollout target.
+        prediction (torch.Tensor): the prediction of the model.
+        tol (float): the tolerance we accept between target and prediction.
 
     Returns:
-        (Tensor): the constraing value as MSE minus the tolerance
+        (tuple(torch.Tensor, torch.Tensor)): the constraing value as MSE minus the tolerance, and MSE.
     """
     rec_loss = reconstruction_loss(prediction=prediction, target=target)
     return rec_loss - tol**2, rec_loss
