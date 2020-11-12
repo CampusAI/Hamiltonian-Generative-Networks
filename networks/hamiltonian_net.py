@@ -71,7 +71,6 @@ class HamiltonianNet(nn.Module):
             )
         self.paddings = paddings
         conv_paddings = [0 if isinstance(p, list) else p for p in paddings]
-        print(conv_paddings)
         in_channels = in_shape[0] * 2
         self.in_conv = nn.Conv2d(in_channels=in_channels,
                                  out_channels=n_filters[0],
