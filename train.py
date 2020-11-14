@@ -72,7 +72,7 @@ class HgnTrainer:
         self.training_logger = TrainingLogger(
             hyper_params=self.params,
             loss_freq=100,
-            rollout_freq=10000,
+            rollout_freq=1000,
             model_freq=10000
         )
 
