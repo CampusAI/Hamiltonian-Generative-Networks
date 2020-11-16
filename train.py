@@ -142,12 +142,14 @@ class HgnTrainer:
         self.optimizer.zero_grad()
 
         rollout_len = rollouts.shape[1]
-        input_frames = self.params['optimization']['input_frames']
-        assert(input_frames <= rollout_len)  # optimization.use_steps must be smaller (or equal) to rollout.sequence_length
-        roll = rollouts[:, :input_frames]
+        # input_frames = self.params['optimization']['input_frames']
+        # assert(input_frames <= rollout_len)  # optimization.use_steps must be smaller (or equal) to rollout.sequence_length
+        # roll = rollouts[:, :input_frames]
 
-        hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
-        target = rollouts[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
+        # hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
+        hgn_output = self.hgn.forward(rollout_batch=rollouts, n_steps=rollout_len-1)
+        # target = rollouts[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
+        target = rollouts
         prediction = hgn_output.reconstructed_rollout
 
         if self.params["networks"]["variational"]:
