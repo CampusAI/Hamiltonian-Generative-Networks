@@ -27,7 +27,11 @@ def kld_loss(mu, logvar):
     Returns:
         (torch.Tensor): KL divergence.
     """
-    return -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+    mu = mu.flatten(1)
+    logvar = logvar.flatten(1)
+    kld_per_sample = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim = 1)
+    kld_loss = torch.mean(kld_per_sample, dim = 0)
+    return kld_loss
 
 
 def geco_constraint(target, prediction, tol):
