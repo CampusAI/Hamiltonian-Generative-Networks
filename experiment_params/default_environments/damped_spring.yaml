@@ -2,4 +2,4 @@ environment:
   name: "Spring"
   mass: 0.5
   elastic_cst: 2.0
-  damping_ratio: 0.1
+  damping_ratio: 0.3
