@@ -172,6 +172,10 @@ class HgnTrainer:
             logvar = hgn_output.z_logvar
             kld = kld_loss(mu=mu, logvar=logvar)
 
+            # normalize by number of frames, channels and pixels per frame
+            kld_normalizer = prediction.flatten(1).size(1)
+            kld = kld / kld_normalizer
+
             # Compute losses
             train_loss = kld + self.langrange_multiplier * C
 
