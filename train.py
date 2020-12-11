@@ -256,13 +256,19 @@ class HgnTrainer:
                 target=prediction.input,
                 prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
                 ).numpy()
+            kld = kld_loss(mu=prediction.z_mean, logvar=prediction.z_logvar, mean_reduction=False).detach().cpu(
+                ).numpy()
             if first:
                 first = False
                 train_errors = error
+                train_klds = kld
             else:
                 train_errors = np.concatenate((train_errors, error))
+                train_klds = np.concatenate((train_klds, kld))
         err_mean, err_h = mean_confidence_interval(train_errors)
+        kld_mean, kld_h = mean_confidence_interval(train_klds)
         self.training_logger.log_error("Train reconstruction error", err_mean, err_h)
+        self.training_logger.log_error("Train KL divergence", kld_mean, kld_h)
         
         print("Calculating final test error...")
         first = True
@@ -275,14 +281,20 @@ class HgnTrainer:
                 target=prediction.input,
                 prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
                 ).numpy()
+            kld = kld_loss(mu=prediction.z_mean, logvar=prediction.z_logvar, mean_reduction=False).detach().cpu(
+                ).numpy()
             if first:
                 first = False
                 test_errors = error
+                test_klds = kld
             else:
                 test_errors = np.concatenate((test_errors, error))
+                test_klds = np.concatenate((test_klds, kld))
         test_errors = np.array(test_errors).flatten()
         err_mean, err_h = mean_confidence_interval(test_errors)
+        kld_mean, kld_h = mean_confidence_interval(test_klds)
         self.training_logger.log_error("Test reconstruction error", err_mean, err_h)
+        self.training_logger.log_error("Test KL divergence", kld_mean, kld_h)
         
 def _overwrite_config_with_cmd_arguments(config, args):
     if args.name is not None:
@@ -434,4 +446,4 @@ if __name__ == "__main__":
 
     # Train HGN network
     trainer = HgnTrainer(_config)
-    hgn = trainer.test()
+    hgn = trainer.fit()

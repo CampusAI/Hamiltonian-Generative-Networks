@@ -1,4 +1,4 @@
 # Define data paths
 dataset:
-  train_data: "datasets/pendulum_data/train"  # Should be of 50k samples
-  test_data: "datasets/pendulum_data/test"  # Should be of 10k samples
+  train_data: "/local_storage/carlesbr/spring_new/train"  # Should be of 50k samples
+  test_data: "/local_storage/carlesbr/spring_new/test"  # Should be of 10k samples

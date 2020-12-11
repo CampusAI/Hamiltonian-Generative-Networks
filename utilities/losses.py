@@ -20,7 +20,7 @@ def reconstruction_loss(prediction, target, mean_reduction=True):
         return mse(input=prediction, target=target).flatten(1).mean(-1)
 
 
-def kld_loss(mu, logvar):
+def kld_loss(mu, logvar, mean_reduction=True):
     """ First it computes the KLD over each datapoint in the batch as a sum over all latent dims. 
         It returns the mean KLD over the batch size.
         The KLD is computed in comparison to a multivariate Gaussian with zero mean and identity covariance.
@@ -28,12 +28,17 @@ def kld_loss(mu, logvar):
     Args:
         mu (torch.Tensor): the part of the latent vector that corresponds to the mean
         logvar (torch.Tensor): the log of the variance (sigma squared)
+        mean_reduction (bool): Whether to perform mean reduction across batch (default is true)
 
     Returns:
         (torch.Tensor): KL divergence.
     """
-    return -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+    kld_value = 1 + logvar - mu.pow(2) - logvar.exp()
+    if mean_reduction:
+        return -0.5 * torch.mean(kld_value)
 
+    else:
+        return -0.5 * kld_value.flatten(1).mean(-1)
 
 def geco_constraint(target, prediction, tol):
     """Computes the constraint for the geco algorithm.
