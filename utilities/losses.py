@@ -33,17 +33,11 @@ def kld_loss(mu, logvar, mean_reduction=True):
     Returns:
         (torch.Tensor): KL divergence.
     """
-<<<<<<< HEAD
-    kld_value = 1 + logvar - mu.pow(2) - logvar.exp()
-    if mean_reduction:
-        return -0.5 * torch.mean(kld_value)
-=======
     mu = mu.flatten(1)
     logvar = logvar.flatten(1)
     kld_per_sample = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim = 1)
     kld_loss = torch.mean(kld_per_sample, dim = 0)
     return kld_loss
->>>>>>> master
 
     else:
         return -0.5 * kld_value.flatten(1).mean(-1)
