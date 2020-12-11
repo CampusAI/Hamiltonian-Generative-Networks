@@ -1,18 +1,23 @@
 import torch
 
 
-def reconstruction_loss(prediction, target):
+def reconstruction_loss(prediction, target, mean_reduction=True):
     """Computes the MSE loss between the target and the predictions.
         
     Args:
         prediction (Tensor) The prediction of the model
         target (Tensor): The target batch
+        mean_reduction (bool): Whether to perform mean reduction across batch (default is true)
 
     Returns:
         (Tensor): MSE loss
     """
-    mse = torch.nn.MSELoss()
-    return mse(input=prediction, target=target)
+    reduction = 'mean' if mean_reduction else 'none'
+    mse = torch.nn.MSELoss(reduction=reduction)
+    if mean_reduction:
+        return mse(input=prediction, target=target)
+    else:
+        return mse(input=prediction, target=target).flatten(1).mean(-1)
 
 
 def kld_loss(mu, logvar):

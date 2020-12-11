@@ -17,7 +17,7 @@ from utilities.training_logger import TrainingLogger
 from utilities import loader
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 from utilities.losses import reconstruction_loss, kld_loss, geco_constraint
-
+from utilities.statistics import mean_confidence_interval
 
 def _avoid_overwriting(experiment_id):
     # This function throws an error if the given experiment data already exists in runs/
@@ -244,19 +244,46 @@ class HgnTrainer:
     def test(self):
         """Test after the training is finished.
         """
-        print("Testing...")
-        test_error = 0
-        pbar = tqdm.tqdm(self.test_data_loader)
+        print("Calculating final training error...")
+        first = True
+        pbar = tqdm.tqdm(self.train_data_loader)
+        
         for _, rollout_batch in enumerate(pbar):
+            rollout_len = rollout_batch.shape[1]
             rollout_batch = rollout_batch.to(self.device).type(self.dtype)
-            prediction = self.hgn.forward(rollout_batch=rollout_batch)
+            prediction = self.hgn.forward(rollout_batch=rollout_batch, n_steps=rollout_len-1)
             error = reconstruction_loss(
                 target=prediction.input,
-                prediction=prediction.reconstructed_rollout).detach().cpu(
+                prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
                 ).numpy()
-            test_error += error / len(self.test_data_loader)
-        self.training_logger.log_test_error(test_error)
-
+            if first:
+                first = False
+                train_errors = error
+            else:
+                train_errors = np.concatenate((train_errors, error))
+        err_mean, err_h = mean_confidence_interval(train_errors)
+        self.training_logger.log_error("Train reconstruction error", err_mean, err_h)
+        
+        print("Calculating final test error...")
+        first = True
+        pbar = tqdm.tqdm(self.test_data_loader)
+        for _, rollout_batch in enumerate(pbar):
+            rollout_len = rollout_batch.shape[1]
+            rollout_batch = rollout_batch.to(self.device).type(self.dtype)
+            prediction = self.hgn.forward(rollout_batch=rollout_batch, n_steps=rollout_len-1)
+            error = reconstruction_loss(
+                target=prediction.input,
+                prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
+                ).numpy()
+            if first:
+                first = False
+                test_errors = error
+            else:
+                test_errors = np.concatenate((test_errors, error))
+        test_errors = np.array(test_errors).flatten()
+        err_mean, err_h = mean_confidence_interval(test_errors)
+        self.training_logger.log_error("Test reconstruction error", err_mean, err_h)
+        
 def _overwrite_config_with_cmd_arguments(config, args):
     if args.name is not None:
         config['experiment_id'] = args.name[0]
@@ -407,4 +434,4 @@ if __name__ == "__main__":
 
     # Train HGN network
     trainer = HgnTrainer(_config)
-    hgn = trainer.fit()
+    hgn = trainer.test()

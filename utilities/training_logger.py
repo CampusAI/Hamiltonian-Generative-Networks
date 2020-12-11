@@ -68,11 +68,21 @@ class TrainingLogger:
                 "_checkpoint_" + str(self.iteration))
             model.save(save_dir)
         self.iteration += 1
-
-    def log_test_error(self, test_error):
-        """Add test error to tensorboard as text
+    
+    def log_text(self, label, msg):
+        """Add text to tensorboard
 
         Args:
-            test_error (float): Test reconstruction error
+            label (str): Label to identify in tensorboard display
+            msg (str, float): Message to display (can be a numericsl value)
         """
-        self.writer.add_text('data/test_error', str(test_error), 0)
+        self.writer.add_text('data/' + label, str(msg), 0)
+        
+    def log_error(self, label, mean, dist):
+        """Add text to tensorboard
+
+        Args:
+            mean (float): Mean of the error interval to display.
+            dist (float): distance of the error corresponding to the confidence.
+        """
+        self.log_text(label, "{:.4f} +/- {:.4f}".format(mean, dist))
