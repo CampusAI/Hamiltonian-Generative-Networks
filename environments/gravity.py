@@ -71,7 +71,7 @@ class NObjectGravity(Environment):
         if self.n_objects == 2:
             return 0.05
         elif self.n_objects == 3:
-            return 0.005
+            return 0.2
         else:
             return 0.
 
