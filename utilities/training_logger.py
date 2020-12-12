@@ -83,4 +83,4 @@ class TrainingLogger:
             mean (float): Mean of the error interval to display.
             dist (float): distance of the error corresponding to the confidence.
         """
-        self.log_text(label, "{:.4f} +/- {:.4f}".format(mean, dist))
+        self.log_text(label, "{:.8f} +/- {:.8f}".format(mean, dist))
