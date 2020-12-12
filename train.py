@@ -17,7 +17,7 @@ from utilities.training_logger import TrainingLogger
 from utilities import loader
 from utilities.loader import load_hgn, get_online_dataloaders, get_offline_dataloaders
 from utilities.losses import reconstruction_loss, kld_loss, geco_constraint
-
+from utilities.statistics import mean_confidence_interval
 
 def _avoid_overwriting(experiment_id):
     # This function throws an error if the given experiment data already exists in runs/
@@ -246,18 +246,57 @@ class HgnTrainer:
     def test(self):
         """Test after the training is finished.
         """
-        print("Testing...")
-        test_error = 0
-        pbar = tqdm.tqdm(self.test_data_loader)
+        print("Calculating final training error...")
+        first = True
+        pbar = tqdm.tqdm(self.train_data_loader)
+        
         for _, rollout_batch in enumerate(pbar):
+            rollout_len = rollout_batch.shape[1]
             rollout_batch = rollout_batch.to(self.device).type(self.dtype)
-            prediction = self.hgn.forward(rollout_batch=rollout_batch)
+            prediction = self.hgn.forward(rollout_batch=rollout_batch, n_steps=rollout_len-1)
             error = reconstruction_loss(
                 target=prediction.input,
-                prediction=prediction.reconstructed_rollout).detach().cpu(
+                prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
                 ).numpy()
-            test_error += error / len(self.test_data_loader)
-        self.training_logger.log_test_error(test_error)
+            kld = kld_loss(mu=prediction.z_mean, logvar=prediction.z_logvar, mean_reduction=False).detach().cpu(
+                ).numpy()
+            if first:
+                first = False
+                train_errors = error
+                train_klds = kld
+            else:
+                train_errors = np.concatenate((train_errors, error))
+                train_klds = np.concatenate((train_klds, kld))
+        err_mean, err_h = mean_confidence_interval(train_errors)
+        kld_mean, kld_h = mean_confidence_interval(train_klds)
+        self.training_logger.log_error("Train reconstruction error", err_mean, err_h)
+        self.training_logger.log_error("Train KL divergence", kld_mean, kld_h)
+        
+        print("Calculating final test error...")
+        first = True
+        pbar = tqdm.tqdm(self.test_data_loader)
+        for _, rollout_batch in enumerate(pbar):
+            rollout_len = rollout_batch.shape[1]
+            rollout_batch = rollout_batch.to(self.device).type(self.dtype)
+            prediction = self.hgn.forward(rollout_batch=rollout_batch, n_steps=rollout_len-1)
+            error = reconstruction_loss(
+                target=prediction.input,
+                prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
+                ).numpy()
+            kld = kld_loss(mu=prediction.z_mean, logvar=prediction.z_logvar, mean_reduction=False).detach().cpu(
+                ).numpy()
+            if first:
+                first = False
+                test_errors = error
+                test_klds = kld
+            else:
+                test_errors = np.concatenate((test_errors, error))
+                test_klds = np.concatenate((test_klds, kld))
+        test_errors = np.array(test_errors).flatten()
+        err_mean, err_h = mean_confidence_interval(test_errors)
+        kld_mean, kld_h = mean_confidence_interval(test_klds)
+        self.training_logger.log_error("Test reconstruction error", err_mean, err_h)
+        self.training_logger.log_error("Test KL divergence", kld_mean, kld_h)
 
 def _overwrite_config_with_cmd_arguments(config, args):
     if args.name is not None:
