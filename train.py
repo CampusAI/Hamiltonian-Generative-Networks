@@ -242,13 +242,19 @@ class HgnTrainer:
 
         self.test()
         return self.hgn
+    
+    def compute_reconst_kld_errors(self, dataloader):
+        """Computes reconstruction error and KL divergence.
 
-    def test(self):
-        """Test after the training is finished.
+        Args:
+            dataloader (torch.utils.data.DataLoader): DataLoader to retrieve errors from.
+
+        Returns:
+            (reconst_error_mean, reconst_error_h), (kld_mean, kld_h): Tuples where the mean and 95%
+            conficence interval is shown.
         """
-        print("Calculating final training error...")
         first = True
-        pbar = tqdm.tqdm(self.train_data_loader)
+        pbar = tqdm.tqdm(dataloader)
         
         for _, rollout_batch in enumerate(pbar):
             # Move to device and change dtype
@@ -272,55 +278,35 @@ class HgnTrainer:
                 kld = kld / kld_normalizer
             if first:
                 first = False
-                train_errors = error
+                set_errors = error
                 if self.params["networks"]["variational"]:
-                    train_klds = kld
+                    set_klds = kld
             else:
-                train_errors = np.concatenate((train_errors, error))
+                set_errors = np.concatenate((set_errors, error))
                 if self.params["networks"]["variational"]:
-                    train_klds = np.concatenate((train_klds, kld))
-        err_mean, err_h = mean_confidence_interval(train_errors)
-        self.training_logger.log_error("Train reconstruction error", err_mean, err_h)
+                    set_klds = np.concatenate((set_klds, kld))
+        err_mean, err_h = mean_confidence_interval(set_errors)
         if self.params["networks"]["variational"]:
-            kld_mean, kld_h = mean_confidence_interval(train_klds)
+            kld_mean, kld_h = mean_confidence_interval(set_klds)
+            return (err_mean, err_h), (kld_mean, kld_h)
+        else:
+            return (err_mean, err_h), None
+        
+    def test(self):
+        """Test after the training is finished and logs result to tensorboard.
+        """
+        print("Calculating final training error...")
+        (err_mean, err_h), kld = self.compute_reconst_kld_errors(self.train_data_loader)
+        self.training_logger.log_error("Train reconstruction error", err_mean, err_h)
+        if kld is not None:
+            kld_mean, kld_h = kld
             self.training_logger.log_error("Train KL divergence", kld_mean, kld_h)
 
         print("Calculating final test error...")
-        first = True
-        pbar = tqdm.tqdm(self.test_data_loader)
-        for _, rollout_batch in enumerate(pbar):
-            # Move to device and change dtype
-            rollout_batch = rollout_batch.to(self.device).type(self.dtype)
-            rollout_len = rollout_batch.shape[1]
-            input_frames = self.params['optimization']['input_frames']
-            assert(input_frames <= rollout_len)  # optimization.use_steps must be smaller (or equal) to rollout.sequence_length
-            roll = rollout_batch[:, :input_frames]
-            hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
-            target = rollout_batch[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
-            prediction = hgn_output.reconstructed_rollout
-            error = reconstruction_loss(
-                target=target,
-                prediction=prediction, mean_reduction=False).detach().cpu(
-                ).numpy()
-            if self.params["networks"]["variational"]:
-                kld = kld_loss(mu=hgn_output.z_mean, logvar=hgn_output.z_logvar, mean_reduction=False).detach().cpu(
-                    ).numpy()
-                # normalize by number of frames, channels and pixels per frame
-                kld_normalizer = prediction.flatten(1).size(1)
-                kld = kld / kld_normalizer
-            if first:
-                first = False
-                test_errors = error
-                if self.params["networks"]["variational"]:
-                    test_klds = kld
-            else:
-                test_errors = np.concatenate((test_errors, error))
-                if self.params["networks"]["variational"]:
-                    test_klds = np.concatenate((test_klds, kld))
-        err_mean, err_h = mean_confidence_interval(test_errors)
+        (err_mean, err_h), kld = self.compute_reconst_kld_errors(self.test_data_loader)
         self.training_logger.log_error("Test reconstruction error", err_mean, err_h)
-        if self.params["networks"]["variational"]:
-            kld_mean, kld_h = mean_confidence_interval(test_klds)
+        if kld is not None:
+            kld_mean, kld_h = kld
             self.training_logger.log_error("Test KL divergence", kld_mean, kld_h)
 
 def _overwrite_config_with_cmd_arguments(config, args):
