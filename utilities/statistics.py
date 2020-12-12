@@ -10,8 +10,7 @@ def mean_confidence_interval(data, confidence=0.95):
         data (np.array): Sample to calculate the confidence interval.
         confidence (float): Confidence of the interval (betwen 0 and 1).
     """
-    a = 1.0 * np.array(data)
-    n = len(a)
-    m, se = np.mean(a), scipy.stats.sem(a)
+    n = len(data)
+    m, se = np.mean(data), scipy.stats.sem(data)
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, h
