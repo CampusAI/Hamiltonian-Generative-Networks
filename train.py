@@ -251,52 +251,77 @@ class HgnTrainer:
         pbar = tqdm.tqdm(self.train_data_loader)
         
         for _, rollout_batch in enumerate(pbar):
-            rollout_len = rollout_batch.shape[1]
+            # Move to device and change dtype
             rollout_batch = rollout_batch.to(self.device).type(self.dtype)
-            prediction = self.hgn.forward(rollout_batch=rollout_batch, n_steps=rollout_len-1)
+            rollout_len = rollout_batch.shape[1]
+            input_frames = self.params['optimization']['input_frames']
+            assert(input_frames <= rollout_len)  # optimization.use_steps must be smaller (or equal) to rollout.sequence_length
+            roll = rollout_batch[:, :input_frames]
+            hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
+            target = rollout_batch[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
+            prediction = hgn_output.reconstructed_rollout
             error = reconstruction_loss(
-                target=prediction.input,
-                prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
+                target=target,
+                prediction=prediction, mean_reduction=False).detach().cpu(
                 ).numpy()
-            kld = kld_loss(mu=prediction.z_mean, logvar=prediction.z_logvar, mean_reduction=False).detach().cpu(
-                ).numpy()
+            if self.params["networks"]["variational"]:
+                kld = kld_loss(mu=hgn_output.z_mean, logvar=hgn_output.z_logvar, mean_reduction=False).detach().cpu(
+                    ).numpy()
+                # normalize by number of frames, channels and pixels per frame
+                kld_normalizer = prediction.flatten(1).size(1)
+                kld = kld / kld_normalizer
             if first:
                 first = False
                 train_errors = error
-                train_klds = kld
+                if self.params["networks"]["variational"]:
+                    train_klds = kld
             else:
                 train_errors = np.concatenate((train_errors, error))
-                train_klds = np.concatenate((train_klds, kld))
+                if self.params["networks"]["variational"]:
+                    train_klds = np.concatenate((train_klds, kld))
         err_mean, err_h = mean_confidence_interval(train_errors)
-        kld_mean, kld_h = mean_confidence_interval(train_klds)
         self.training_logger.log_error("Train reconstruction error", err_mean, err_h)
-        self.training_logger.log_error("Train KL divergence", kld_mean, kld_h)
-        
+        if self.params["networks"]["variational"]:
+            kld_mean, kld_h = mean_confidence_interval(train_klds)
+            self.training_logger.log_error("Train KL divergence", kld_mean, kld_h)
+
         print("Calculating final test error...")
         first = True
         pbar = tqdm.tqdm(self.test_data_loader)
         for _, rollout_batch in enumerate(pbar):
-            rollout_len = rollout_batch.shape[1]
+            # Move to device and change dtype
             rollout_batch = rollout_batch.to(self.device).type(self.dtype)
-            prediction = self.hgn.forward(rollout_batch=rollout_batch, n_steps=rollout_len-1)
+            rollout_len = rollout_batch.shape[1]
+            input_frames = self.params['optimization']['input_frames']
+            assert(input_frames <= rollout_len)  # optimization.use_steps must be smaller (or equal) to rollout.sequence_length
+            roll = rollout_batch[:, :input_frames]
+            hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
+            target = rollout_batch[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
+            prediction = hgn_output.reconstructed_rollout
             error = reconstruction_loss(
-                target=prediction.input,
-                prediction=prediction.reconstructed_rollout, mean_reduction=False).detach().cpu(
+                target=target,
+                prediction=prediction, mean_reduction=False).detach().cpu(
                 ).numpy()
-            kld = kld_loss(mu=prediction.z_mean, logvar=prediction.z_logvar, mean_reduction=False).detach().cpu(
-                ).numpy()
+            if self.params["networks"]["variational"]:
+                kld = kld_loss(mu=hgn_output.z_mean, logvar=hgn_output.z_logvar, mean_reduction=False).detach().cpu(
+                    ).numpy()
+                # normalize by number of frames, channels and pixels per frame
+                kld_normalizer = prediction.flatten(1).size(1)
+                kld = kld / kld_normalizer
             if first:
                 first = False
                 test_errors = error
-                test_klds = kld
+                if self.params["networks"]["variational"]:
+                    test_klds = kld
             else:
                 test_errors = np.concatenate((test_errors, error))
-                test_klds = np.concatenate((test_klds, kld))
-        test_errors = np.array(test_errors).flatten()
+                if self.params["networks"]["variational"]:
+                    test_klds = np.concatenate((test_klds, kld))
         err_mean, err_h = mean_confidence_interval(test_errors)
-        kld_mean, kld_h = mean_confidence_interval(test_klds)
         self.training_logger.log_error("Test reconstruction error", err_mean, err_h)
-        self.training_logger.log_error("Test KL divergence", kld_mean, kld_h)
+        if self.params["networks"]["variational"]:
+            kld_mean, kld_h = mean_confidence_interval(test_klds)
+            self.training_logger.log_error("Test KL divergence", kld_mean, kld_h)
 
 def _overwrite_config_with_cmd_arguments(config, args):
     if args.name is not None:
