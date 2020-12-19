@@ -83,7 +83,7 @@ in the `train_data:` and `test_data:` sections can be given to `--dataset-config
 A dataset can be generated starting from a `yaml` parameter file that specifies all its parameters
 in the `environment` and `dataset` sections. To create a dataset, run
 ```commandline
-python environments/generate_data.py
+python generate_data.py
 ```
 which will create the dataset in a folder with the given name (see args below) and will
 write a `parameters.yaml` file within it, that can be directly used for off-line training
