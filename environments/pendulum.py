@@ -90,16 +90,16 @@ class Pendulum(Environment):
         q = self._rollout[0, :]
         length = len(q)
         vid = np.zeros((length, res, res, 3), dtype='float')
+        ball_color = self._default_ball_colors[0]
         space_res = 2.*self.get_world_size()/res
         for t in range(length):
             vid[t] = cv2.circle(vid[t], self._world_to_pixels(self.length*np.sin(q[t]),
                                                               self.length*np.cos(q[t]), res),
-                                int(self.mass/space_res), (1., 1., 0.), -1)
-            vid[t] = cv2.blur(vid[t], (3, 3))
-        if color:
-            vid += 80./255.
-            vid[vid > 1.] = 1.
-        else:
+                                int(self.mass/space_res), ball_color, -1)
+            vid[t] = cv2.blur(cv2.blur(vid[t], (2, 2)), (2, 2))
+        vid += self._default_background_color
+        vid[vid > 1.] = 1.
+        if not color:
             vid = np.expand_dims(np.max(vid, axis=-1), -1)
         return vid
 
@@ -125,10 +125,10 @@ if __name__ == "__main__":
     rolls = pd.sample_random_rollouts(number_of_frames=100,
                                       delta_time=0.1,
                                       number_of_rollouts=16,
-                                      img_size=64,
+                                      img_size=32,
                                       noise_level=0.,
                                       radius_bound=(1.3, 2.3),
-                                      color=False,
+                                      color=True,
                                       seed=23)
     idx = np.random.randint(rolls.shape[0])
     visualize_rollout(rolls[idx])

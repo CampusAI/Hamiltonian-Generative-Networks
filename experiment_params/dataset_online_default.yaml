@@ -10,12 +10,12 @@ environment:
 # Define data characteristics
 dataset:
   img_size: 32
-  radius_bound: [1.3, 2.3]
+  radius_bound: 'auto'
   num_train_samples: 50000  # Total number of rollouts used when training on-line.
-  num_test_samples: 100  # Number of test samples.
+  num_test_samples: 10000  # Number of test samples.
   rollout:
-    seq_length: 30
+    seq_length: 34
     delta_time: 0.125
     n_channels: 3
-    noise_level: 0  # Level of environment noise. 0 means no noise, 1 means max noise.
+    noise_level: 1  # Level of environment noise. 0 means no noise, 1 means max noise.
                     # Maximum values are defined in each environment.

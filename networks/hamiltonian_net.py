@@ -5,6 +5,7 @@ value that is interpreted as the Hamiltonian.
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 
 class HamiltonianNet(nn.Module):
@@ -24,7 +25,8 @@ class HamiltonianNet(nn.Module):
                  n_filters=None,
                  kernel_sizes=None,
                  strides=None,
-                 act_func=nn.ReLU(),
+                 paddings=None,
+                 act_func=nn.Softplus(),
                  dtype=torch.float):
         """Create the layers of the Hamiltonian network.
 
@@ -44,52 +46,48 @@ class HamiltonianNet(nn.Module):
         """
         super().__init__()
         if all(var is None for var in (hidden_conv_layers, n_filters,
-                                       kernel_sizes, strides)):
+                                       kernel_sizes, strides, paddings)):
             hidden_conv_layers = HamiltonianNet.DEFAULT_PARAMS[
                 'hidden_conv_layers']
             n_filters = HamiltonianNet.DEFAULT_PARAMS['n_filters']
             kernel_sizes = HamiltonianNet.DEFAULT_PARAMS['kernel_sizes']
             strides = HamiltonianNet.DEFAULT_PARAMS['strides']
+            paddings = HamiltonianNet.DEFAULT_PARAMS['paddings']
         elif all(var is not None for var in (hidden_conv_layers, n_filters,
-                                             kernel_sizes, strides)):
+                                             kernel_sizes, strides, paddings)):
             # If no Nones, check consistency
-            assert len(n_filters) == hidden_conv_layers + 2,\
+            assert len(n_filters) == hidden_conv_layers + 1,\
                 'n_filters must be a list of length hidden_conv_layers + 2 ' \
                 '(' + str(hidden_conv_layers + 2) + ' in this case).'
             assert len(kernel_sizes) == hidden_conv_layers + 2 and \
-                   len(strides) == hidden_conv_layers + 2, \
+                   len(strides) == len(kernel_sizes) and \
+                   len(paddings) == len(kernel_sizes), \
                    'kernel_sizes and strides must be lists with values foreach layer in the ' \
                    'network (' + str(hidden_conv_layers + 2) + ' in this case).'
         else:
             raise ValueError(
                 'Args hidden_conv_layers, n_filters, kernel_sizes, and strides'
-                'can only be either all None, or all defined by the user.')
+                'can only be either all None, or all defined by the user.'
+            )
+        self.paddings = paddings
+        conv_paddings = [0 if isinstance(p, list) else p for p in paddings]
         in_channels = in_shape[0] * 2
-        paddings = [int(k / 2) for k in kernel_sizes]
         self.in_conv = nn.Conv2d(in_channels=in_channels,
                                  out_channels=n_filters[0],
                                  kernel_size=kernel_sizes[0],
-                                 padding=paddings[0])
-        out_size = int(
-            (in_shape[1] - kernel_sizes[0] + 2 * paddings[0])) / strides[0] + 1
+                                 padding=conv_paddings[0],
+                                 stride=strides[0])
         self.hidden_layers = nn.ModuleList(modules=[
             nn.Conv2d(in_channels=n_filters[i],
                       out_channels=n_filters[i + 1],
                       kernel_size=kernel_sizes[i + 1],
-                      padding=paddings[i + 1],
+                      padding=conv_paddings[i + 1],
                       stride=strides[i + 1]) for i in range(hidden_conv_layers)
         ])
-        for i in range(hidden_conv_layers):
-            out_size = int((out_size - kernel_sizes[i] + 2 * paddings[i]) /
-                           strides[i]) + 1
         self.out_conv = nn.Conv2d(in_channels=n_filters[-1],
-                                  out_channels=n_filters[-1],
-                                  kernel_size=kernel_sizes[-1],
-                                  padding=paddings[-1])
-        out_size = int(
-            (out_size - kernel_sizes[-1] + 2 * paddings[-1]) / strides[-1]) + 1
-        self.n_flat = (out_size**2) * n_filters[-1]
-        self.linear = nn.Linear(in_features=self.n_flat, out_features=1)
+                                  out_channels=1,
+                                  kernel_size=2,
+                                  padding=0)
         self.activation = act_func
         self.type(dtype)
 
@@ -108,12 +106,15 @@ class HamiltonianNet(nn.Module):
         x = torch.cat(
             (q, p),
             dim=1)  # Concatenate q and p to obtain a N x 2C x H x W tensor
+        if isinstance(self.paddings[0], list):
+            x = F.pad(x, self.paddings[0])
         x = self.activation(self.in_conv(x))
-        for layer in self.hidden_layers:
+        for i, layer in enumerate(self.hidden_layers):
+            if isinstance(self.paddings[i + 1], list):
+                x = F.pad(x, self.paddings[i + 1])
             x = self.activation(layer(x))
         x = self.activation(self.out_conv(x))
-        x = x.view(-1, self.n_flat)
-        x = self.linear(x)
+        x = x.squeeze(dim=1).squeeze(dim=1)
         return x
 
 
