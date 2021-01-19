@@ -85,8 +85,10 @@ class HGN:
         prediction.set_z(z_sample=z, z_mean=z_mean, z_logvar=z_logvar)
 
         # Initial state
-        #q, p = self.transformer(z)
-        q, p = torch.split(z, z.size(1)//2, dim=1)
+        if self.transformer is not None:
+            q, p = self.transformer(z)
+        else:
+            q, p = torch.split(z, z.size(1)//2, dim=1)
         prediction.append_state(q=q, p=p)
 
         # Initial state reconstruction
@@ -139,8 +141,9 @@ class HGN:
         pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
         torch.save(self.encoder, os.path.join(directory,
                                               self.ENCODER_FILENAME))
-        torch.save(self.transformer,
-                   os.path.join(directory, self.TRANSFORMER_FILENAME))
+        if self.transformer is not None:
+            torch.save(self.transformer,
+                       os.path.join(directory, self.TRANSFORMER_FILENAME))
         torch.save(self.hnn, os.path.join(directory,
                                           self.HAMILTONIAN_FILENAME))
         torch.save(self.decoder, os.path.join(directory,
@@ -165,9 +168,12 @@ class HGN:
                 given minibatch.
         """
         # Sample from a normal distribution the latent representation of the rollout
-        latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0],
-                        img_shape[1])
-        latent_representation = torch.randn(latent_shape).to(self.device)
+        if self.transformer is not None:
+            latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0],
+                            img_shape[1])
+        else:  # TODO: Don't hardcode shape
+            latent_shape = (1, int(self.encoder.out_mean.out_channels), 4, 4)
+        latent_representation = torch.randn(latent_shape).to(self.device).requires_grad_()
 
         # Instantiate prediction object
         prediction_shape = (1, n_steps, self.channels, img_shape[0],
@@ -178,7 +184,10 @@ class HGN:
         prediction.set_z(z_sample=latent_representation)
 
         # Initial state
-        q, p = self.transformer(latent_representation)
+        if self.transformer is not None:
+            q, p = self.transformer(latent_representation)
+        else:
+            q, p = torch.split(latent_representation, latent_representation.size(1)//2, dim=1)
         prediction.append_state(q=q, p=p)
 
         # Initial state reconstruction

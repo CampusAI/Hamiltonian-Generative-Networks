@@ -24,11 +24,14 @@ def instantiate_encoder(params, device, dtype):
 
 
 def instantiate_transformer(params, device, dtype):
-    transformer = TransformerNet(
-        in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"],
-        dtype=dtype).to(device)
-    return transformer
+    if "transformer" in params["networks"]:
+        transformer = TransformerNet(
+            in_channels=params["networks"]["encoder"]["out_channels"],
+            **params["networks"]["transformer"],
+            dtype=dtype).to(device)
+        return transformer
+    else:
+        return None
 
 
 def instantiate_hamiltonian(params, device, dtype):
@@ -59,14 +62,19 @@ def load_hgn(params, device, dtype):
                          in_channels=params["dataset"]["rollout"]["n_channels"],
                          **params["networks"]["encoder"],
                          dtype=dtype).to(device)
-    transformer = TransformerNet(
-        in_channels=params["networks"]["encoder"]["out_channels"],
-        **params["networks"]["transformer"],
-        dtype=dtype).to(device)
+    if "transformer" in params["networks"]:
+        transformer = TransformerNet(
+            in_channels=params["networks"]["encoder"]["out_channels"],
+            **params["networks"]["transformer"],
+            dtype=dtype).to(device)
+        decoder_in_channels = params["networks"]["transformer"]["out_channels"]
+    else:
+        transformer = None
+        decoder_in_channels = params["networks"]["encoder"]["out_channels"] / 2
     hnn = HamiltonianNet(**params["networks"]["hamiltonian"],
                          dtype=dtype).to(device)
     decoder = DecoderNet(
-        in_channels=params["networks"]["transformer"]["out_channels"],
+        in_channels=decoder_in_channels,
         out_channels=params["dataset"]["rollout"]["n_channels"],
         **params["networks"]["decoder"],
         dtype=dtype).to(device)

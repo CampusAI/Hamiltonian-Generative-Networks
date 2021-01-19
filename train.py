@@ -89,10 +89,6 @@ class HgnTrainer:
                 'lr': params["optimization"]["encoder_lr"]
             },
             {
-                'params': self.hgn.transformer.parameters(),
-                'lr': params["optimization"]["transformer_lr"]
-            },
-            {
                 'params': self.hgn.hnn.parameters(),
                 'lr': params["optimization"]["hnn_lr"]
             },
@@ -101,6 +97,11 @@ class HgnTrainer:
                 'lr': params["optimization"]["decoder_lr"]
             },
         ]
+        if self.hgn.transformer is not None:
+            optim_params.append(
+                {'params': self.hgn.transformer.parameters(),
+                 'lr': params["optimization"]["transformer_lr"]},
+            )
         self.optimizer = torch.optim.Adam(optim_params)
 
     def load_and_reset(self, params, device, dtype):

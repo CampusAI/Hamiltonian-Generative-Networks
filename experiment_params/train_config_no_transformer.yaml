@@ -12,7 +12,7 @@ networks:
     n_filters: [32, 64, 64, 64, 64, 64, 64]  # first + hidden
     kernel_sizes: [3, 3, 3, 3, 3, 3, 3, 3]  # first + hidden + last
     strides: [1, 1, 1, 1, 1, 2, 2, 2]  # first + hidden + last
-    out_channels: 48
+    out_channels: 32
   hamiltonian:
     hidden_conv_layers: 3
     in_shape: [ 16, 4, 4 ]  # Should be coherent with transformer output
