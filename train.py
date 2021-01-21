@@ -194,8 +194,8 @@ class HgnTrainer:
         else:  # not variational
             # Compute frame reconstruction error
             train_loss = reconstruction_loss(
-                target=prediction.input,
-                prediction=prediction.reconstructed_rollout)
+                target=target,
+                prediction=prediction)
             losses = {'loss/train': train_loss.item()}
 
         train_loss.backward()
