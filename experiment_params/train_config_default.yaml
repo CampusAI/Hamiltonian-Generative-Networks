@@ -57,4 +57,4 @@ geco:
   initial_lagrange_multiplier: 0.1 # This is 1/beta (This is the only one that should be tunned)
   alpha: 0.0
   tol: 0.0
-  lagrange_multiplier_param: 1.0
+  lagrange_multiplier_param: 0.0
