@@ -55,5 +55,5 @@ geco:
   # To train in a beta-vae fashion use the following parameters:
   # alpha: 0.0
   # tol: 0.0
-  # initial_lagrange_multiplier: 1 / beta
-  # lagrange_multiplier_param = 1.0
+  # initial_lagrange_multiplier: 100
+  # lagrange_multiplier_param: 0.0
