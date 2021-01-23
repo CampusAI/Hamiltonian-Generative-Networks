@@ -51,7 +51,7 @@ geco:
   alpha: 0.99 # decay of the moving average
   tol: 3.3e-2 # per pixel error tolerance. keep in mind this gets squared
   initial_lagrange_multiplier: 1.0 # this is 1/beta
-  lagrange_multiplier_param: 0.1   # adjust update on langrange multiplier
+  lagrange_multiplier_param: 0.1   # adjust update on lagrange multiplier
   # To train in a beta-vae fashion use the following parameters:
   # alpha: 0.0
   # tol: 0.0
