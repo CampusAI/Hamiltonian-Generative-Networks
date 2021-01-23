@@ -180,7 +180,7 @@ class HgnTrainer:
             # clamping the langrange multiplier to avoid inf values
             self.langrange_multiplier = self.langrange_multiplier * torch.exp(
                 lagrange_mult_param * C.detach())
-            self.langrange_multiplier = torch.clamp(self.langrange_multiplier, 1e-10, 1e10)
+            self.langrange_multiplier = torch.clamp(self.langrange_multiplier, 1e-10, 5e3)
 
             losses = {
                 'loss/train': train_loss.item(),
