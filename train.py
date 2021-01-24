@@ -151,19 +151,7 @@ class HgnTrainer:
         prediction = hgn_output.reconstructed_rollout
 
         if self.params["networks"]["variational"]:
-            tol = self.params["geco"]["tol"]
-            alpha = self.params["geco"]["alpha"]
-            lagrange_mult_param = self.params["geco"]["lagrange_multiplier_param"]
-
-            C, rec_loss = geco_constraint(target, prediction, tol)  # C has gradient
-
-            # Compute moving average of constraint C (without gradient)
-            if self.C_ma is None:
-                self.C_ma = C.detach()
-            else:
-                self.C_ma = alpha * self.C_ma + (1 - alpha) * C.detach()
-            C_curr = C.detach().item() # keep track for logging
-            C = C + (self.C_ma - C.detach())  # Move C without affecting its gradient
+            rec_loss = reconstruction_loss(prediction=prediction, target=target)
 
             # Compute KL divergence
             mu = hgn_output.z_mean
@@ -175,22 +163,14 @@ class HgnTrainer:
             kld = kld / kld_normalizer
 
             # Compute losses
-            train_loss = kld + self.langrange_multiplier * C
-
-            # clamping the langrange multiplier to avoid inf values
-            self.langrange_multiplier = self.langrange_multiplier * torch.exp(
-                lagrange_mult_param * C.detach())
-            self.langrange_multiplier = torch.clamp(self.langrange_multiplier, 1e-10, 1e10)
+            train_loss = kld + self.langrange_multiplier * rec_loss
 
             losses = {
                 'loss/train': train_loss.item(),
                 'loss/kld': kld.item(),
-                'loss/C': C_curr,
-                'loss/C_ma': self.C_ma.item(),
                 'loss/rec': rec_loss.item(),
                 'other/langrange_mult': self.langrange_multiplier.item()
             }
-
         else:  # not variational
             # Compute frame reconstruction error
             train_loss = reconstruction_loss(
