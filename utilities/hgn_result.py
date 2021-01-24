@@ -14,7 +14,7 @@ class HgnResult():
     """Class to bundle HGN guessed output information.
     """
 
-    def __init__(self, batch_shape, device):
+    def __init__(self, batch_shape, device, dtype):
         """Instantiate the HgnResult that will contain all the information of the forward pass
         over a single batch of rollouts.
 
@@ -22,6 +22,7 @@ class HgnResult():
             batch_shape (torch.Size): Shape of a batch of reconstructed rollouts, returned by
                 batch.shape.
             device (str): String with the device to use. E.g. 'cuda:0', 'cpu'.
+            dtype (torch.dtype): Data type
         """
         self.input = None
         self.z_mean = None
@@ -30,7 +31,7 @@ class HgnResult():
         self.q_s = []
         self.p_s = []
         self.energies = []  # Estimated energy of the system by the Hamiltonian network
-        self.reconstructed_rollout = torch.empty(batch_shape).to(device)
+        self.reconstructed_rollout = torch.empty(batch_shape, dtype=dtype).to(device)
         self.reconstruction_ptr = 0
 
     def set_input(self, rollout):
