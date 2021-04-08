@@ -1,4 +1,6 @@
 # Hamiltonian-Generative-Networks
+[![DOI](https://zenodo.org/badge/295400716.svg)](https://zenodo.org/badge/latestdoi/295400716)
+
 Re-implementation of Hamiltonian Generative Networks [paper](https://arxiv.org/abs/1909.13789)
 
 
