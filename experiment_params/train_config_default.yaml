@@ -6,7 +6,7 @@ device: 'cuda:0'  # Will use this device if available, otherwise wil use cpu
 # Define networks architectures
 networks:
   variational: True
-  dtype : "float"
+  dtype : "double"
   encoder:
     hidden_conv_layers: 6
     n_filters: [32, 64, 64, 64, 64, 64, 64]  # first + hidden

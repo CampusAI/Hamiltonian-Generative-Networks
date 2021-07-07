@@ -74,7 +74,7 @@ class HGN:
         prediction_shape = list(rollout_batch.shape)
         prediction_shape[1] = n_steps + 1  # Count the first one
         prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
-                               device=self.device)
+                               device=self.device, dtype=self.dtype)
         prediction.set_input(rollout_batch)
 
         # Concat along channel dimension
@@ -165,13 +165,13 @@ class HGN:
         # Sample from a normal distribution the latent representation of the rollout
         latent_shape = (1, self.encoder.out_mean.out_channels, img_shape[0],
                         img_shape[1])
-        latent_representation = torch.randn(latent_shape).to(self.device)
+        latent_representation = torch.randn(latent_shape).to(self.device).type(self.dtype)
 
         # Instantiate prediction object
         prediction_shape = (1, n_steps, self.channels, img_shape[0],
                             img_shape[1])
         prediction = HgnResult(batch_shape=torch.Size(prediction_shape),
-                               device=self.device)
+                               device=self.device, dtype=self.dtype)
 
         prediction.set_z(z_sample=latent_representation)
 
