@@ -1,7 +1,8 @@
 # Hamiltonian-Generative-Networks
 [![DOI](https://zenodo.org/badge/295400716.svg)](https://zenodo.org/badge/latestdoi/295400716)
 
-Re-implementation of Hamiltonian Generative Networks [paper](https://arxiv.org/abs/1909.13789)
+Re-implementation of Hamiltonian Generative Networks [paper](https://arxiv.org/abs/1909.13789).
+You can find the re-implementation publication details [here](https://rescience.github.io/bibliography/Balsells_Rodas_2021.html), and article [here](https://zenodo.org/record/4835278#.YQUhI3UzaEC).
 
 
 ## Setup
