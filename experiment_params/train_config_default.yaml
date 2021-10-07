@@ -40,6 +40,7 @@ optimization:
   epochs: 5
   batch_size: 16
   input_frames: 5  # Number of frames to feed to the encoder while training
+  autoencoding: False  # Whether to predict the whole input sequence
   # Learning rates
   encoder_lr: 1.5e-4
   transformer_lr: 1.5e-4
@@ -50,9 +51,9 @@ geco:
   alpha: 0.99 # decay of the moving average
   tol: 3.3e-2 # per pixel error tolerance. keep in mind this gets squared
   initial_lagrange_multiplier: 1.0 # this is 1/beta
-  lagrange_multiplier_param: 0.1   # adjust update on langrange multiplier
+  lagrange_multiplier_param: 0.1   # adjust update on lagrange multiplier
   # To train in a beta-vae fashion use the following parameters:
   # alpha: 0.0
   # tol: 0.0
-  # initial_lagrange_multiplier: 1 / beta
-  # lagrange_multiplier_param = 1.0
+  # initial_lagrange_multiplier: 100
+  # lagrange_multiplier_param: 0.0

@@ -142,12 +142,19 @@ class HgnTrainer:
         self.optimizer.zero_grad()
 
         rollout_len = rollouts.shape[1]
-        input_frames = self.params['optimization']['input_frames']
-        assert(input_frames <= rollout_len)  # optimization.use_steps must be smaller (or equal) to rollout.sequence_length
-        roll = rollouts[:, :input_frames]
+        autoencoding = self.params['optimization']['autoencoding']
+        hgn_output, target = None, None
 
-        hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
-        target = rollouts[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
+        if autoencoding:  # We feed the whole sequence and try to fit it
+            hgn_output = self.hgn.forward(rollout_batch=rollouts, n_steps=rollout_len)
+            target = rollouts  # Target is the full rollout
+        else:
+            input_frames = self.params['optimization']['input_frames']
+            assert(input_frames < rollout_len)  # optimization.use_steps must be strictly smaller to rollout.sequence_length
+            roll = rollouts[:, :input_frames]
+            hgn_output = self.hgn.forward(rollout_batch=roll, n_steps=rollout_len - input_frames)
+            target = rollouts[:, input_frames-1:]  # Fit first input_frames and try to predict the last + the next (rollout_len - input_frames)
+
         prediction = hgn_output.reconstructed_rollout
 
         if self.params["networks"]["variational"]:
@@ -180,7 +187,7 @@ class HgnTrainer:
             # clamping the langrange multiplier to avoid inf values
             self.langrange_multiplier = self.langrange_multiplier * torch.exp(
                 lagrange_mult_param * C.detach())
-            self.langrange_multiplier = torch.clamp(self.langrange_multiplier, 1e-10, 1e10)
+            self.langrange_multiplier = torch.clamp(self.langrange_multiplier, 1e-10, 1e4)
 
             losses = {
                 'loss/train': train_loss.item(),
