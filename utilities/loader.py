@@ -147,7 +147,7 @@ def get_offline_dataloaders(params):
     if params["dataset"]["droplet"]:
         trainDS = DroplerLoader(params["dataset"]["train_data"])
         train_data_loader = torch.utils.data.DataLoader(
-        trainDS, shuffle=True, batch_size=params["optimization"]["batch_size"])
+        trainDS, shuffle=True, batch_size=None)
         return train_data_loader, train_data_loader
     trainDS = EnvironmentLoader(params["dataset"]["train_data"])
     train_data_loader = torch.utils.data.DataLoader(

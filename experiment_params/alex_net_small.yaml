@@ -1,4 +1,4 @@
-experiment_id: "alex_net"
+experiment_id: "alex_net_small_euler_MUCHO_BIG_PAPASITO"
 model_save_dir: "saved_models"
 
 device: 'cuda:0'  # Will use this device if available, otherwise wil use cpu
@@ -8,10 +8,10 @@ networks:
   variational: True
   dtype : "float"
   encoder:
-    hidden_conv_layers: 6
-    n_filters:    [32, 16, 16, 16, 8, 8, 8]  # first + hidden
-    kernel_sizes: [5, 5, 5, 3, 3, 3, 3, 3]  # first + hidden + last
-    strides:      [2, 2, 1, 1, 1, 1, 1, 1]  # first + hidden + last
+    hidden_conv_layers: 3
+    n_filters:    [32, 16, 16, 8]  # first + hidden
+    kernel_sizes: [5, 5, 5, 3, 3]  # first + hidden + last
+    strides:      [2, 2, 1, 1, 1]  # first + hidden + last
     out_channels: 32
   transformer:
     hidden_conv_layers: 1
@@ -28,12 +28,12 @@ networks:
     paddings: [1, 0, [0, 1, 0, 1], [0, 1, 0, 1], 0]  # first + hidden + last
   decoder:
     n_residual_blocks: 4
-    n_filters: [16, 16, 16, 16]
+    n_filters: [8, 8, 16, 16]
     kernel_sizes: [3, 3, 3, 3, 3]
 
 # Define HGN Integrator
 integrator:
-  method: "Leapfrog"
+  method: "Euler"
 
 # Define optimization
 optimization:
