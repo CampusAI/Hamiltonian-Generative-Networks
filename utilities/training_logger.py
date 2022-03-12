@@ -7,7 +7,7 @@ class TrainingLogger:
     def __init__(self,
                  hyper_params,
                  loss_freq=100,
-                 rollout_freq=1000,
+                 rollout_freq=100,
                  model_freq=1000):
         """Instantiate a TrainingLogger.
 
