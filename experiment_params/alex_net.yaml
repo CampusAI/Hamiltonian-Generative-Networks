@@ -1,0 +1,58 @@
+experiment_id: "default_offline"
+model_save_dir: "saved_models"
+
+device: 'cuda:0'  # Will use this device if available, otherwise wil use cpu
+
+# Define networks architectures
+networks:
+  variational: True
+  dtype : "float"
+  encoder:
+    hidden_conv_layers: 6
+    n_filters:    [32, 16, 16, 16, 8, 8, 8]  # first + hidden
+    kernel_sizes: [5, 5, 5, 3, 3, 3, 3, 3]  # first + hidden + last
+    strides:      [2, 2, 1, 1, 1, 1, 1, 1]  # first + hidden + last
+    out_channels: 32
+  transformer:
+    hidden_conv_layers: 1
+    n_filters: [64, 64]  # first + hidden
+    kernel_sizes: [3, 3, 3]  # first + hidden + last
+    strides: [1, 2, 2]  # first + hidden + last
+    out_channels: 16  # Channels of q, and p splitted
+  hamiltonian:
+    hidden_conv_layers: 3
+    in_shape: [16, 4, 4]  # Should be coherent with transformer output
+    n_filters: [32, 64, 64, 64]  # first + hidden
+    kernel_sizes: [3, 2, 2, 2, 2]  # first + hidden + last
+    strides: [1, 2, 1, 1, 1]  # first + hidden + last
+    paddings: [1, 0, [0, 1, 0, 1], [0, 1, 0, 1], 0]  # first + hidden + last
+  decoder:
+    n_residual_blocks: 4
+    n_filters: [16, 16, 16, 16]
+    kernel_sizes: [3, 3, 3, 3, 3]
+
+# Define HGN Integrator
+integrator:
+  method: "Leapfrog"
+
+# Define optimization
+optimization:
+  epochs: 100
+  batch_size: 1
+  input_frames: 5  # Number of frames to feed to the encoder while training
+  # Learning rates
+  encoder_lr: 1.5e-4
+  transformer_lr: 1.5e-4
+  hnn_lr: 1.5e-4
+  decoder_lr: 1.5e-4
+
+geco:
+  alpha: 0.99 # decay of the moving average
+  tol: 3.3e-2 # per pixel error tolerance. keep in mind this gets squared
+  initial_lagrange_multiplier: 1.0 # this is 1/beta
+  lagrange_multiplier_param: 0.1   # adjust update on langrange multiplier
+  # To train in a beta-vae fashion use the following parameters:
+  # alpha: 0.0
+  # tol: 0.0
+  # initial_lagrange_multiplier: 1 / beta
+  # lagrange_multiplier_param = 1.0

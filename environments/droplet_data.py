@@ -27,8 +27,8 @@ class DroplerLoader(Dataset):
         for i in range(len(image_list)//20):
             file_path = os.path.join(path, image_list[i*20])
             im = np.load(file_path).astype(np.float32)
-            im = cv2.resize(im, (64, 64), interpolation=cv2.INTER_NEAREST)
-            im_list.append(im.astype(np.float32))
+            im = cv2.resize(im, (128, 128), interpolation=cv2.INTER_NEAREST).astype(np.float32)
+            im_list.append(im)
         
         return np.array(im_list)[:,None,:,:]
 
