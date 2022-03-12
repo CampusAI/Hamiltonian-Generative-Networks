@@ -1,0 +1,10 @@
+# Define data paths
+dataset:
+  train_data: "../trajectories"
+  test_data: "datasets/pendulum_data/test"  # Should be of 10k samples
+  droplet: True
+  rollout:
+    seq_length: 0
+    delta_time: 1
+    n_channels: 1
+    noise_level: 1 

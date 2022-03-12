@@ -22,7 +22,7 @@ from utilities.statistics import mean_confidence_interval
 def _avoid_overwriting(experiment_id):
     # This function throws an error if the given experiment data already exists in runs/
     logdir = os.path.join('runs', experiment_id)
-    if os.path.exists(logdir):
+    if os.path.exists(logdir) and False:
         assert len(os.listdir(logdir)) == 0,\
             f'Experiment id {experiment_id} already exists in runs/. Remove it, change the name ' \
             f'in the yaml file.'
@@ -355,6 +355,8 @@ def _merge_configs(train_config, dataset_config):
         config[key] = value
     # If the config specifies a dataset path, we take the rollout from the configuration file
     # in the given dataset
+    if config['dataset']['droplet']:
+        return config
     if 'dataset' in config and 'train_data' in config['dataset']:
         dataset_config = _read_config(  # Read parameters.yaml in root of given dataset
             os.path.join(os.path.dirname(config['dataset']['train_data']), 'parameters.yaml'))

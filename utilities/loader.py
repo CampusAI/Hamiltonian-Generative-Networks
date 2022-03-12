@@ -6,6 +6,7 @@ import torch
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from environments.datasets import EnvironmentSampler, EnvironmentLoader
+from environments.droplet_data import DroplerLoader
 from environments.environment_factory import EnvFactory
 from hamiltonian_generative_network import HGN
 from networks.decoder_net import DecoderNet
@@ -143,6 +144,11 @@ def get_offline_dataloaders(params):
         tuple(torch.utils.data.DataLoader, torch.utils.data.DataLoader): Train and test dataloader
     """
     # Train
+    if params["dataset"]["droplet"]:
+        trainDS = DroplerLoader(params["dataset"]["train_data"])
+        train_data_loader = torch.utils.data.DataLoader(
+        trainDS, shuffle=True, batch_size=params["optimization"]["batch_size"])
+        return train_data_loader, train_data_loader
     trainDS = EnvironmentLoader(params["dataset"]["train_data"])
     train_data_loader = torch.utils.data.DataLoader(
         trainDS, shuffle=True, batch_size=params["optimization"]["batch_size"])
