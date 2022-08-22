@@ -128,7 +128,8 @@ class Integrator:
         _, dp_dt = self._get_grads(q, p, hnn, remember_energy=True)
         # leapfrog step
         p_next_half = p + dp_dt * (self.delta_t) / 2
-        q_next = q + p_next_half * self.delta_t
+        dq_dt, _ = self._get_grads(q, p_next_half, hnn)
+        q_next = q + dq_dt * self.delta_t
         # momentum synchronization
         _, dp_next_dt = self._get_grads(q_next, p_next_half, hnn)
         p_next = p_next_half + dp_next_dt * (self.delta_t) / 2
